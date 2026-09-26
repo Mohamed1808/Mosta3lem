@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workflow tests · [PlatformName]</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <main class="content" style="margin:0 auto;max-width:960px">
+    <p class="small"><a href="index.html">Back to the app</a></p>
+    <h1 class="mt-8">Workflow tests</h1>
+    <p class="muted mt-8">Pure workflow, SLA, masking, scoring, batch and validation tests. The same suite runs from the command line with <span class="mono">node tests/run-node.js</span>, and the acceptance scenarios run against the service layer with <span class="mono">node tests/scenarios.js</span>.</p>
+    <div id="summary" class="mt-16"></div>
+    <div id="out" class="mt-16"></div>
+  </main>
+  <script src="js/core/util.js"></script>
+  <script src="js/core/i18n.js"></script>
+  <script src="js/config/platform.js"></script>
+  <script src="js/config/geo.js"></script>
+  <script src="js/config/services.js"></script>
+  <script src="js/config/ratings.js"></script>
+  <script src="js/config/status.js"></script>
+  <script src="js/config/defaults.js"></script>
+  <script src="js/config/forms.js"></script>
+  <script src="js/workflow/common.js"></script>
+  <script src="js/workflow/validation.js"></script>
+  <script src="js/workflow/investigation.js"></script>
+  <script src="js/workflow/collection.js"></script>
+  <script src="js/workflow/batch.js"></script>
+  <script src="js/workflow/sla.js"></script>
+  <script src="js/workflow/masking.js"></script>
+  <script src="js/workflow/scoring.js"></script>
+  <script src="tests/runner.js"></script>
+  <script src="tests/workflow.test.js"></script>
+  <script>
+    (function () {
+      var res = TestRunner.run();
+      var summary = document.getElementById('summary');
+      var box = document.createElement('div');
+      box.className = 'notice ' + (res.failed ? 'bad' : 'ok');
+      box.textContent = res.passed + ' passed, ' + res.failed + ' failed';
+      summary.appendChild(box);
+      var bySuite = {};
+      res.results.forEach(function (r) { (bySuite[r.suite] = bySuite[r.suite] || []).push(r); });
+      var out = document.getElementById('out');
+      Object.keys(bySuite).forEach(function (s) {
+        var list = bySuite[s], bad = list.filter(function (r) { return !r.ok; });
+        var det = document.createElement('details');
+        det.className = 'card mb-8';
+        if (bad.length) det.open = true;
+        var sum = document.createElement('summary');
+        sum.className = 'card-h';
+        sum.style.cursor = 'pointer';
+        sum.textContent = s + '  (' + (list.length - bad.length) + '/' + list.length + ')';
+        det.appendChild(sum);
+        var body = document.createElement('div');
+        body.className = 'card-b small';
+        list.forEach(function (r) {
+          var line = document.createElement('div');
+          line.style.color = r.ok ? 'var(--text-2)' : 'var(--bad)';
+          line.textContent = (r.ok ? 'ok  ' : 'FAIL  ') + r.name + (r.error ? ': ' + r.error : '');
+          body.appendChild(line);
+        });
+        det.appendChild(body);
+        out.appendChild(det);
+      });
+    })();
+  </script>
+</body>
+</html>

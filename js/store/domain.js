@@ -1,0 +1,122 @@
+/* Domain helpers shared by the seed and the mock services. They read a db document
+   passed in explicitly, so they stay testable and never reach for global state. */
+(function () {
+  var ICM = (window.ICM = window.ICM || {});
+  var U = ICM.util, wf = ICM.wf;
+
+  var domain = {};
+
+  domain.gov = function (db, id) {
+    return (db.config.lists.governorates || []).filter(function (g) { return g.id === id; })[0] || null;
+  };
+  domain.zoneOf = function (db, govId) {
+    var g = domain.gov(db, govId);
+    return g ? g.zone : 'greater_cairo';
+  };
+
+  /** Primary governorate of a case, used for coverage, capacity and grouping. */
+  domain.caseGov = function (c) {
+    if (c.governorate) return c.governorate;
+    var a = c.addresses || {};
+    return (a.home && a.home.governorate) || (a.work && a.work.governorate) || (a.business && a.business.governorate) || null;
+  };
+
+  /** Price of an investigation for a provider: sum of its inquiry type prices in the case's zone. */
+  domain.investigationPrice = function (db, provider, inquiryTypes, govId) {
+    var zone = domain.zoneOf(db, govId);
+    var p = (provider.pricing && provider.pricing.investigation) || {};
+    return U.sum(inquiryTypes || [], function (t) { return (p[t] && p[t][zone]) || 0; });
+  };
+
+  domain.collectionTerms = function (provider, bucket) {
+    var p = (provider.pricing && provider.pricing.collection) || {};
+    return { feePct: (p.feePct || {})[bucket] || 0, fixedFee: p.fixedFee || 0 };
+  };
+
+  domain.priceFor = function (db, provider, c) {
+    if (c.service === 'investigation') return domain.investigationPrice(db, provider, c.inquiryTypes, domain.caseGov(c));
+    return domain.collectionTerms(provider, c.bucket);
+  };
+
+  /** Amount billed for a closed case (before any dispute adjustment). */
+  domain.billableAmount = function (c) {
+    if (c.service === 'investigation') return +c.price || 0;
+    var terms = c.price || {};
+    return U.round(wf.collection.recovered(c) * (terms.feePct || 0) / 100 + (terms.fixedFee || 0), 0);
+  };
+
+  /** Open cases per governorate for a provider (offers pending count against capacity). */
+  domain.providerLoad = function (db, providerId, service) {
+    var load = {};
+    db.cases.forEach(function (c) {
+      if (c.providerId !== providerId || wf.isTerminal(c.status)) return;
+      if (service && c.service !== service) return;
+      if (c.status === 'draft' || c.status === 'submitted') return;
+      var g = domain.caseGov(c);
+      load[g] = (load[g] || 0) + 1;
+    });
+    return load;
+  };
+
+  domain.agentLoad = function (db, agentId) {
+    return db.cases.filter(function (c) {
+      return c.agentId === agentId && !wf.isTerminal(c.status) && ['delivered', 'accepted_by_entity'].indexOf(c.status) < 0;
+    }).length;
+  };
+
+  domain.nextRef = function (db, kind) {
+    db.counters = db.counters || {};
+    db.counters[kind] = (db.counters[kind] || 0) + 1;
+    var prefix = { investigation: 'INV', collection: 'COL', batch: 'BAT', invoice: 'INVC', dispute: 'DSP' }[kind] || 'REF';
+    return prefix + '-' + new Date().getFullYear() + '-' + String(db.counters[kind]).padStart(5, '0');
+  };
+
+  /** Simulated address coordinates: the governorate centre plus a random offset (< ~3 km). */
+  domain.randomGeo = function (db, govId, rnd) {
+    var g = domain.gov(db, govId) || { lat: 30.04, lng: 31.23 };
+    var r = rnd || Math.random;
+    return { lat: U.round(g.lat + (r() - 0.5) * 0.05, 6), lng: U.round(g.lng + (r() - 0.5) * 0.05, 6) };
+  };
+
+  /** Simulated GPS fix near the case address. Usually within 250 m, sometimes further. */
+  domain.simulateCheckIn = function (c, now, rnd) {
+    var r = rnd || Math.random;
+    var geo = c.geo || { lat: 30.04, lng: 31.23 };
+    var far = r() < 0.08;
+    var meters = far ? 350 + r() * 400 : 15 + r() * 220;
+    var angle = r() * Math.PI * 2;
+    var dLat = (meters * Math.cos(angle)) / 111320;
+    var dLng = (meters * Math.sin(angle)) / (111320 * Math.cos(geo.lat * Math.PI / 180));
+    var lat = U.round(geo.lat + dLat, 6), lng = U.round(geo.lng + dLng, 6);
+    return { at: now, lat: lat, lng: lng, distanceM: U.distanceM(geo.lat, geo.lng, lat, lng) };
+  };
+
+  domain.providerUsers = function (db, providerId, roles) {
+    return db.users.filter(function (u) {
+      return u.active !== false && u.providerId === providerId && (!roles || roles.indexOf(u.role) >= 0);
+    });
+  };
+  domain.entityUsersFor = function (db, c) {
+    return db.users.filter(function (u) {
+      return u.active !== false && u.entityId === c.entityId && wf.entityServes(u.role, c.service);
+    });
+  };
+  domain.platformUsers = function (db, role) {
+    return db.users.filter(function (u) { return u.active !== false && u.role === role; });
+  };
+  domain.agentUser = function (db, agentId) {
+    var a = db.agents.filter(function (x) { return x.id === agentId; })[0];
+    return a ? db.users.filter(function (u) { return u.id === a.userId; })[0] : null;
+  };
+
+  domain.actorOf = function (user) {
+    if (!user) return null;
+    return { userId: user.id, name: user.name, role: user.role, entityId: user.entityId, providerId: user.providerId, agentId: user.agentId };
+  };
+
+  domain.minPhotos = function (db, c) {
+    return wf.investigation.minPhotos(c, { inquiryTypes: db.config.lists.inquiryTypes });
+  };
+
+  ICM.domain = domain;
+})();

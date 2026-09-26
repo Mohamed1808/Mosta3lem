@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[PlatformName]</title>
+  <meta name="description" content="Marketplace for field investigations and collections between lenders and verified providers.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toasts" aria-live="polite"></div>
+  <noscript>This application needs JavaScript.</noscript>
+
+  <!-- Third party: charts and Excel parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Core and translations -->
+  <script src="js/core/util.js"></script>
+  <script src="js/core/i18n.js"></script>
+  <script src="js/i18n/en.js"></script>
+  <script src="js/i18n/ar.js"></script>
+
+  <!-- Configuration -->
+  <script src="js/config/platform.js"></script>
+  <script src="js/config/geo.js"></script>
+  <script src="js/config/services.js"></script>
+  <script src="js/config/ratings.js"></script>
+  <script src="js/config/status.js"></script>
+  <script src="js/config/defaults.js"></script>
+  <script src="js/config/forms.js"></script>
+
+  <!-- Workflow engines (pure) -->
+  <script src="js/workflow/common.js"></script>
+  <script src="js/workflow/validation.js"></script>
+  <script src="js/workflow/investigation.js"></script>
+  <script src="js/workflow/collection.js"></script>
+  <script src="js/workflow/batch.js"></script>
+  <script src="js/workflow/sla.js"></script>
+  <script src="js/workflow/masking.js"></script>
+  <script src="js/workflow/scoring.js"></script>
+
+  <!-- Store and seed -->
+  <script src="js/store/store.js"></script>
+  <script src="js/store/domain.js"></script>
+  <script src="js/store/seed.js"></script>
+
+  <!-- Service layer (mock backend) -->
+  <script src="js/services/engine.js"></script>
+  <script src="js/services/contracts.js"></script>
+  <script src="js/services/core.js"></script>
+  <script src="js/services/cases.js"></script>
+  <script src="js/services/batches.js"></script>
+  <script src="js/services/providers.js"></script>
+  <script src="js/services/ratings.js"></script>
+  <script src="js/services/billing.js"></script>
+  <script src="js/services/index.js"></script>
+
+  <!-- UI -->
+  <script src="js/ui/icons.js"></script>
+  <script src="js/ui/components.js"></script>
+  <script src="js/ui/modal.js"></script>
+  <script src="js/ui/forms.js"></script>
+  <script src="js/ui/charts.js"></script>
+  <script src="js/ui/layout.js"></script>
+  <script src="js/ui/caseView.js"></script>
+  <script src="js/ui/dialogs.js"></script>
+  <script src="js/ui/workflowDialogs.js"></script>
+
+  <!-- Portals -->
+  <script src="js/portals/auth/login.js"></script>
+  <script src="js/portals/entity/cases.js"></script>
+  <script src="js/portals/entity/batches.js"></script>
+  <script src="js/portals/entity/other.js"></script>
+  <script src="js/portals/provider/main.js"></script>
+  <script src="js/portals/provider/other.js"></script>
+  <script src="js/portals/agent/agent.js"></script>
+  <script src="js/portals/admin/main.js"></script>
+  <script src="js/portals/admin/config.js"></script>
+
+  <!-- App -->
+  <script src="js/app/app.js"></script>
+  <script>ICM.app.start();</script>
+</body>
+</html>
