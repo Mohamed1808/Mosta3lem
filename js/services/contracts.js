@@ -74,6 +74,22 @@
       enforce: '(providerId, level, reason) -> Provider',
       setAutomatic: '(providerId) -> Provider'
     },
+    registration: {
+      submit: '(values) -> { ref, providerId, userId }   (public self sign-up; signs the owner in)',
+      adminRegister: '(values, { verifyNow }) -> { ref, providerId, userId, status }   (admin)',
+      mine: '() -> Provider application   (applicant)',
+      uploadDocument: '(type, fileName) -> Provider   (applicant)',
+      resubmit: '(note) -> Provider   (applicant, after a request for information)'
+    },
+    team: {
+      structure: '() -> { owners, supervisors[{ agents }], unassigned, canManage }   (owner: all, supervisor: own team)',
+      addSupervisor: '(values) -> User   (owner)',
+      addAgent: '(values) -> Agent   (owner, or supervisor for own team)',
+      updateMember: '(agentId | supervisorUserId, values) -> Agent | User',
+      moveAgent: '(agentId, supervisorUserId) -> Agent   (owner)',
+      setActive: '(agentId | supervisorUserId, active) -> Agent | User',
+      ofProvider: '(providerId) -> hierarchy   (admin, read only)'
+    },
     entities: {
       list: '() -> Entity[] with volume, spend and data-quality rating   (admin)',
       mine: '() -> Entity',

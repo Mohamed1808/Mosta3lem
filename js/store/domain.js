@@ -67,7 +67,7 @@
   domain.nextRef = function (db, kind) {
     db.counters = db.counters || {};
     db.counters[kind] = (db.counters[kind] || 0) + 1;
-    var prefix = { investigation: 'INV', collection: 'COL', batch: 'BAT', invoice: 'INVC', dispute: 'DSP' }[kind] || 'REF';
+    var prefix = { investigation: 'INV', collection: 'COL', batch: 'BAT', invoice: 'INVC', dispute: 'DSP', registration: 'REG' }[kind] || 'REF';
     return prefix + '-' + new Date().getFullYear() + '-' + String(db.counters[kind]).padStart(5, '0');
   };
 
@@ -107,6 +107,34 @@
   domain.agentUser = function (db, agentId) {
     var a = db.agents.filter(function (x) { return x.id === agentId; })[0];
     return a ? db.users.filter(function (u) { return u.id === a.userId; })[0] : null;
+  };
+
+  /** Supervisor (user id) an agent reports to, or null. */
+  domain.agentSupervisor = function (db, agentId) {
+    var a = db.agents.filter(function (x) { return x.id === agentId; })[0];
+    return a ? a.supervisorId || null : null;
+  };
+
+  /**
+   * Team scope of a company supervisor: their own agents. Owners and everyone else see the
+   * whole company. An agent nobody supervises stays visible to every supervisor.
+   */
+  domain.agentInScope = function (actor, agent) {
+    if (!agent || !actor || actor.role !== 'provider_supervisor') return true;
+    return !agent.supervisorId || agent.supervisorId === actor.userId;
+  };
+  domain.caseInTeamScope = function (db, actor, c) {
+    if (!actor || actor.role !== 'provider_supervisor' || !c.agentId) return true;
+    return domain.agentInScope(actor, db.agents.filter(function (x) { return x.id === c.agentId; })[0]);
+  };
+
+  /** Recipients for a submitted company report: the agent's supervisor, else every supervisor, plus the owners. */
+  domain.companyReviewers = function (db, c) {
+    var sup = c.agentId ? domain.agentSupervisor(db, c.agentId) : null;
+    var owners = domain.providerUsers(db, c.providerId, ['provider_admin']);
+    var sups = domain.providerUsers(db, c.providerId, ['provider_supervisor']).filter(function (u) { return !sup || u.id === sup; });
+    if (sup && !sups.length) sups = domain.providerUsers(db, c.providerId, ['provider_supervisor']);
+    return sups.concat(owners);
   };
 
   domain.actorOf = function (user) {

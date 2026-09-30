@@ -416,4 +416,109 @@
       expect(wf.validateMobile('0131234567')).toBe('errors.mobileFormat');
     });
   });
+
+  describe('provider registration', function () {
+    var NOW = new Date('2026-09-30T12:00:00').getTime();
+    var company = function (over) {
+      return Object.assign({
+        kind: 'company', services: ['investigation'], companyName: 'Delta Checks', taxId: '123-456-789', commercialRegNo: '45821',
+        mainPhone: '0223456789', ownerName: 'Hisham Nabil', ownerPhone: '01012345678', focalSame: true,
+        addrGov: 'dakahlia', addrCity: 'mansoura', addrStreet: '12 El Gomhoreya St', coverage: { dakahlia: [], damietta: ['ras_el_bar'] }, terms: true
+      }, over || {});
+    };
+    var person = function (over) {
+      return Object.assign({
+        kind: 'individual', services: ['collection'], fullName: 'Sara Mahmoud Ali', nationalId: '29501011312345', phone: '01112345678',
+        addrGov: 'sharqia', addrCity: 'zagazig', addrStreet: '4 Talaat Harb St', coverage: { sharqia: ['zagazig', 'belbeis'] }, terms: true
+      }, over || {});
+    };
+    var check = function (v, opts) { return wf.validateRegistration(v, Object.assign({ now: NOW, requireTerms: true }, opts || {})); };
+
+    it('accepts a complete company', function () { expect(Object.keys(check(company())).length).toBe(0); });
+    it('accepts a complete individual', function () { expect(Object.keys(check(person())).length).toBe(0); });
+    it('needs a provider type and at least one service', function () {
+      var e = check(company({ kind: '', services: [] }), { steps: ['type'] });
+      expect(e.kind).toBe('errors.required');
+      expect(e.services).toBe('errors.serviceRequired');
+    });
+    it('strips dashes and spaces from the tax ID', function () { expect(wf.normalizeRegistration(company()).taxId).toBe('123456789'); });
+    it('rejects a tax ID that is not 9 digits', function () { expect(check(company({ taxId: '12345678' })).taxId).toBe('errors.taxIdFormat'); });
+    it('rejects a malformed commercial registration', function () { expect(check(company({ commercialRegNo: '12' })).commercialRegNo).toBe('errors.commercialRegFormat'); });
+    it('accepts a landline, a mobile or a hotline as the main phone', function () {
+      expect(wf.validateAnyPhone('0223456789')).toBeNull();
+      expect(wf.validateAnyPhone('01012345678')).toBeNull();
+      expect(wf.validateAnyPhone('19991')).toBeNull();
+      expect(wf.validateAnyPhone('12345')).toBeNull();
+      expect(wf.validateAnyPhone('555')).toBe('errors.phoneFormat');
+    });
+    it('needs the owner mobile, which becomes the login', function () { expect(check(company({ ownerPhone: '0223456789' })).ownerPhone).toBe('errors.mobileFormat'); });
+    it('asks for a focal point unless the owner is the focal point', function () {
+      var e = check(company({ focalSame: false }));
+      expect(e.focalName).toBe('errors.required');
+      expect(e.focalPhone).toBe('errors.required');
+      expect(check(company({ focalSame: false, focalName: 'Mona Adel', focalPhone: '01212345678' })).focalName).toBe(undefined);
+    });
+    it('copies the owner into the focal point when they are the same person', function () {
+      var n = wf.normalizeRegistration(company());
+      expect(n.focalName).toBe('Hisham Nabil');
+      expect(n.focalPhone).toBe('01012345678');
+    });
+    it('checks the individual national ID', function () { expect(check(person({ nationalId: '2950101131234' })).nationalId).toBe('errors.nationalIdFormat'); });
+    it('rejects individuals under 18', function () {
+      expect(wf.ageFromNationalId('31001010112345', NOW)).toBe(16);
+      expect(check(person({ nationalId: '31001010112345' })).nationalId).toBe('errors.underage');
+    });
+    it('needs the full name, not only a first name', function () { expect(check(person({ fullName: 'Sara' })).fullName).toBe('errors.fullNameShort'); });
+    it('needs an address with a city from the governorate', function () {
+      expect(check(person({ addrCity: '' })).addrCity).toBe('errors.required');
+      expect(check(person({ addrCity: 'mansoura' })).addrCity).toBe('errors.unknownCity');
+      expect(check(person({ addrGov: 'atlantis' })).addrGov).toBe('errors.unknownGovernorate');
+    });
+    it('needs at least one governorate of coverage', function () { expect(check(person({ coverage: {} })).coverage).toBe('errors.coverageRequired'); });
+    it('only allows cities that belong to the covered governorate', function () {
+      expect(wf.validateCoverage({ giza: ['dokki', 'haram'] })).toBeNull();
+      expect(wf.validateCoverage({ giza: ['mansoura'] })).toBe('errors.unknownCity');
+    });
+    it('covers all 27 governorates, each with a city list', function () {
+      expect(ICM.config.GOVERNORATES.length).toBe(27);
+      expect(ICM.config.GOVERNORATES.every(function (g) { return ICM.config.citiesOf(g.id).length >= 5; })).toBe(true);
+    });
+    it('requires accepting the terms on self sign-up only', function () {
+      expect(check(person({ terms: false })).terms).toBe('errors.termsRequired');
+      expect(check(person({ terms: false }), { requireTerms: false }).terms).toBe(undefined);
+    });
+    it('validates one wizard step at a time', function () {
+      var e = check(company({ taxId: '', addrStreet: '' }), { steps: ['details'] });
+      expect(e.taxId).toBe('errors.required');
+      expect(e.addrStreet).toBe(undefined);
+    });
+    it('asks individuals and companies for different documents', function () {
+      expect(wf.registrationDocs('company').join()).toBe('commercial_register,tax_card');
+      expect(wf.registrationDocs('individual').join()).toBe('national_id,training_certificate');
+    });
+  });
+
+  describe('team members', function () {
+    var NOW = new Date('2026-09-30T12:00:00').getTime();
+    var agent = function (over) {
+      return Object.assign({ name: 'Mostafa Adel', phone: '01098765432', nationalId: '29203150112345', services: ['investigation'], coverage: { cairo: ['nasr_city'] }, supervisorId: 'u_sup' }, over || {});
+    };
+    var opts = { services: ['investigation'], supervisors: ['u_sup'], now: NOW };
+    it('accepts a complete field agent', function () { expect(Object.keys(wf.validateTeamMember('agent', agent(), opts)).length).toBe(0); });
+    it('needs a supervisor for every field agent', function () {
+      expect(wf.validateTeamMember('agent', agent({ supervisorId: '' }), opts).supervisorId).toBe('errors.supervisorRequired');
+      expect(wf.validateTeamMember('agent', agent({ supervisorId: 'u_other' }), opts).supervisorId).toBe('errors.supervisorRequired');
+    });
+    it('needs a national ID and coverage for field agents', function () {
+      var e = wf.validateTeamMember('agent', agent({ nationalId: '', coverage: {} }), opts);
+      expect(e.nationalId).toBe('errors.required');
+      expect(e.coverage).toBe('errors.coverageRequired');
+    });
+    it('limits services to what the company provides', function () {
+      expect(wf.validateTeamMember('agent', agent({ services: ['collection'] }), opts).services).toBe('errors.serviceRequired');
+    });
+    it('keeps the supervisor national ID optional', function () {
+      expect(Object.keys(wf.validateTeamMember('provider_supervisor', { name: 'Salma Reda', phone: '01233334444', services: ['investigation'] }, opts)).length).toBe(0);
+    });
+  });
 })();

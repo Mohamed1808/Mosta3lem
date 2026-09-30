@@ -7,30 +7,178 @@
   P.provider = P.provider || {};
 
   // ================================================================ team
+  // Owner -> supervisors -> field agents. The owner manages everyone; a supervisor sees and
+  // manages only the field agents that report to them.
+  function agentCoverage(a) {
+    if (a.coverageCities) return a.coverageCities;
+    var out = {};
+    (a.governorates || []).forEach(function (g) { out[g] = []; });
+    return out;
+  }
+
+  function memberModal(d, role, member, presetSupervisor) {
+    var isAgent = role === 'agent';
+    var prov = d.provider;
+    var editing = !!member;
+    var sups = d.supervisors.filter(function (s) { return s.active !== false; });
+    var start = member ? {
+      name: member.name, phone: member.phone, email: member.email, nationalId: member.nationalId,
+      services: (member.services || prov.services).slice(), coverage: isAgent ? agentCoverage(member) : null, supervisorId: member.supervisorId
+    } : { services: prov.services.length === 1 ? prov.services.slice() : [], coverage: {}, supervisorId: presetSupervisor || (sups.length === 1 ? sups[0].id : '') };
+    function fld(v, errors, name, label, opts) {
+      opts = opts || {};
+      var bad = errors[name];
+      return h`<div class="field ${opts.full ? 'full' : ''}"><label for="tm_${name}">${label}${opts.required ? h`<span class="req">*</span>` : ''}</label>
+        <input class="input ${bad ? 'invalid' : ''}" id="tm_${name}" name="${name}" value="${v[name] || ''}" ${opts.ltr ? ICM.raw('dir="ltr" inputmode="numeric"') : ''} ${opts.max ? ICM.raw('maxlength="' + opts.max + '"') : ''}>
+        ${bad ? h`<div class="err">${t(bad)}</div>` : ''}</div>`;
+    }
+    function supervisorControl(v, errors) {
+      if (d.canManage && !editing) {
+        return h`<select class="select ${errors.supervisorId ? 'invalid' : ''}" id="tm_sup" name="supervisorId"><option value="">${t('common.select')}</option>${sups.map(function (s) {
+          return h`<option value="${s.id}" ${s.id === v.supervisorId ? 'selected' : ''}>${s.name}</option>`;
+        })}</select>`;
+      }
+      var sup = d.supervisors.filter(function (s) { return s.id === (v.supervisorId || d.me.userId); })[0];
+      return h`<div class="small">${sup ? sup.name : t('team.noSupervisor')}${editing && d.canManage ? h` <span class="xs faint">${t('team.moveHint')}</span>` : ''}</div>`;
+    }
+    function body(v, errors) {
+      return h`<form id="tm-form" data-submit="modal" class="stack" novalidate>
+        <div class="form-grid">
+          ${fld(v, errors, 'name', t('common.name'), { required: true })}
+          ${fld(v, errors, 'phone', t('team.mobile'), { required: true, ltr: true })}
+          ${fld(v, errors, 'nationalId', t('reg.f.nationalId'), { required: isAgent, ltr: true, max: 14 })}
+          ${fld(v, errors, 'email', t('common.email'), {})}
+          <div class="field full"><label>${isAgent ? t('team.agentServices') : t('team.supervisorServices')}<span class="req">*</span></label><div class="checks">${prov.services.map(function (s) {
+            return h`<label class="check"><input type="checkbox" name="services" value="${s}" ${v.services.indexOf(s) >= 0 ? 'checked' : ''}>${t('service.' + s)}</label>`;
+          })}</div>${errors.services ? h`<div class="err">${t(errors.services)}</div>` : ''}</div>
+          ${isAgent ? h`<div class="field full"><label for="tm_sup">${t('team.reportsTo')}<span class="req">*</span></label>${supervisorControl(v, errors)}
+            ${errors.supervisorId ? h`<div class="err">${t(errors.supervisorId)}</div>` : ''}</div>` : ''}
+        </div>
+        ${isAgent ? h`<div><h3 class="mb-8">${t('team.agentCoverage')}<span class="req">*</span></h3><p class="xs faint mb-8">${t('team.agentCoverageHint')}</p>
+          ${errors.coverage ? h`<div class="err mb-8">${t(errors.coverage)}</div>` : ''}${ui.coverage.picker('tm', v.coverage, { only: prov.governorates, cityLimit: prov.coverageCities })}</div>` : ''}
+        <div class="err small" data-err style="color:var(--bad)"></div>
+      </form>`;
+    }
+    return new Promise(function (resolve) {
+      var saved = false;
+      var ctrl = ui.modal.open({
+        title: editing ? t('team.editTitle', { name: member.name }) : isAgent ? t('team.addAgent') : t('team.addSupervisor'),
+        size: isAgent ? 'lg' : '',
+        body: body(start, {}),
+        footer: h`<button type="button" class="btn" data-action="modalClose">${t('common.cancel')}</button><button type="submit" form="tm-form" class="btn btn-primary">${editing ? t('common.saveChanges') : isAgent ? t('team.addAgent') : t('team.addSupervisor')}</button>`,
+        onSubmit: async function (raw, form) {
+          var v = {
+            name: (raw.name || '').trim(), phone: (raw.phone || '').trim(), email: (raw.email || '').trim(), nationalId: (raw.nationalId || '').trim(),
+            services: U.asArray(raw.services), supervisorId: raw.supervisorId || start.supervisorId || (d.canManage ? '' : d.me.userId)
+          };
+          if (isAgent) v.coverage = ui.coverage.read(form, 'tm') || {};
+          var errors = wf.validateTeamMember(role, Object.assign({}, v, { phone: v.phone.replace(/[\s\-]/g, ''), nationalId: v.nationalId.replace(/[\s\-]/g, '') }),
+            { services: prov.services, now: ICM.clock.now() });
+          if (editing && isAgent && !start.supervisorId) delete errors.supervisorId;
+          if (Object.keys(errors).length) { ctrl.update({ body: body(v, errors) }); return; }
+          try {
+            if (editing) await S.team.updateMember(member.id, v);
+            else if (isAgent) await S.team.addAgent(v);
+            else await S.team.addSupervisor(v);
+            saved = true; ctrl.close();
+            ui.toast(editing ? t('team.saved') : isAgent ? t('team.agentAdded', { name: v.name }) : t('team.supervisorAdded', { name: v.name }), 'success');
+          } catch (e) {
+            if (e && e.params && e.params.field) { var er = {}; er[e.params.field] = e.key; ctrl.update({ body: body(v, er) }); return; }
+            var box = ctrl.el && ctrl.el.querySelector('[data-err]');
+            if (box) box.textContent = ui.errorText(e); else ui.fail(e);
+          }
+        },
+        onClose: function () { resolve(saved); }
+      });
+    });
+  }
+
   P.provider.team = {
     title: function () { return t('nav.team'); },
-    load: function (ctx) { return S.providers.team(ctx.service); },
-    render: function (team, ctx) {
+    load: function () { return S.team.structure(); },
+    render: function (d, ctx) {
       var inv = ctx.service === 'investigation';
-      var canEdit = ['provider_admin', 'provider_supervisor'].indexOf(ctx.session.user.role) >= 0;
-      return h`${ui.pageHead(t('nav.team'), t('team.subtitle', { n: team.length }))}
-        ${ui.card(null, ui.table([
-          { label: t('common.name'), render: function (a) { return h`<strong>${a.name}</strong><div class="sub">${a.services.map(function (s) { return t('service.' + s); }).join(', ')}</div>`; } },
-          { label: t('assign.areas'), render: function (a) { return h`<span class="small">${a.governorates.map(ui.gov).join(', ')}</span>`; } },
+      var owner = d.canManage;
+      var activeSups = d.supervisors.filter(function (s) { return s.active !== false; });
+      var agentCount = d.unassigned.length + U.sum(d.supervisors, function (s) { return s.agents.length; });
+      var ltr = function (x) { return x ? h`<bdi dir="ltr">${x}</bdi>` : ''; };
+
+      function agentTable(agents) {
+        return ui.table([
+          { label: t('common.name'), render: function (a) { return h`<strong>${a.name}</strong><div class="sub">${ltr(a.phone)}</div>`; } },
+          { label: t('team.coverage'), render: function (a) { return h`<span class="small">${ui.coverage.text(agentCoverage(a), 3)}</span>`; } },
+          { label: t('profile.services'), render: function (a) { return h`${a.services.map(function (s) { return ui.serviceBadge(s); })}`; } },
           { label: t('common.status'), render: function (a) { return a.active ? ui.badge(t('common.active'), 'success') : ui.badge(t('common.inactive'), 'muted'); } },
           { label: t('assign.load'), num: true, render: function (a) { return U.num(a.stats.open); } },
-          inv ? { label: t('team.delivered'), num: true, render: function (a) { return U.num(a.stats.delivered); } } : { label: t('team.collected'), num: true, render: function (a) { return U.money(a.stats.collected); } },
-          inv ? { label: t('metric.onTime'), num: true, render: function (a) { return ui.pct(a.stats.onTimeRate); } } : { label: t('team.closed'), num: true, render: function (a) { return U.num(a.stats.closedCollections); } },
-          inv ? { label: t('team.returns'), num: true, render: function (a) { return U.num(a.stats.returns + a.stats.reworks); } } : { label: t('team.actions'), num: true, render: function (a) { return U.num(a.stats.actionsLogged); } },
-          inv ? { label: t('metric.evidence'), num: true, render: function (a) { return ui.pct(a.stats.evidenceRate); } } : null,
-          canEdit ? { label: '', cls: 'right', render: function (a) { return a.active ? h`<button type="button" class="btn btn-sm btn-danger" data-action="toggle" data-id="${a.id}" data-on="0">${t('team.deactivate')}</button>` : h`<button type="button" class="btn btn-sm" data-action="toggle" data-id="${a.id}" data-on="1">${t('team.activate')}</button>`; } } : null
-        ].filter(Boolean), team), { flush: true })}`;
+          inv ? { label: t('metric.onTime'), num: true, render: function (a) { return ui.pct(a.stats.onTimeRate); } } : { label: t('team.collected'), num: true, render: function (a) { return U.money(a.stats.collected); } },
+          owner ? { label: t('team.reportsTo'), render: function (a) {
+            var current = activeSups.some(function (s) { return s.id === a.supervisorId; });
+            return h`<select class="select sm" data-change="moveAgent" data-id="${a.id}" aria-label="${t('team.reportsTo')}">${current ? '' : h`<option value="">${t('team.noSupervisor')}</option>`}${activeSups.map(function (s) {
+              return h`<option value="${s.id}" ${s.id === a.supervisorId ? 'selected' : ''}>${s.name}</option>`;
+            })}</select>`;
+          } } : null,
+          { label: '', cls: 'right nowrap', render: function (a) {
+            return h`<button type="button" class="btn btn-sm btn-ghost" data-action="editAgent" data-id="${a.id}" title="${t('common.edit')}" aria-label="${t('common.edit')}">${icon('edit')}</button>${a.active
+              ? h`<button type="button" class="btn btn-sm btn-danger" data-action="toggle" data-id="${a.id}" data-on="0">${t('team.deactivate')}</button>`
+              : h`<button type="button" class="btn btn-sm" data-action="toggle" data-id="${a.id}" data-on="1">${t('team.activate')}</button>`}`;
+          } }
+        ].filter(Boolean), agents, { empty: t('team.noAgents') });
+      }
+
+      function supCard(s) {
+        var off = s.active === false;
+        var head = h`<div class="row wrap"><span class="avatar">${U.initials(s.name)}</span><div><div class="strong">${s.name}${s.id === d.me.userId ? h` <span class="xs faint">${t('team.you')}</span>` : ''}</div>
+          <div class="xs faint">${t('role.provider_supervisor')} · ${ltr(s.phone)} · ${t('team.agentsN', { n: s.agents.length })}</div></div>
+          ${(s.services || []).map(function (x) { return ui.serviceBadge(x); })}${off ? ui.badge(t('common.inactive'), 'muted') : ''}</div>`;
+        var actions = h`${!off ? h`<button type="button" class="btn btn-sm" data-action="addAgent" data-sup="${s.id}">${icon('plus')}${t('team.addAgent')}</button>` : ''}
+          ${owner || s.id === d.me.userId ? h`<button type="button" class="btn btn-sm btn-ghost" data-action="editSupervisor" data-id="${s.id}">${icon('edit')}${t('common.edit')}</button>` : ''}
+          ${owner ? (!off ? h`<button type="button" class="btn btn-sm btn-ghost" data-action="toggleSupervisor" data-id="${s.id}" data-on="0">${t('team.deactivate')}</button>` : h`<button type="button" class="btn btn-sm" data-action="toggleSupervisor" data-id="${s.id}" data-on="1">${t('team.activate')}</button>`) : ''}`;
+        return h`<section class="card team-card ${off ? 'is-off' : ''}"><div class="card-h">${head}<div class="row wrap">${actions}</div></div><div class="card-b flush">${agentTable(s.agents)}</div></section>`;
+      }
+
+      return h`${ui.pageHead(t('nav.team'), owner ? t('team.subtitleOwner', { s: d.supervisors.length, n: agentCount }) : t('team.subtitleSupervisor', { n: agentCount }),
+          h`${owner ? h`<button type="button" class="btn" data-action="addSupervisor">${icon('plus')}${t('team.addSupervisor')}</button>` : ''}
+            ${activeSups.length ? h`<button type="button" class="btn btn-primary" data-action="addAgent">${icon('plus')}${t('team.addAgent')}</button>` : ''}`)}
+        <div class="org-strip mb-16">
+          <div class="org-node">${icon('briefcase')}<div><div class="xs faint">${t('team.owner')}</div><div class="strong small">${d.owners.map(function (o) { return o.name; }).join(t('common.listSep')) || '-'}</div></div></div>
+          <span class="org-arrow">${icon('chevronRight')}</span>
+          <div class="org-node">${icon('users')}<div><div class="xs faint">${t('team.supervisors')}</div><div class="strong small">${U.num(activeSups.length)}</div></div></div>
+          <span class="org-arrow">${icon('chevronRight')}</span>
+          <div class="org-node">${icon('smartphone')}<div><div class="xs faint">${t('team.fieldAgents')}</div><div class="strong small">${U.num(agentCount)}</div></div></div>
+        </div>
+        ${owner && !d.supervisors.length ? h`<div class="mb-16">${ui.notice(t('team.startHint'), 'info')}</div>` : ''}
+        <div class="stack">${d.supervisors.map(supCard)}
+          ${d.unassigned.length ? h`<section class="card"><div class="card-h"><div><h2>${t('team.unassigned')}</h2><div class="xs faint">${t('team.unassignedHint')}</div></div></div><div class="card-b flush">${agentTable(d.unassigned)}</div></section>` : ''}</div>`;
     },
     actions: {
+      addSupervisor: async function (el, ev, ctx) { if (await memberModal(await S.team.structure(), 'provider_supervisor')) ctx.reload(); },
+      addAgent: async function (el, ev, ctx) { if (await memberModal(await S.team.structure(), 'agent', null, el.getAttribute('data-sup'))) ctx.reload(); },
+      editAgent: async function (el, ev, ctx) {
+        var d = await S.team.structure();
+        var all = d.supervisors.reduce(function (acc, s) { return acc.concat(s.agents); }, d.unassigned.slice());
+        var a = all.filter(function (x) { return x.id === el.getAttribute('data-id'); })[0];
+        if (a && await memberModal(d, 'agent', a)) ctx.reload();
+      },
+      editSupervisor: async function (el, ev, ctx) {
+        var d = await S.team.structure();
+        var s = d.supervisors.filter(function (x) { return x.id === el.getAttribute('data-id'); })[0];
+        if (s && await memberModal(d, 'provider_supervisor', s)) ctx.reload();
+      },
+      moveAgent: async function (el, ev, ctx) {
+        if (!el.value) return;
+        await S.team.moveAgent(el.getAttribute('data-id'), el.value);
+        ui.toast(t('team.moved'), 'success'); ctx.reload();
+      },
       toggle: async function (el, ev, ctx) {
         var on = el.getAttribute('data-on') === '1';
         if (!on && !(await ui.confirm({ title: t('team.deactivate'), message: t('team.deactivateBody'), danger: true, confirmLabel: t('team.deactivate') }))) return;
-        await S.providers.setAgentActive(el.getAttribute('data-id'), on);
+        await S.team.setActive(el.getAttribute('data-id'), on);
+        ctx.reload();
+      },
+      toggleSupervisor: async function (el, ev, ctx) {
+        var on = el.getAttribute('data-on') === '1';
+        if (!on && !(await ui.confirm({ title: t('team.deactivate'), message: t('team.deactivateSupervisorBody'), danger: true, confirmLabel: t('team.deactivate') }))) return;
+        await S.team.setActive(el.getAttribute('data-id'), on);
         ctx.reload();
       }
     }
@@ -55,9 +203,10 @@
               <div class="field"><label>${t('profile.services')}</label><div>${p.services.map(function (s) { return ui.serviceBadge(s); })}</div></div>
             </div>`)}
             ${ui.card(t('profile.documents'), h`<div class="stack tight">${p.verification.documents.map(function (dc) {
-              return h`<div class="stat-row"><span>${t('doc.' + dc.type)}</span><span class="row">${ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified')}${dc.status === 'missing' ? h`<button type="button" class="btn btn-sm" data-action="upload" data-type="${dc.type}">${icon('upload')}${t('profile.upload')}</button>` : ''}</span></div>`;
+              return h`<div class="stat-row"><span>${t('doc.' + dc.type)}</span><span class="row">${ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}${dc.status === 'missing' ? h`<button type="button" class="btn btn-sm" data-action="upload" data-type="${dc.type}">${icon('upload')}${t('profile.upload')}</button>` : ''}</span></div>`;
             })}<p class="xs faint">${t('profile.docsNote')}</p></div>`)}
           </div>
+          ${ui.card(t('profile.registration'), h`<p class="small muted mb-8">${t('profile.registrationHint')}</p>${ui.registrationDetails(p)}`)}
           ${ui.card(t('profile.coverage'), h`<p class="small muted mb-8">${t('profile.coverageHint')}</p><div class="form-grid cols-4">${ui.cfg.lists.governorates.map(function (g) {
             var on = p.governorates.indexOf(g.id) >= 0;
             return h`<div class="field"><label class="check"><input type="checkbox" name="gov" value="${g.id}" ${on ? 'checked' : ''}>${U.label(g)}</label>

@@ -290,7 +290,7 @@
           c.offers = db.offers.filter(function (o) { return o.providerId === p.id && o.status === 'pending' && (!service || o.service === service); }).length;
           var mine = db.cases.filter(function (x) { return x.providerId === p.id && (!service || x.service === service); });
           c.unassigned = mine.filter(function (x) { return x.status === 'accepted' || x.status === 'rework_requested'; }).length;
-          c.review = p.kind === 'company' ? mine.filter(function (x) { return x.status === 'submitted_for_review'; }).length : 0;
+          c.review = p.kind === 'company' ? mine.filter(function (x) { return x.status === 'submitted_for_review' && D.caseInTeamScope(db, a, x); }).length : 0;
           c.clientPending = db.cases.filter(function (x) {
             return x.providerId === p.id && x.status === 'closed' && !x.batchId && E.now() - x.closedAt < 60 * U.DAY && !db.clientRatings.some(function (r) { return r.caseId === x.id; });
           }).length;

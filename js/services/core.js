@@ -7,15 +7,18 @@
 
   function portalOf(u) {
     if (wf.isEntityRole(u.role)) return 'entity';
-    if (u.role === 'agent') return 'agent';
     if (u.role === 'platform_admin' || u.role === 'platform_qa') return 'admin';
-    return 'provider';
+    var prov = u.providerId ? E.providerById(u.providerId) : null;
+    // Until the platform verifies the provider, its people only see their application.
+    if (prov && prov.verification.status !== 'verified') return 'applicant';
+    return u.role === 'agent' ? 'agent' : 'provider';
   }
   function homeOf(u) {
     var p = portalOf(u);
     if (p === 'entity') return '#/client';
     if (p === 'agent') return '#/agent';
     if (p === 'admin') return u.role === 'platform_qa' ? '#/admin/qa' : '#/admin';
+    if (p === 'applicant') return '#/application';
     var prov = E.providerById(u.providerId);
     return '#/provider/' + (prov ? prov.services[0] : 'investigation');
   }
@@ -171,6 +174,7 @@
       case 'entity': return '#/client/' + id;
       case 'provider-admin': return '#/admin/providers/' + id;
       case 'admin': return '#/admin/' + id;
+      case 'application': return portalOf(u) === 'applicant' ? '#/application' : null;
       default: return null;
     }
   }

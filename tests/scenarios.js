@@ -4,9 +4,9 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
 const files = ['js/core/util.js', 'js/core/i18n.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js',
-  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js',
+  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js',
   'js/store/store.js', 'js/store/domain.js', 'js/store/seed.js',
-  'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/index.js'];
+  'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/index.js'];
 const mem = {};
 const ctx = { console, Intl, Date, Math, JSON, setTimeout, clearTimeout, Promise };
 ctx.window = ctx; ctx.globalThis = ctx;
@@ -242,7 +242,7 @@ async function runInvestigation(caseId, providerId, opts) {
   });
 
   // ---------------------------------------------------------------- 6
-  await scenario('6. Freelancer report goes to QA', async () => {
+  await scenario('6. Individual provider report goes to QA', async () => {
     await as('Tamer Lotfy');
     const c = await S.cases.createDraft('investigation', invValues('giza'));
     await S.cases.sendOffer(c.id, 'prv_fl_omar');
@@ -311,6 +311,144 @@ async function runInvestigation(caseId, providerId, opts) {
     const ref = d.case.ref;
     const got = (name) => notifs(uid(name), 'notif.sla_breached').some((n) => n.params.ref === ref);
     ok(got('Tamer Lotfy') && got('Hany Wagdy') && got('Laila Hosny'), 'entity, provider and admin notified of the breach');
+  });
+
+  // ---------------------------------------------------------------- 10
+  const newCompany = {
+    kind: 'company', services: ['investigation', 'collection'], companyName: 'Canal Field Partners', taxId: '482-615-903', commercialRegNo: '77410',
+    mainPhone: '0643345566', companyEmail: 'info@canalfield.example', ownerName: 'Sherif Mansour', ownerPhone: '01066554433', ownerNationalId: '27805121912345',
+    focalSame: false, focalName: 'Dina Abbas', focalTitle: 'Operations manager', focalPhone: '01266554433',
+    addrGov: 'ismailia', addrCity: 'ismailia_city', addrStreet: '8 Sultan Hussein St', addrLandmark: 'Near the canal authority',
+    coverage: { ismailia: [], port_said: ['port_fouad', 'el_sharq'], suez: [] }, docs: { commercial_register: 'cr.pdf' }, terms: true
+  };
+  await scenario('10. Provider registration: self sign-up and admin registration', async () => {
+    await S.auth.logout();
+    let fail = null;
+    try { await S.registration.submit(Object.assign({}, newCompany, { terms: false })); } catch (e) { fail = e; }
+    ok(fail && fail.key === 'errors.termsRequired' && fail.params.field === 'terms', 'sign-up blocked until the terms are accepted');
+    const r = await S.registration.submit(newCompany);
+    ok(/^REG-\d{4}-\d{5}$/.test(r.ref), 'application gets a reference ' + r.ref);
+    let s = await S.auth.currentUser();
+    ok(s.portal === 'applicant' && s.home === '#/application' && s.user.role === 'provider_admin', 'owner is signed in to the applicant portal');
+    let app = await S.registration.mine();
+    ok(app.verification.status === 'pending' && app.legal.taxId === '482615903' && app.focalPoint.name === 'Dina Abbas', 'tax ID, commercial registration, owner and focal point stored');
+    ok(app.coverageCities.port_said.join() === 'port_fouad,el_sharq' && app.coverageCities.ismailia.length === 0, 'coverage keeps governorates and cities');
+    ok(app.verification.documents.find((d) => d.type === 'tax_card').status === 'missing', 'documents not attached are marked missing');
+    ok(notifs(uid('Laila Hosny'), 'notif.application_new').some((n) => n.params.name === 'Canal Field Partners'), 'platform admin notified of the application');
+    await S.auth.logout();
+    fail = null;
+    try { await S.registration.submit(Object.assign({}, newCompany, { ownerPhone: '01099887766' })); } catch (e) { fail = e; }
+    ok(fail && fail.key === 'errors.taxIdTaken' && fail.params.field === 'taxId', 'a second company with the same tax ID is refused');
+
+    await as('Laila Hosny');
+    await S.providers.requestInfo(r.providerId, 'Please attach the tax card.');
+    await as('Sherif Mansour');
+    ok(notifs(uid('Sherif Mansour'), 'notif.application_info_requested').length === 1, 'applicant notified of the request');
+    await S.registration.uploadDocument('tax_card', 'tax-card.pdf');
+    await S.registration.resubmit('Tax card attached.');
+    app = await S.registration.mine();
+    ok(app.verification.status === 'pending', 'applicant answers and the application returns to review');
+    await as('Laila Hosny');
+    await S.providers.verify(r.providerId);
+    await as('Sherif Mansour');
+    s = await S.auth.currentUser();
+    ok(s.portal === 'provider' && s.home === '#/provider/investigation', 'after verification the owner opens the provider portal');
+
+    const ind = {
+      kind: 'individual', services: ['investigation'], fullName: 'Youssef Hamdy Salem', nationalId: '29406152112345', phone: '01555443322',
+      addrGov: 'giza', addrCity: 'faisal', addrStreet: '22 Faisal St', coverage: { giza: ['faisal', 'haram'] }
+    };
+    await as('Laila Hosny');
+    const r2 = await S.registration.adminRegister(ind, { verifyNow: true });
+    ok(r2.status === 'verified', 'admin registers an individual and verifies on the spot');
+    const fu = ICM.store.db.users.find((u) => u.id === r2.userId);
+    const fa = ICM.store.db.agents.find((a) => a.id === fu.agentId);
+    ok(fu.role === 'freelancer' && fa && fa.coverageCities.giza.join() === 'faisal,haram', 'individual gets a login and a field agent record with city coverage');
+    ok(ICM.store.db.providers.find((p) => p.id === r2.providerId).registration.source === 'admin', 'registration source recorded as admin');
+  });
+
+  // ---------------------------------------------------------------- 11
+  await scenario('11. Company team hierarchy: owner, supervisors, field agents', async () => {
+    await as('Sherif Mansour');
+    const s1 = await S.team.addSupervisor({ name: 'Hala Fikry', phone: '01033221100', services: ['investigation'] });
+    const s2 = await S.team.addSupervisor({ name: 'Omar Zaki', phone: '01133221100', services: ['collection'] });
+    ok(s1.role === 'provider_supervisor' && s2.role === 'provider_supervisor', 'owner adds two supervisors');
+    const a1 = await S.team.addAgent({ name: 'Karim Adel Nour', phone: '01233221100', nationalId: '29502141912345', services: ['investigation'], coverage: { ismailia: [] }, supervisorId: s1.id });
+    ok(a1.supervisorId === s1.id, 'owner adds a field agent under the first supervisor');
+    let fail = null;
+    try { await S.team.addAgent({ name: 'Nader Samir Aly', phone: '01533221100', nationalId: '29502141912346', services: ['investigation'], coverage: { cairo: [] }, supervisorId: s1.id }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.outsideCompanyCoverage', 'agents cannot cover areas outside the company coverage');
+    fail = null;
+    try { await S.team.addAgent({ name: 'Nader Samir Aly', phone: '01233221100', nationalId: '29502141912346', services: ['investigation'], coverage: { suez: [] }, supervisorId: s1.id }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.phoneTaken', 'a mobile number can only belong to one person');
+    fail = null;
+    try { await S.team.addAgent({ name: 'Nader Samir Aly', phone: '01533221100', nationalId: '29502141912346', services: ['investigation'], coverage: { suez: [] } }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.supervisorRequired', 'every field agent needs a supervisor');
+
+    await as('Omar Zaki');
+    const a2 = await S.team.addAgent({ name: 'Tamer Wagih Fouad', phone: '01533221100', nationalId: '29502141912346', services: ['collection'], coverage: { port_said: ['port_fouad'] } });
+    ok(a2.supervisorId === s2.id, 'a supervisor adds an agent, who reports to them automatically');
+    let st = await S.team.structure();
+    ok(st.supervisors.length === 1 && st.supervisors[0].id === s2.id && !st.canManage, 'a supervisor sees only their own team');
+    fail = null;
+    try { await S.team.setActive(a1.id, false); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.notYourAgent', 'a supervisor cannot manage another supervisor\'s agent');
+
+    await as('Sherif Mansour');
+    await S.team.moveAgent(a2.id, s1.id);
+    st = await S.team.structure();
+    ok(st.supervisors.find((x) => x.id === s1.id).agents.length === 2 && st.supervisors.find((x) => x.id === s2.id).agents.length === 0, 'owner moves an agent to another supervisor');
+    fail = null;
+    try { await S.team.setActive(s1.id, false); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.supervisorHasAgents', 'a supervisor with active agents cannot be deactivated');
+
+    // Scope in an existing company: Recovery Partners has two supervisors.
+    await as('Rehab Anwar');
+    const team = await S.providers.team('collection');
+    ok(team.map((a) => a.name).sort().join() === 'Tarek Helmy,Yasser Fawzy', 'Rehab sees only her field agents for assignment');
+    const col = ICM.store.db.cases.find((c) => c.providerId === 'prv_recovery' && c.status === 'accepted');
+    if (col) {
+      fail = null;
+      try { await S.cases.assign([col.id], 'ag_mahmoud_saad'); } catch (e) { fail = e.key; }
+      ok(fail === 'errors.notYourAgent', 'Rehab cannot assign to an agent of Khaled Samy');
+      await as('Adel Morsy');
+      await S.cases.assign([col.id], 'ag_mahmoud_saad');
+      ok(true, 'the owner can assign to any agent');
+    }
+
+    // Reports go to the agent's own supervisor.
+    await as('Hany Wagdy');
+    const sup2 = await S.team.addSupervisor({ name: 'Mervat Lotfy', phone: '01011112222', services: ['investigation'] });
+    await S.team.moveAgent('ag_amr_saeed', sup2.id);
+    await as('Tamer Lotfy');
+    const c = await S.cases.createDraft('investigation', invValues('giza'));
+    await S.cases.sendOffer(c.id, 'prv_sphinx');
+    await as('Hany Wagdy');
+    const inbox = await S.offers.inbox('investigation');
+    await S.offers.accept(inbox.find((o) => o.caseIds.includes(c.id)).id);
+    await as('Salma Reda');
+    fail = null;
+    try { await S.cases.assign([c.id], 'ag_amr_saeed'); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.notYourAgent', 'Salma cannot assign Amr after he moved to Mervat');
+    await as('Mervat Lotfy');
+    await S.cases.assign([c.id], 'ag_amr_saeed');
+    await as('Amr Saeed');
+    await S.cases.checkIn(c.id);
+    for (let i = 0; i < 3; i++) await S.cases.addPhoto(c.id, PHOTO);
+    await S.cases.saveReport(c.id, 'residence', goodResidence);
+    await S.cases.transition(c.id, 'submit_report');
+    const ref = (await S.cases.get(c.id)).case.ref;
+    const got = (name) => notifs(uid(name), 'notif.report_submitted').some((n) => n.params.ref === ref);
+    ok(got('Mervat Lotfy') && got('Hany Wagdy') && !got('Salma Reda'), 'report notification goes to Mervat and the owner, not Salma');
+    await as('Salma Reda');
+    ok(!(await S.cases.reviewQueue()).some((x) => x.id === c.id), 'Salma does not see it in her review queue');
+    fail = null;
+    try { await S.cases.transition(c.id, 'approve'); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.notYourAgent', 'Salma cannot approve it');
+    await as('Mervat Lotfy');
+    ok((await S.cases.reviewQueue()).some((x) => x.id === c.id), 'Mervat sees it and can review');
+    await S.cases.transition(c.id, 'approve');
+    ok((await S.cases.get(c.id)).case.status === 'delivered', 'Mervat approves and the report is delivered');
   });
 
   // ---------------------------------------------------------------- report

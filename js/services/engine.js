@@ -125,7 +125,7 @@
   E.qa = function () { return D.platformUsers(E.db(), 'platform_qa'); };
   E.reviewersFor = function (c) {
     var p = E.providerById(c.providerId);
-    return p && p.kind === 'freelancer' ? E.qa() : D.providerUsers(E.db(), c.providerId, ['provider_supervisor', 'provider_admin']);
+    return p && p.kind === 'freelancer' ? E.qa() : D.companyReviewers(E.db(), c);
   };
 
   /** Default notifications for each transition. Batch flows pass silent and notify themselves. */

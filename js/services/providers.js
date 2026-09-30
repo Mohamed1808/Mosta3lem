@@ -58,6 +58,8 @@
   }
 
   S.providers = {
+    _agentStats: agentStats,
+    _withScore: withScore,
     mine: function () { return E.run(function () { return withScore(myProvider()); }); },
     updateProfile: function (patch) {
       return E.mutate(function () {
@@ -71,6 +73,9 @@
           var cap = {};
           next.governorates.forEach(function (g) { cap[g] = Math.max(1, +((patch.capacity || {})[g] || p.capacity[g] || 5)); });
           next.capacity = cap;
+          var cities = {};
+          next.governorates.forEach(function (g) { cities[g] = ((p.coverageCities || {})[g] || []).slice(); });
+          next.coverageCities = cities;
         } else if (patch.capacity) {
           Object.keys(patch.capacity).forEach(function (g) { if (next.governorates.indexOf(g) >= 0) next.capacity[g] = Math.max(1, +patch.capacity[g]); });
         }
@@ -83,23 +88,23 @@
         return withScore(p);
       });
     },
-    uploadDocument: function (type) {
+    uploadDocument: function (type, fileName) {
       return E.mutate(function () {
         var a = E.actor();
         var p = E.providerById(a.providerId);
         if (!p || ['provider_admin', 'freelancer'].indexOf(a.role) < 0) throw new Err('errors.forbidden');
         var docs = p.verification.documents;
         var d = docs.filter(function (x) { return x.type === type; })[0];
-        if (d) { d.status = 'uploaded'; d.uploadedAt = E.now(); }
-        else docs.push({ type: type, status: 'uploaded', uploadedAt: E.now() });
+        if (d) { d.status = 'uploaded'; d.uploadedAt = E.now(); d.fileName = fileName || d.fileName || null; }
+        else docs.push({ type: type, status: 'uploaded', uploadedAt: E.now(), fileName: fileName || null });
         E.audit('provider.document_uploaded', 'provider', p.id, p.name, null, { type: type }, null, a);
         return withScore(p);
       });
     },
     team: function (service) {
       return E.run(function () {
-        var p = myProvider();
-        return E.db().agents.filter(function (ag) { return ag.providerId === p.id && (!service || ag.services.indexOf(service) >= 0); })
+        var p = myProvider(), a = E.actor();
+        return E.db().agents.filter(function (ag) { return ag.providerId === p.id && (!service || ag.services.indexOf(service) >= 0) && D.agentInScope(a, ag); })
           .map(function (ag) { return Object.assign({}, ag, { stats: agentStats(ag) }); });
       });
     },
@@ -109,6 +114,7 @@
         if (['provider_admin', 'provider_supervisor'].indexOf(a.role) < 0) throw new Err('errors.forbidden');
         var ag = E.agentById(agentId);
         if (!ag || ag.providerId !== a.providerId) throw new Err('errors.forbidden');
+        if (!D.agentInScope(a, ag)) throw new Err('errors.notYourAgent');
         ag.active = !!active;
         var u = E.userById(ag.userId);
         if (u) u.active = !!active;
@@ -155,6 +161,7 @@
         var before = p.verification.status;
         p.verification.status = 'verified';
         p.verification.verifiedAt = E.now();
+        if (p.registration) p.joinedAt = E.now();
         p.verification.documents.forEach(function (d) { d.status = 'verified'; });
         p.enforcement = { level: 'none', source: 'auto', since: E.now() };
         // Give the new provider a login so it can be used straight away.
@@ -183,6 +190,7 @@
         p.verification.status = 'rejected';
         p.verification.notes.push({ at: E.now(), by: a.name, text: reason, kind: 'rejected' });
         E.audit('provider.reject', 'provider', p.id, p.name, { status: before }, { status: 'rejected' }, reason, a);
+        E.notify(D.providerUsers(E.db(), p.id, ['provider_admin', 'freelancer']), 'notif.application_rejected', {}, 'application:mine');
         return p;
       });
     },
@@ -195,6 +203,7 @@
         p.verification.status = 'info_requested';
         p.verification.notes.push({ at: E.now(), by: a.name, text: note, kind: 'info_requested' });
         E.audit('provider.request_info', 'provider', p.id, p.name, { status: before }, { status: 'info_requested' }, note, a);
+        E.notify(D.providerUsers(E.db(), p.id, ['provider_admin', 'freelancer']), 'notif.application_info_requested', {}, 'application:mine');
         return p;
       });
     },

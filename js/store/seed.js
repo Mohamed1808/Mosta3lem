@@ -262,6 +262,82 @@
     addUser('Laila Hosny', 'platform_admin', { email: 'laila.hosny@platform.example' });
     addUser('Ziad Ezzat', 'platform_qa', { email: 'ziad.ezzat@platform.example' });
 
+    // ---------- registration details and team hierarchy
+    // A separate generator, so adding registration data never shifts the case history below.
+    var R2 = U.prng(4242);
+    function mobile2() { return '01' + R2.pick(['0', '1', '2', '5']) + String(R2.int(10000000, 99999999)); }
+    function nid2(gov, minYear, maxYear) {
+      var g = lists.governorates.filter(function (x) { return x.id === gov; })[0] || { code: '01' };
+      var year = R2.int(minYear || 1970, maxYear || 1998);
+      return (year >= 2000 ? '3' : '2') + String(year % 100).padStart(2, '0') + String(R2.int(1, 12)).padStart(2, '0') + String(R2.int(1, 28)).padStart(2, '0') + g.code + String(R2.int(1000, 9999)) + String(R2.int(1, 9));
+    }
+    var HQ = { Cairo: ['cairo', 'nasr_city'], Giza: ['giza', 'dokki'], Alexandria: ['alexandria', 'smouha'], Mansoura: ['dakahlia', 'mansoura'], Zagazig: ['sharqia', 'zagazig'] };
+    var CITY_COVERAGE = { prv_fl_omar: { giza: ['dokki', 'haram', 'faisal', 'october'], cairo: ['downtown', 'zamalek'] }, prv_fl_mariam: { alexandria: [], beheira: ['damanhour', 'kafr_el_dawar'] }, prv_app_sara: { sharqia: ['zagazig', 'belbeis', 'minya_el_qamh'] } };
+    var regN = 0;
+    db.providers.forEach(function (p) {
+      var hq = HQ[p.city] || ['cairo', 'nasr_city'];
+      p.address = { governorate: hq[0], city: hq[1], street: R2.int(2, 90) + ' ' + R2.pick(STREETS), landmark: R2.pick(LANDMARKS) };
+      p.coverageCities = {};
+      p.governorates.forEach(function (g) { p.coverageCities[g] = ((CITY_COVERAGE[p.id] || {})[g] || []).slice(); });
+      var pending = p.verification.status !== 'verified';
+      regN++;
+      p.registration = { ref: 'REG-' + new Date(T).getFullYear() + '-' + String(regN).padStart(5, '0'), source: pending ? 'self' : 'admin', at: pending ? p.verification.submittedAt : p.joinedAt };
+      var users = db.users.filter(function (u) { return u.providerId === p.id; });
+      if (p.kind === 'company') {
+        var src = APPLICATIONS.concat(PROVIDERS).filter(function (x) { return x.id === p.id; })[0];
+        var ownerName = src.admin || src.contact;
+        var owner = users.filter(function (u) { return u.role === 'provider_admin'; })[0];
+        var sup = users.filter(function (u) { return u.role === 'provider_supervisor'; })[0];
+        p.legal = { taxId: String(R2.int(100000000, 999999999)), commercialRegNo: String(R2.int(10000, 999999)), commercialRegOffice: hq[0] };
+        p.owner = { name: ownerName, phone: owner ? owner.phone : mobile2(), email: owner ? owner.email : null, nationalId: nid2(hq[0], 1962, 1985) };
+        p.focalPoint = sup ? { name: sup.name, title: 'Operations manager', phone: sup.phone, email: sup.email } : { name: ownerName, title: 'Owner', phone: p.owner.phone, email: null };
+        p.contactName = p.focalPoint.name;
+        if (owner) owner.owner = true;
+        // Every agent reports to a supervisor.
+        if (sup) {
+          sup.services = p.services.slice();
+          db.agents.forEach(function (a) { if (a.providerId === p.id) a.supervisorId = sup.id; });
+        }
+      } else {
+        p.nationalId = nid2(hq[0], 1975, 1999);
+        p.contactName = p.name;
+      }
+      db.agents.forEach(function (a) {
+        if (a.providerId !== p.id) return;
+        a.coverageCities = {};
+        a.governorates.forEach(function (g) { a.coverageCities[g] = ((p.coverageCities || {})[g] || []).slice(); });
+        a.nationalId = p.kind === 'freelancer' ? p.nationalId : nid2(a.governorates[0], 1978, 2001);
+        var au = db.users.filter(function (u) { return u.id === a.userId; })[0];
+        if (au) a.phone = au.phone;
+      });
+    });
+
+    // Recovery Partners runs two field teams: Cairo and Giza under Rehab, the Delta and
+    // Alexandria under Khaled.
+    var rp = 'prv_recovery';
+    var khaled = { id: 'u_khaled_samy', name: 'Khaled Samy', role: 'provider_supervisor', providerId: rp, active: true, phone: mobile2(), email: 'khaled.samy@recovery-partners-egypt.example', services: ['collection'], createdAt: T - 200 * DAY };
+    db.users.push(khaled);
+    db.agents.forEach(function (a) { if (a.providerId === rp && ['ag_mahmoud_saad', 'ag_ibrahim_nour'].indexOf(a.id) >= 0) a.supervisorId = khaled.id; });
+
+    // Applicants can sign in to follow their application.
+    db.providers.filter(function (p) { return p.verification.status !== 'verified'; }).forEach(function (p) {
+      if (db.users.some(function (u) { return u.providerId === p.id; })) return;
+      var at = p.verification.submittedAt;
+      if (p.kind === 'company') {
+        var ou = { id: 'u_' + slug(p.owner.name), name: p.owner.name, role: 'provider_admin', providerId: p.id, owner: true, active: true, phone: p.owner.phone, email: null, createdAt: at };
+        db.users.push(ou);
+        p.focalPoint = { name: 'Nadia Fawzy', title: 'Field operations lead', phone: mobile2(), email: null };
+        p.contactName = p.focalPoint.name;
+      } else {
+        var agId = 'ag_' + slug(p.name);
+        var fu = { id: 'u_' + slug(p.name), name: p.name, role: 'freelancer', providerId: p.id, agentId: agId, active: true, phone: mobile2(), email: null, createdAt: at };
+        db.users.push(fu);
+        db.agents.push({ id: agId, providerId: p.id, userId: fu.id, name: p.name, governorates: p.governorates.slice(), coverageCities: U.clone(p.coverageCities), services: p.services.slice(), active: true, nationalId: p.nationalId, phone: fu.phone });
+      }
+      p.phone = db.users[db.users.length - 1].phone;
+    });
+    db.counters.registration = regN;
+
     // ---------- lookups for replay
     function providerById(pid) { return db.providers.filter(function (p) { return p.id === pid; })[0] || null; }
     function userById(uid) { return db.users.filter(function (u) { return u.id === uid; })[0]; }

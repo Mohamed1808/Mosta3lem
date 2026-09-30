@@ -14,17 +14,17 @@
     time: { dh: '{d}d {h}h', hm: '{h}h {m}m', m: '{m}m', hoursShort: '{h} h' },
     portal: { entity: 'Requesting entities', provider: 'Service providers', agent: 'Field agents', admin: 'Platform' },
     service: { investigation: 'Investigation', collection: 'Collection' },
-    kind: { company: 'Company', freelancer: 'Freelancer' },
+    kind: { company: 'Company', freelancer: 'Individual' },
     entityType: { bank: 'Bank', auto_finance: 'Auto finance', consumer_finance: 'Consumer finance', corporate: 'Corporate' },
     role: {
       entity_admin: 'Admin', entity_credit: 'Credit', entity_operations: 'Operations', entity_collections: 'Collections',
-      provider_admin: 'Company admin', provider_supervisor: 'Supervisor', agent: 'Field agent', freelancer: 'Freelancer',
+      provider_admin: 'Owner', provider_supervisor: 'Supervisor', agent: 'Field agent', freelancer: 'Individual provider',
       platform_admin: 'Platform admin', platform_qa: 'QA reviewer', system: 'System'
     },
     roleHint: {
       entity_admin: 'all work and users', entity_credit: 'investigations', entity_operations: 'investigations and collections',
-      entity_collections: 'collections', provider_admin: 'offers, pricing and team', provider_supervisor: 'assigns and reviews',
-      agent: 'field app', freelancer: 'own offers and field work', platform_admin: 'full control', platform_qa: 'reviews freelancer reports'
+      entity_collections: 'collections', provider_admin: 'manages the account and team', provider_supervisor: 'assigns and reviews',
+      agent: 'field app', freelancer: 'own offers and field work', platform_admin: 'full control', platform_qa: 'reviews reports from individuals'
     },
     nav: {
       main: 'Main navigation', menu: 'Menu', dashboard: 'Dashboard', newRequest: 'New request', bulkUpload: 'Bulk upload',
@@ -48,7 +48,7 @@
       demoNote: 'This is a demo. Pick any user to sign in; switch users at any time from the header.',
       tests: 'Workflow tests', pick: 'Choose a demo user', pickHint: 'Users are grouped by portal and organisation.',
       providers: 'Service providers and field agents', entityGroupHint: 'Requesting entity', companyGroupHint: 'Provider company with field team',
-      freelancers: 'Freelancers', freelancerHint: 'Self-employed; acts as own field agent'
+      freelancers: 'Individual providers', freelancerHint: 'Works alone and does the field work personally'
     },
     status: {
       draft: 'Draft', submitted: 'Submitted', awaiting_acceptance: 'Awaiting acceptance', declined: 'Declined', expired: 'Expired',
@@ -391,7 +391,7 @@
       removePhoto: 'Remove photo', removePhotoBody: 'Remove this photo from the evidence?', reportFor: 'Report: {type}', saved: 'Saved',
       saveAnswers: 'Save answers', answersSaved: 'Answers saved', savedIncomplete: 'Saved, but some required answers are missing',
       submit: 'Submit for review', chkCheckIn: 'Checked in at the address', chkPhotos: 'Photos: {n} of {min}', chkForms: 'All report forms complete',
-      goesToQa: 'Freelancer reports go to platform QA.', goesToSupervisor: 'The report goes to your supervisor.',
+      goesToQa: 'Reports from individual providers go to platform QA.', goesToSupervisor: 'The report goes to your supervisor.',
       submitBody: 'You cannot edit the report after submitting.', submitted: 'Report submitted', yourReport: 'Your report',
       logWork: 'Log work', returnedTitle: 'Returned tasks', noneReturned: 'Nothing returned to you', performanceTitle: 'My performance',
       openTasks: 'Open tasks', completedMonth: 'Completed this month', returnRate: 'Return rate', avgDistance: 'Avg. check-in distance',
@@ -416,11 +416,11 @@
       extendHours: 'Extend by (hours)', extended: 'SLA extended', cancelBody: 'The case is cancelled for both sides.', billingSubtitle: 'Issue draft invoices to entities.'
     },
     onboarding: {
-      subtitle: 'Applications from companies and freelancers.', applied: 'Applied {date}', contact: 'Contact', freelancerChecks: 'Freelancer checks',
+      subtitle: 'Applications from companies and individuals, self-registered or registered by the platform.', applied: 'Applied {date}', contact: 'Contact', freelancerChecks: 'Checks for individuals',
       idVerified: 'ID verified', certified: 'Passed training', verify: 'Verify', verifyBody: 'The provider goes live in the marketplace and gets a login.',
       verified: 'Provider verified', reject: 'Reject', requestInfo: 'Request more info', whatIsMissing: 'What is missing', send: 'Send', none: 'No applications waiting'
     },
-    qa: { subtitle: 'Reports from freelancers. Approve to deliver to the client, or return with comments.' },
+    qa: { subtitle: 'Reports from individual providers. Approve to deliver to the client, or return with comments.' },
     moderation: {
       subtitle: 'Flagged or reported feedback. Hiding keeps the rating in the score but hides the text.', flagged: 'Flagged', hidden: 'Hidden', all: 'All feedback',
       by: 'by {name}', hiddenBadge: 'Hidden', flagReason: 'Reported by provider: {reason}', hide: 'Hide', restore: 'Restore', dismiss: 'Dismiss report',
@@ -492,7 +492,7 @@
         3: 'Offer expiry: send an offer, then advance the clock 5 hours here. The entity is notified; use Auto-select best on the case.',
         4: 'Collection: as Youssef Kamel create a collection with a 20% discount authority for Recovery Partners. As Tarek Helmy log a call and a promise, advance a day, record a partial payment and request a 15% discount. Approve as Youssef, pay the rest, close as Rehab Anwar, rate as Youssef.',
         5: 'Bulk: download the sample file on Bulk upload, fix the 3 bad rows, create the batch, split by governorate, accept as providers, simulate field work here, accept all and close the batch with a rating.',
-        6: 'Freelancer: send a Giza residence case to Omar Hassan. His report goes to the QA queue (Ziad Ezzat), not a supervisor.',
+        6: 'Individual provider: send a Giza residence case to Omar Hassan. His report goes to the QA queue (Ziad Ezzat), not a supervisor.',
         7: 'Rating dispute: as Fady Mikhail (Cairo Collect) dispute a 1-star rating. Uphold it as admin; the rating leaves the score.',
         8: 'Enforcement: raise the suspension threshold to 50 (reduce 55) in Scoring. Cairo Collect is suspended and leaves the marketplace.',
         9: 'SLA: advance the clock on an accepted case; it turns amber at 80% and red at the deadline. Entity, provider and admin are notified.',
@@ -537,7 +537,7 @@
       listItemInvalid: 'Every row needs an ID and an English name', listDuplicate: 'IDs must be unique',
       priceOutOfBand: 'Price for {type} in {zone} must be between {min} and {max}', feeOutOfBand: 'Fee for {bucket} must be between {min}% and {max}%',
       fixedFeeOutOfBand: 'Fixed fee must be at most {max}', coverageRequired: 'Cover at least one governorate',
-      freelancerChecks: 'Freelancers need ID verification and training before verification', documentsMissing: 'Some documents are missing',
+      freelancerChecks: 'Individual providers need ID verification and training before verification', documentsMissing: 'Some documents are missing',
       emailFormat: 'Enter a valid email', emailTaken: 'This email is already used', lastAdmin: 'Keep at least one admin', cannotDeactivateSelf: 'You cannot deactivate yourself',
       invoiceNotIssued: 'Only issued invoices can be paid', invoiceNotDraft: 'Only draft invoices can be issued', invoiceEmpty: 'The invoice has no lines',
       storageFull: 'Browser storage is full. Reset the demo data or remove photos.'
@@ -548,7 +548,7 @@
         role: 'Your role cannot do this', notOwner: 'This case is not yours', providerRequired: 'Choose a provider',
         providerDeclined: 'This provider already declined the case', sameProvider: 'Choose a different provider', reasonRequired: 'A reason is required',
         agentRequired: 'Choose an agent', checkInRequired: 'Check in at the address first', photosRequired: 'Add the minimum number of photos',
-        reportIncomplete: 'Complete every report form', commentRequired: 'Add a comment for the agent', reviewerQa: 'Freelancer reports are reviewed by platform QA',
+        reportIncomplete: 'Complete every report form', commentRequired: 'Add a comment for the agent', reviewerQa: 'Reports from individual providers are reviewed by platform QA',
         reviewerSupervisor: 'Company reports are reviewed by their supervisor', entityCancelAfterAccept: 'Entities can cancel only before acceptance. Recall or ask the platform.',
         settlementKind: 'Choose a settlement type', noSettlementAuthority: 'The entity gave no settlement authority on this case',
         settlementKindNotAllowed: 'This settlement type is not allowed on this case', discountRequired: 'Enter a discount',

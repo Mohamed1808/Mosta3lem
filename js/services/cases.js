@@ -441,6 +441,7 @@
         var c = E.mustCase(id);
         var a = E.actor();
         if (['accept', 'decline', 'expire', 'send_offer', 'force_reassign'].indexOf(action) >= 0) throw new Err('errors.useDedicatedAction');
+        if (['approve', 'return_to_agent'].indexOf(action) >= 0 && !D.caseInTeamScope(E.db(), a, c)) throw new Err('errors.notYourAgent');
         var next = E.transition(c, action, payload || {}, a);
         if (action === 'accept_report') next = E.transition(next, 'close', {}, a);
         return next;
@@ -452,6 +453,7 @@
         var agent = E.agentById(agentId);
         if (!agent || agent.providerId !== a.providerId) throw new Err('errors.forbidden');
         if (!agent.active) throw new Err('errors.agentInactive');
+        if (!D.agentInScope(a, agent)) throw new Err('errors.notYourAgent');
         var out = [];
         caseIds.forEach(function (id) {
           var c = E.mustCase(id);
@@ -573,7 +575,7 @@
           if (c.status !== 'submitted_for_review') return false;
           var p = E.providerById(c.providerId);
           if (a.role === 'platform_qa' || a.role === 'platform_admin') return p && p.kind === 'freelancer';
-          if (a.role === 'provider_supervisor' || a.role === 'provider_admin') return c.providerId === a.providerId && p.kind === 'company';
+          if (a.role === 'provider_supervisor' || a.role === 'provider_admin') return c.providerId === a.providerId && p.kind === 'company' && D.caseInTeamScope(E.db(), a, c);
           return false;
         }).map(function (c) { return decorate(c, a, now); }).filter(Boolean)
           .sort(function (x, y) { return x.reportSubmittedAt - y.reportSubmittedAt; });

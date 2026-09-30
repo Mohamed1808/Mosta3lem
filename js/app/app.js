@@ -17,6 +17,8 @@
 
   function defineRoutes() {
     route('/login', 'public', P.auth.login);
+    route('/register', 'public', P.auth.register);
+    route('/application', 'applicant', P.applicant.application);
     route('/client', 'entity', P.entity.dashboard);
     route('/client/new', 'entity', P.entity.newRequest);
     route('/client/cases', 'entity', P.entity.cases);
@@ -54,6 +56,7 @@
     var ADMIN = ['platform_admin'], QA = ['platform_admin', 'platform_qa'];
     route('/admin', 'admin', P.admin.overview, QA);
     route('/admin/onboarding', 'admin', P.admin.onboarding, ADMIN);
+    route('/admin/onboarding/new', 'admin', P.admin.registerProvider, ADMIN);
     route('/admin/providers', 'admin', P.admin.providers, ADMIN);
     route('/admin/providers/:id', 'admin', P.admin.providerDetail, ADMIN);
     route('/admin/entities', 'admin', P.admin.entities, ADMIN);
@@ -106,6 +109,7 @@
       case 'provider': return session.portal === 'provider' && session.provider.services.indexOf(params.service) >= 0;
       case 'agent': return role === 'agent' || role === 'freelancer';
       case 'admin': return session.portal === 'admin';
+      case 'applicant': return session.portal === 'applicant';
     }
     return false;
   }
@@ -254,6 +258,22 @@
       inp.setAttribute('inputmode', 'numeric'); inp.setAttribute('dir', 'ltr'); inp.placeholder = '01XXXXXXXXX';
       box.insertBefore(inp, el.parentNode);
       inp.focus();
+    },
+    /** Refill a city dropdown when its governorate changes (data-city-name names the city field). */
+    cityForGov: function (el) {
+      var name = el.getAttribute('data-city-name');
+      var slot = el.closest('form, .modal-b, #page, #app').querySelector('[data-city-slot="' + name + '"]');
+      if (slot) slot.innerHTML = String(ui.cityControl(name, el.value, '', false));
+    },
+    /** Keep only the chosen file name for a document slot (the demo stores no files). */
+    pickDocFile: function (el) {
+      var file = el.files && el.files[0];
+      var box = el.closest('.doc-pick');
+      if (!file || !box) return;
+      box.querySelector('input[type=hidden]').value = file.name;
+      var label = box.querySelector('[data-doc-name]');
+      label.textContent = file.name;
+      label.classList.remove('faint');
     },
     formPhoto: async function (el) {
       var file = el.files && el.files[0];

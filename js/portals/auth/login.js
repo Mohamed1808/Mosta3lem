@@ -10,7 +10,7 @@
   function userButton(u) {
     return h`<button type="button" class="user-btn" data-action="login" data-id="${u.id}">
       <span class="avatar">${U.initials(u.name)}</span>
-      <span class="grow"><span class="strong">${u.name}</span><br><span class="role">${t('role.' + u.role)}${ICM.i18n.has('roleHint.' + u.role) ? ' · ' + t('roleHint.' + u.role) : ''}</span></span>
+      <span class="grow"><span class="strong">${u.name}</span><br><span class="role">${t('role.' + u.role)}${u.portal === 'applicant' ? ' · ' + u.orgName : ICM.i18n.has('roleHint.' + u.role) ? ' · ' + t('roleHint.' + u.role) : ''}</span></span>
       ${icon('chevronRight')}</button>`;
   }
 
@@ -25,8 +25,9 @@
     render: function (users) {
       var byOrg = U.groupBy(users, function (u) { return u.orgName; });
       var entities = Object.keys(byOrg).filter(function (o) { return byOrg[o][0].portal === 'entity'; });
-      var companies = Object.keys(byOrg).filter(function (o) { return byOrg[o][0].orgKind === 'company'; });
-      var freelancers = users.filter(function (u) { return u.role === 'freelancer'; });
+      var companies = Object.keys(byOrg).filter(function (o) { return byOrg[o][0].orgKind === 'company' && byOrg[o][0].portal !== 'applicant'; });
+      var freelancers = users.filter(function (u) { return u.role === 'freelancer' && u.portal !== 'applicant'; });
+      var applicants = users.filter(function (u) { return u.portal === 'applicant'; });
       var platform = users.filter(function (u) { return u.portal === 'admin'; });
       return h`<div class="login">
         <aside class="login-side">
@@ -35,6 +36,7 @@
           <p>${t('login.body1')}</p>
           <p>${t('login.body2')}</p>
           ${ui.notice(t('login.demoNote'), 'info')}
+          <div class="register-cta"><div class="strong">${t('login.registerTitle')}</div><div class="small">${t('login.registerBody')}</div><a class="btn btn-primary" href="#/register">${icon('briefcase')}${t('login.registerCta')}</a></div>
           <div class="row wrap">
             <button type="button" class="btn btn-sm" data-action="toggleLang">${icon('globe')}${ICM.i18n.lang() === 'ar' ? 'English' : 'العربية'}</button>
             <button type="button" class="btn btn-sm" data-action="resetDemo">${icon('refresh')}${t('demo.reset')}</button>
@@ -50,6 +52,7 @@
           <div class="user-groups">${companies.map(function (o) {
             return group(o, t('login.companyGroupHint'), byOrg[o]);
           })}${group(t('login.freelancers'), t('login.freelancerHint'), freelancers)}</div>
+          ${applicants.length ? h`<h3 class="mb-8 mt-24">${t('login.applicants')}</h3><div class="user-groups">${group(t('login.applicantsGroup'), t('login.applicantsHint'), applicants)}</div>` : ''}
           <h3 class="mb-8 mt-24">${t('portal.admin')}</h3>
           <div class="user-groups">${group(ICM.config.PLATFORM_NAME, null, platform)}</div>
         </main>

@@ -24,7 +24,7 @@ for (const file of walk(path.join(root, 'js'))) {
 const ctx = { console, Intl, Date, Math, JSON };
 ctx.window = ctx; ctx.globalThis = ctx; ctx.localStorage = { getItem: () => null, setItem: () => {} }; ctx.document = { documentElement: {} };
 vm.createContext(ctx);
-['js/core/util.js', 'js/core/i18n.js', 'js/i18n/en.js', 'js/i18n/ar.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js']
+['js/core/util.js', 'js/core/i18n.js', 'js/i18n/en.js', 'js/i18n/ar.js', 'js/i18n/registration.en.js', 'js/i18n/registration.ar.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js']
   .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
 const ICM = ctx.ICM, C = ICM.config;
 const add = (k) => used.add(k);
@@ -46,7 +46,15 @@ C.COLLECTION_OUTCOMES.forEach((x) => add('outcome.' + x));
 C.PAYMENT_METHODS.forEach((x) => add('paymentMethod.' + x));
 ['discount', 'instalments'].forEach((x) => add('settlement.kind.' + x));
 C.AMOUNT_RANGES.forEach((r) => add('amountRange.' + r.key));
-['entity', 'provider', 'agent', 'admin'].forEach((p) => add('portal.' + p));
+['entity', 'provider', 'agent', 'admin', 'applicant'].forEach((p) => add('portal.' + p));
+['company', 'individual', 'companyBody', 'individualBody'].forEach((k) => add('reg.kind.' + k));
+['type', 'details', 'area', 'submit'].forEach((s) => add('reg.stepTitle.' + s));
+['self', 'admin'].forEach((s) => add('onboarding.source.' + s));
+['pending', 'rejected', 'verified'].forEach((s) => add('docStatus.' + s));
+['submitted', 'review', 'info', 'decision', 'rejected'].forEach((s) => add('application.track.' + s));
+['c1', 'c2', 'c3', 'i1', 'i2', 'i3'].forEach((s) => add('application.after.' + s));
+['companyName', 'taxId', 'commercialRegNo', 'mainPhone', 'companyEmail', 'ownerName', 'ownerNationalId', 'ownerPhone', 'ownerEmail', 'focalName', 'focalTitle', 'focalPhone', 'focalEmail', 'fullName', 'nationalId', 'phone', 'email', 'addrStreet', 'addrLandmark'].forEach((f) => add('reg.f.' + f));
+['team_supervisor_activated', 'team_supervisor_deactivated'].forEach((a) => add('audit.action.' + a));
 ['home', 'work', 'business', 'governorate', 'city', 'street', 'landmark'].forEach((a) => add('address.' + a));
 C.PROVIDER_DOCUMENTS.forEach((d) => add('doc.' + d));
 ['entrance', 'building', 'door', 'street', 'premises', 'signboard'].forEach((l) => add('evidence.label.' + l));

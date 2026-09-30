@@ -11,7 +11,7 @@ const files = [
   'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js',
   'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js',
   'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js',
-  'js/workflow/masking.js', 'js/workflow/scoring.js',
+  'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js',
   'tests/runner.js', 'tests/workflow.test.js'
 ].concat(process.argv.slice(2));
 

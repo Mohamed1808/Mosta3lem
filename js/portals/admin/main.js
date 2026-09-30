@@ -50,14 +50,15 @@
     title: function () { return t('nav.onboarding'); },
     load: function () { return S.providers.applications(); },
     render: function (apps) {
-      return h`${ui.pageHead(t('nav.onboarding'), t('onboarding.subtitle'))}
+      return h`${ui.pageHead(t('nav.onboarding'), t('onboarding.subtitle'), h`<a class="btn btn-primary" href="#/admin/onboarding/new">${icon('plus')}${t('reg.adminTitle')}</a>`)}
         ${apps.length ? h`<div class="stack">${apps.map(function (p) {
           var fl = p.kind === 'freelancer';
-          return h`<section class="card"><div class="card-h"><div class="row wrap"><strong>${p.name}</strong>${ui.kindBadge(p.kind)}${ui.status(p.verification.status)}</div><span class="small faint">${t('onboarding.applied', { date: U.fmtDate(p.verification.submittedAt) })}</span></div>
+          var reg = p.registration || {};
+          return h`<section class="card"><div class="card-h"><div class="row wrap"><strong>${p.name}</strong>${ui.kindBadge(p.kind)}${ui.status(p.verification.status)}${reg.source ? ui.badge(t('onboarding.source.' + reg.source), 'neutral') : ''}</div><span class="small faint">${reg.ref ? h`<span class="mono">${reg.ref}</span> · ` : ''}${t('onboarding.applied', { date: U.fmtDate(p.verification.submittedAt) })}</span></div>
             <div class="card-b grid cols-3">
-              <dl class="dl"><dt>${t('profile.city')}</dt><dd>${p.city}</dd><dt>${t('profile.services')}</dt><dd>${p.services.map(function (s) { return t('service.' + s); }).join(', ')}</dd><dt>${t('onboarding.contact')}</dt><dd>${p.contactName || '-'}</dd><dt>${t('provider.coverage')}</dt><dd>${p.governorates.map(ui.gov).join(', ')}</dd></dl>
+              ${ui.registrationDetails(p)}
               <div><div class="small muted mb-8">${t('profile.documents')}</div>${p.verification.documents.map(function (dc) {
-                return h`<div class="stat-row"><span>${t('doc.' + dc.type)}</span>${ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified')}</div>`;
+                return h`<div class="stat-row"><span>${t('doc.' + dc.type)}${dc.fileName ? h`<div class="xs faint">${dc.fileName}</div>` : ''}</span>${ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}</div>`;
               })}</div>
               <div class="stack tight">${fl ? h`<div class="small muted">${t('onboarding.freelancerChecks')}</div>
                 <label class="check"><input type="checkbox" data-change="check" data-id="${p.id}" data-field="idVerified" ${p.verification.idVerified ? 'checked' : ''}>${t('onboarding.idVerified')}</label>
@@ -109,9 +110,30 @@
     }
   };
 
+  /** Read-only owner, supervisors and field agents of a company. */
+  function teamTree(p) {
+    var agentsById = {};
+    p.agents.forEach(function (a) { agentsById[a.id] = a; });
+    function agentRow(a) {
+      var full = agentsById[a.id] || a;
+      return h`<div class="tree-row"><span>${a.name}${a.active ? '' : h` ${ui.badge(t('common.inactive'), 'muted')}`}</span><span class="small faint">${ui.coverage.text(a.coverageCities || {}, 2)}</span><span class="small num">${t('team.openN', { n: full.stats ? full.stats.open : 0 })}</span></div>`;
+    }
+    return h`<div class="tree">
+      <div class="tree-owner">${icon('briefcase')}<strong>${p.team.owners.map(function (o) { return o.name; }).join(t('common.listSep')) || '-'}</strong><span class="xs faint">${t('team.owner')}</span></div>
+      ${p.team.supervisors.map(function (s) {
+        return h`<div class="tree-sup"><div class="tree-sup-h">${icon('users')}<strong>${s.name}</strong><span class="xs faint">${t('role.provider_supervisor')} · ${t('team.agentsN', { n: s.agents.length })}</span>${s.active === false ? ui.badge(t('common.inactive'), 'muted') : ''}</div>${s.agents.map(agentRow)}</div>`;
+      })}
+      ${p.team.unassigned.length ? h`<div class="tree-sup"><div class="tree-sup-h">${icon('alert')}<strong>${t('team.unassigned')}</strong></div>${p.team.unassigned.map(agentRow)}</div>` : ''}
+    </div>`;
+  }
+
   P.admin.providerDetail = {
     title: function (p) { return p ? p.name : ''; },
-    load: function (ctx) { return S.providers.get(ctx.params.id); },
+    load: async function (ctx) {
+      var p = await S.providers.get(ctx.params.id);
+      p.team = p.kind === 'company' ? await S.team.ofProvider(ctx.params.id) : null;
+      return p;
+    },
     render: function (p) {
       var lvl = p.enforcement.level;
       return h`${ui.pageHead(p.name, h`<span class="row wrap">${ui.kindBadge(p.kind)}${p.services.map(function (s) { return ui.serviceBadge(s); })}${ui.status(lvl, 'enforcement')}<span class="small faint">${t('enforcementSource.' + p.enforcement.source)}${p.enforcement.reason ? ': ' + p.enforcement.reason : ''}</span></span>`,
@@ -133,12 +155,9 @@
                 : h`<dt>${t('metric.recoveryNorm')}</dt><dd>${ui.pct(m.recovery)}</dd><dt>${t('metric.ptpKept')}</dt><dd>${ui.pct(m.ptpKept)}</dd><dt>${t('metric.complaints')}</dt><dd>${ui.pct(m.complaintRate)}</dd>`}
               <dt>${t('admin.volume')}</dt><dd>${U.num(m.volume)}</dd></dl>${ui.criteriaView(sc.criteria)}</div>`);
           })}
-          ${p.services.length === 1 ? ui.card(t('admin.team'), ui.table([
-            { label: t('common.name'), render: function (a) { return a.name; } },
-            { label: t('assign.areas'), render: function (a) { return h`<span class="small">${a.governorates.map(ui.gov).join(', ')}</span>`; } },
-            { label: t('assign.load'), num: true, render: function (a) { return U.num(a.stats.open); } }
-          ], p.agents), { flush: true }) : ''}
+          ${ui.card(t('admin.registration'), h`${p.registration ? h`<div class="xs faint mb-8"><span class="mono">${p.registration.ref}</span> · ${t('onboarding.source.' + p.registration.source)} · ${U.fmtDate(p.registration.at)}</div>` : ''}${ui.registrationDetails(p)}`)}
         </div>
+        ${p.team ? ui.card(t('admin.team'), teamTree(p), { cls: 'mb-16' }) : ''}
         <div class="grid cols-2">
           ${ui.card(t('admin.ratingsReceived', { n: p.ratings.length }), h`<div class="stack tight" style="max-height:520px;overflow:auto">${p.ratings.slice(0, 30).map(function (r) {
             return h`<div class="stat-row"><span><span class="row wrap">${ui.stars(r.overall)}<span class="small">${r.entityName}</span>${r.status === 'removed' ? ui.badge(t('rating.removed'), 'muted') : ''}</span>${r.feedback ? h`<div class="xs muted">${r.feedback}</div>` : ''}</span><span class="xs faint nowrap">${U.fmtDate(r.createdAt)}</span></span>`;

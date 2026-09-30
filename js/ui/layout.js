@@ -33,7 +33,7 @@
       ];
       if (company) list.push({ href: base + '/assignment', icon: 'route', label: t('nav.assignment'), count: c.unassigned });
       if (company && svc === 'investigation') list.push({ href: base + '/review', icon: 'checkSquare', label: t('nav.reviewQueue'), count: c.review });
-      if (company) list.push({ href: base + '/team', icon: 'users', label: t('nav.team') });
+      if (company) list.push({ href: base + '/team', icon: 'users', label: t('nav.team'), exact: true });
       if (svc === 'collection') list.push({ href: base + '/portfolio', icon: 'chart', label: t('nav.portfolio') });
       var list2 = [
         { href: base + '/ratings', icon: 'star', label: t('nav.feedback') },
@@ -42,6 +42,9 @@
       ];
       if (u.role === 'provider_admin' || u.role === 'freelancer') list2.push({ href: base + '/profile', icon: 'settings', label: t('nav.profile') });
       return [{ items: list }, { title: t('nav.groupAccount'), items: list2 }];
+    }
+    if (s.portal === 'applicant') {
+      return [{ items: [{ href: '#/application', icon: 'shieldCheck', label: t('nav.application') }] }];
     }
     if (s.portal === 'admin') {
       if (u.role === 'platform_qa') {
@@ -87,6 +90,7 @@
       { portal: 'entity', label: t('portal.entity') },
       { portal: 'provider', label: t('portal.provider') },
       { portal: 'agent', label: t('portal.agent') },
+      { portal: 'applicant', label: t('portal.applicant') },
       { portal: 'admin', label: t('portal.admin') }
     ];
     return h`<label class="sr-only" for="user-switch">${t('header.switchUser')}</label>

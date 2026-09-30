@@ -43,8 +43,21 @@
     document.documentElement.dir = current === 'ar' ? 'rtl' : 'ltr';
   }
 
+  function merge(into, from) {
+    Object.keys(from).forEach(function (k) {
+      var v = from[k];
+      if (v && typeof v === 'object' && into[k] && typeof into[k] === 'object') merge(into[k], v);
+      else into[k] = v;
+    });
+    return into;
+  }
+
   ICM.i18n = {
     dict: ICM.i18n && ICM.i18n.dict ? ICM.i18n.dict : {},
+    /** Add a module's strings to a language (js/i18n/<module>.<lang>.js). */
+    extend: function (lang, strings) {
+      ICM.i18n.dict[lang] = merge(ICM.i18n.dict[lang] || {}, strings);
+    },
     t: t,
     has: has,
     lang: function () { return current; },
