@@ -419,9 +419,10 @@
     }
     function offerById(oid) { return db.offers.filter(function (o) { return o.id === oid; })[0]; }
 
+    function hashId(str) { var x = 7; for (var i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) >>> 0; return x; }
     function fillEvidence(c, at) {
       var n = ICM.domain.minPhotos(db, c) + (rnd() < 0.4 ? 1 : 0);
-      var labels = ['entrance', 'building', 'door', 'street', 'premises', 'signboard'];
+      var labels = wf.reports.photoSlots(c.inquiryTypes).concat(['street']);
       c.photos = [];
       for (var i = 0; i < n; i++) c.photos.push({ id: id('ph'), at: at - (n - i) * 5 * U.MIN, lat: c.checkIn.lat, lng: c.checkIn.lng, placeholder: true, label: labels[i % labels.length] });
       c.report = {};
@@ -431,6 +432,7 @@
         if (t === 'employment') c.report[t] = { employerConfirmed: 'yes', jobTitle: R.pick(JOBS), tenureYears: R.int(1, 12), hrContact: 'HR office, ext. ' + R.int(100, 499), salaryConfirmed: rnd() < 0.8 ? 'yes' : 'no', notes: note };
         if (t === 'business') c.report[t] = { businessExists: 'yes', activityMatches: rnd() < 0.85 ? 'yes' : 'no', estimatedSize: R.pick(['micro', 'small', 'medium']), employees: R.int(1, 14), notes: note };
         if (t === 'guarantor') c.report[t] = { guarantorFound: 'yes', willingToGuarantee: rnd() < 0.85 ? 'yes' : 'no', relationship: R.pick(['family', 'friend', 'colleague']), notes: note };
+        if (t === 'residence' || t === 'business') c.report[t] = wf.reports.sample(t, c, at, U.prng(hashId(c.id + t)).next);
       });
     }
 
@@ -927,6 +929,17 @@
     db.audit.sort(function (a, b) { return a.at - b.at; });
 
     db.cases.forEach(function (c) { if (!c.updatedAt) c.updatedAt = c.createdAt; });
+
+    var R3 = U.prng(5150);
+    db.cases.filter(function (c) { return c.service === 'investigation'; }).forEach(function (c) {
+      c.accountNumber = String(R3.int(3000000, 3199999));
+      c.customer.telephone = R3.next() < 0.4 ? '02' + R3.int(20000000, 39999999) : null;
+      if ((c.inquiryTypes || []).indexOf('business') >= 0) { c.orderNumber = 'ORD-' + R3.int(10000, 99999); c.businessPhone = '02' + R3.int(20000000, 39999999); }
+      if (['accepted_by_entity', 'closed'].indexOf(c.status) >= 0 && R3.next() < 0.8) {
+        var rec = ((c.report || {}).residence || (c.report || {}).business || {}).recommendation;
+        c.clientDecision = { value: rec === 'REJECTED' ? 'REJECTED' : (R3.next() < 0.9 ? 'APPROVED' : 'REJECTED'), note: '', at: c.updatedAt, by: c.createdBy, byName: (db.users.filter(function (u) { return u.id === c.createdBy; })[0] || {}).name };
+      }
+    });
     return db;
   }
 

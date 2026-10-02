@@ -275,6 +275,31 @@
       label.textContent = file.name;
       label.classList.remove('faint');
     },
+    /** Repeat fields (references): add or remove a row, keeping what was typed. */
+    formAddRow: function (el) {
+      var box = el.closest('[data-form-key]'), name = el.getAttribute('data-name');
+      var values = ui.forms.collect(box, ui.forms.defOf(box));
+      var change = {};
+      change[name] = (values[name] || []).concat([{}]);
+      ui.forms.refreshWith(box, change);
+    },
+    formRemoveRow: function (el) {
+      var box = el.closest('[data-form-key]'), name = el.getAttribute('data-name');
+      var rows = (ui.forms.collect(box, ui.forms.defOf(box))[name] || []).slice();
+      rows.splice(+el.getAttribute('data-index'), 1);
+      var change = {};
+      change[name] = rows;
+      ui.forms.refreshWith(box, change);
+    },
+    sigClear: function (el) {
+      var box = el.closest('.sig-box');
+      var cv = box.querySelector('canvas');
+      cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+      var img = box.querySelector('.sig-img');
+      if (img) img.remove();
+      box.querySelector('input[type=hidden]').value = '';
+      box.classList.remove('has-sig', 'signed');
+    },
     formPhoto: async function (el) {
       var file = el.files && el.files[0];
       if (!file) return;

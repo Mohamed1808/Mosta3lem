@@ -3,10 +3,10 @@
    Each scenario switches users exactly as a tester would with the header switcher. */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
-const files = ['js/core/util.js', 'js/core/i18n.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js',
-  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js',
+const files = ['js/core/util.js', 'js/core/i18n.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js',
+  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/reports.js',
   'js/store/store.js', 'js/store/domain.js', 'js/store/seed.js',
-  'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/index.js'];
+  'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/exports.js', 'js/services/index.js'];
 const mem = {};
 const ctx = { console, Intl, Date, Math, JSON, setTimeout, clearTimeout, Promise };
 ctx.window = ctx; ctx.globalThis = ctx;
@@ -35,7 +35,8 @@ function localIn(h) { const d = new Date(ICM.clock.now() + h * H); return d.getF
 function dateIn(days) { return localIn(days * 24).slice(0, 10); }
 const addr = (gov) => ({ governorate: gov, city: 'Dokki', street: '12 Tahrir St', landmark: 'Near the metro' });
 const invValues = (gov) => ({ fullName: 'Hossam Adel Mahmoud', nationalId: '29003150112345', mobile: '01012345678', inquiryTypes: ['residence'], home: addr(gov), instructions: 'Visit after 5 pm', deadline: localIn(48), internalRef: 'T-1' });
-const goodResidence = { customerFound: 'yes', residenceConfirmed: 'yes', ownership: 'rented', yearsAtAddress: 6, neighbourConfirmation: 'yes', notes: 'Doorman confirmed.' };
+// A complete Residence report (client template) for the case, as an agent would fill it.
+const goodResidence = (caseId) => ICM.wf.reports.sample('residence', ICM.store.db.cases.find((x) => x.id === caseId), ICM.clock.now(), ICM.util.prng(9).next);
 const PHOTO = 'data:image/jpeg;base64,AAAA';
 function score(pid, svc) { return ICM.store.db.scores[pid].byService[svc]; }
 function notifs(userId, key) { return ICM.store.db.notifications.filter((n) => n.userId === userId && n.key === key); }
@@ -73,7 +74,7 @@ async function runInvestigation(caseId, providerId, opts) {
   const ci = await S.cases.checkIn(caseId);
   ok(ci.status === 'in_field' && ci.checkIn.distanceM >= 0, 'agent checks in ' + ci.checkIn.distanceM + ' m from address');
   for (let i = 0; i < 3; i++) await S.cases.addPhoto(caseId, PHOTO);
-  await S.cases.saveReport(caseId, 'residence', goodResidence);
+  await S.cases.saveReport(caseId, 'residence', goodResidence(caseId));
   await S.cases.transition(caseId, 'submit_report');
   ok(true, 'agent submits report with 3 photos');
   return agentUser;
@@ -435,7 +436,7 @@ async function runInvestigation(caseId, providerId, opts) {
     await as('Amr Saeed');
     await S.cases.checkIn(c.id);
     for (let i = 0; i < 3; i++) await S.cases.addPhoto(c.id, PHOTO);
-    await S.cases.saveReport(c.id, 'residence', goodResidence);
+    await S.cases.saveReport(c.id, 'residence', goodResidence(c.id));
     await S.cases.transition(c.id, 'submit_report');
     const ref = (await S.cases.get(c.id)).case.ref;
     const got = (name) => notifs(uid(name), 'notif.report_submitted').some((n) => n.params.ref === ref);
@@ -449,6 +450,69 @@ async function runInvestigation(caseId, providerId, opts) {
     ok((await S.cases.reviewQueue()).some((x) => x.id === c.id), 'Mervat sees it and can review');
     await S.cases.transition(c.id, 'approve');
     ok((await S.cases.get(c.id)).case.status === 'delivered', 'Mervat approves and the report is delivered');
+  });
+
+  // ---------------------------------------------------------------- 12
+  await scenario('12. Residence and Business templates: OCR, report, decision and Excel export', async () => {
+    await as('Tamer Lotfy');
+    const v = Object.assign(invValues('cairo'), {
+      inquiryTypes: ['residence', 'business'], accountNumber: '3118007', telephone: '0233456789',
+      business: { governorate: 'cairo', city: 'Nasr City', street: '4 Abbas El Akkad St', landmark: 'Near the mall' },
+      businessName: 'Delta Print House', businessPhone: '0224445566', orderNumber: 'ORD-55120'
+    });
+    const c = await S.cases.createDraft('investigation', v);
+    await S.cases.sendOffer(c.id, 'prv_sphinx');
+    await as('Hany Wagdy');
+    const off = (await S.offers.inbox('investigation')).find((o) => o.caseIds.includes(c.id));
+    ok(off.cases[0].accountNumber === null && off.cases[0].businessName === null, 'account number and company stay hidden before acceptance');
+    await S.offers.accept(off.id);
+    await as('Salma Reda');
+    await S.cases.assign([c.id], 'ag_mostafa_ali');
+    await as('Mostafa Ali');
+    let fail = null;
+    try { await S.cases.scanDocument(c.id, 'national_id_card'); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.checkInFirst', 'documents can only be scanned after check-in');
+    await S.cases.checkIn(c.id);
+    const idScan = await S.cases.scanDocument(c.id, 'national_id_card');
+    ok(idScan.fields.idName === v.fullName && idScan.fields.idNationalId === v.nationalId, 'ID card OCR reads the customer name and national ID');
+    const crScan = await S.cases.scanDocument(c.id, 'commercial_register_extract');
+    ok(crScan.fields.tradeName === 'Delta Print House' && crScan.fields.commercialRegister, 'commercial register OCR fills the register fields');
+    const home = Object.assign(goodResidence(c.id), idScan.fields, { maritalStatus: 'MARRIED', spouseName: '', title: 'Mr' });
+    await S.cases.saveReport(c.id, 'residence', home);
+    let d = await S.cases.get(c.id);
+    ok(Object.keys(ICM.wf.reports.validate(ICM.config.REPORT_FORMS.residence, d.case.report.residence)).join() === 'spouseName', 'a married customer needs the spouse name');
+    await S.cases.saveReport(c.id, 'residence', Object.assign(home, { spouseName: 'Hala Samir', streetAllowsCars: 'no' }));
+    const biz = Object.assign(ICM.wf.reports.sample('business', ICM.store.db.cases.find((x) => x.id === c.id), ICM.clock.now(), ICM.util.prng(21).next), crScan.fields, { maleWorkers: 9, femaleWorkers: 4, mainCenterOwnership: 'RENTED' });
+    await S.cases.saveReport(c.id, 'business', biz);
+    d = await S.cases.get(c.id);
+    ok(d.case.report.business.numberOfWorkers === 13 && d.case.report.residence.age > 0, 'total workers and age are calculated');
+    for (const slot of ['building', 'entrance', 'door']) await S.cases.addPhoto(c.id, PHOTO, slot);
+    ok((await S.cases.get(c.id)).case.photos.map((p) => p.label).join() === 'building,entrance,door', 'photos are stored against their slots');
+    await S.cases.transition(c.id, 'submit_report');
+    await as('Tamer Lotfy');
+    fail = null;
+    try { await S.cases.setClientDecision(c.id, 'APPROVED'); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.decisionAfterDelivery', 'the bank decides only after delivery');
+    await as('Salma Reda');
+    await S.cases.transition(c.id, 'approve');
+    await as('Tamer Lotfy');
+    await S.cases.setClientDecision(c.id, 'REJECTED', 'Income below policy');
+    ok((await S.cases.get(c.id)).case.clientDecision.value === 'REJECTED', 'bank records its credit decision');
+
+    const sheets = await S.exports.investigations({});
+    const [hs, cs] = sheets;
+    ok(hs.sheet === 'DRIVE_HOME_INVESTIGATION' && cs.sheet === 'DRIVE_CORP_INVESTIGATION' && hs.headers.length === 68 && cs.headers.length === 68, 'export has both template sheets with 68 headers each');
+    const col = (sh, ref, name) => sh.rows.find((r) => r[0] === ref)[sh.headers.indexOf(name)];
+    ok(col(hs, d.case.ref, 'ACCOUNT_NUMBER') === '3118007' && col(hs, d.case.ref, 'NAME') === v.fullName && col(hs, d.case.ref, 'NICK_NAME') === 'Mr', 'request and ID card values land in their columns');
+    ok(col(hs, d.case.ref, 'MARITAL_STATUS') === 'MARRIED' && col(hs, d.case.ref, 'NAME_OF_THE_CLIENT_WIFE') === 'Hala Samir' && col(hs, d.case.ref, 'STREET_ALLOWS_CARS_TO_PASS') === 0, 'answers use the template codes');
+    ok(col(hs, d.case.ref, 'Final Decision Home') === 'REJECTED' && col(hs, d.case.ref, 'STATUS') === 'COMPLETED' && col(hs, d.case.ref, 'IS_FINAL') === 1, 'status and the bank decision are filled');
+    ok(/^\d{4}-\d{2}-\d{2}$/.test(col(hs, d.case.ref, 'VISIT_DATE')) && col(hs, d.case.ref, 'LATITUDE') !== '' && col(hs, d.case.ref, 'LOCATION_ACCURACY') > 0, 'visit date, time and GPS come from the check-in');
+    ok(col(cs, d.case.ref, 'NUMBER_OF_WORKERS') === 13 && col(cs, d.case.ref, 'MAIN_CENTER').indexOf('RENTED') === 0 && col(cs, d.case.ref, 'COMPANY_NAME') === 'Delta Print House', 'business answers and request fields are exported');
+    ok(col(cs, d.case.ref, 'ORDER_NUMBER') === 'ORD-55120' && col(cs, d.case.ref, 'SIGNATURE_OF_THE_WORK_VISI3729') === 'SIGNED' && col(cs, d.case.ref, 'Review Status') === 'APPROVED', 'order number, signature and review status are exported');
+    await as('Hany Wagdy');
+    fail = null;
+    try { await S.exports.investigations({}); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.forbidden', 'providers cannot export the bank\'s results');
   });
 
   // ---------------------------------------------------------------- report

@@ -1,7 +1,7 @@
 /* Build the seed in Node and print a summary: node tests/seed-check.js */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
-const files = ['js/core/util.js','js/core/i18n.js','js/config/platform.js','js/config/geo.js','js/config/services.js','js/config/ratings.js','js/config/status.js','js/config/defaults.js','js/config/forms.js','js/workflow/common.js','js/workflow/validation.js','js/workflow/investigation.js','js/workflow/collection.js','js/workflow/batch.js','js/workflow/sla.js','js/workflow/masking.js','js/workflow/scoring.js','js/workflow/registration.js','js/store/store.js','js/store/domain.js','js/store/seed.js'];
+const files = ['js/core/util.js','js/core/i18n.js','js/config/platform.js','js/config/geo.js','js/config/services.js','js/config/ratings.js','js/config/status.js','js/config/defaults.js','js/config/forms.js','js/config/reportForms.js','js/workflow/common.js','js/workflow/validation.js','js/workflow/investigation.js','js/workflow/collection.js','js/workflow/batch.js','js/workflow/sla.js','js/workflow/masking.js','js/workflow/scoring.js','js/workflow/registration.js','js/workflow/reports.js','js/store/store.js','js/store/domain.js','js/store/seed.js'];
 const ctx = { console, Intl, Date, Math, JSON, setTimeout, clearTimeout };
 ctx.window = ctx; ctx.globalThis = ctx; ctx.localStorage = { getItem: () => null, setItem: () => {} }; ctx.document = { documentElement: {} };
 vm.createContext(ctx);

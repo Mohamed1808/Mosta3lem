@@ -9,7 +9,8 @@
     fullName: 'full_name', nationalId: 'national_id', mobile: 'mobile', mobiles: 'mobile', inquiryTypes: 'inquiry_types',
     employerName: 'employer_name', businessName: 'business_name', guarantorName: 'guarantor_name', guarantorMobile: 'guarantor_mobile',
     contractNumber: 'contract_number', productType: 'product_type', originalAmount: 'original_amount', overdueAmount: 'overdue_amount',
-    instalmentAmount: 'instalment_amount', dpd: 'days_past_due'
+    instalmentAmount: 'instalment_amount', dpd: 'days_past_due', accountNumber: 'account_number', telephone: 'telephone',
+    businessPhone: 'business_phone', orderNumber: 'order_number'
   };
 
   function norm(s) { return String(s == null ? '' : s).trim(); }
@@ -43,7 +44,9 @@
         fullName: norm(raw.full_name), nationalId: norm(raw.national_id), mobile: norm(raw.mobile).replace(/\s+/g, ''),
         inquiryTypes: types, employerName: norm(raw.employer_name), businessName: norm(raw.business_name),
         guarantorName: norm(raw.guarantor_name), guarantorMobile: norm(raw.guarantor_mobile), instructions: norm(raw.instructions),
-        internalRef: norm(raw.internal_ref), deadline: U.toLocalInput(now + hours * U.HOUR)
+        internalRef: norm(raw.internal_ref), deadline: U.toLocalInput(now + hours * U.HOUR),
+        accountNumber: norm(raw.account_number), telephone: norm(raw.telephone).replace(/\s+/g, ''),
+        businessPhone: norm(raw.business_phone).replace(/\s+/g, ''), orderNumber: norm(raw.order_number)
       };
       if (types.indexOf('employment') >= 0 && types.indexOf('residence') < 0 && types.indexOf('guarantor') < 0) v.work = address;
       else if (types.indexOf('business') >= 0 && types.indexOf('residence') < 0 && types.indexOf('guarantor') < 0) v.business = address;
@@ -169,7 +172,7 @@
           if (i === 11) mob = '0123';            // invalid phone
           if (i === 19) g = ['Atlantis', '01'];  // unknown governorate
           if (service === 'investigation') {
-            aoa.push([name, nid, mob, 'residence', g[0], R.pick(['Dokki', 'Maadi', 'Smouha', 'Haram']), R.int(2, 99) + ' Tahrir St', 'Near the pharmacy', '', '', '', '', '', 'BULK-' + (1000 + i)]);
+            aoa.push([name, nid, mob, 'residence', g[0], R.pick(['Dokki', 'Maadi', 'Smouha', 'Haram']), R.int(2, 99) + ' Tahrir St', 'Near the pharmacy', '', '', '', '', '', 'BULK-' + (1000 + i), String(3100000 + i * 37)]);
           } else {
             var original = R.int(40, 400) * 1000, overdue = Math.round(original * 0.15);
             aoa.push([name, nid, mob, '', g[0], R.pick(['Dokki', 'Maadi', 'Smouha']), R.int(2, 99) + ' Tahrir St', 'Near the pharmacy', 'CN-2025-' + R.int(10000, 99999), 'consumer_finance', original, overdue, Math.round(original / 36), R.int(31, 89), '', 'BULK-' + (2000 + i)]);
@@ -350,12 +353,12 @@
               var agB = D.actorOf(D.agentUser(db, c.agentId));
               if (c.status === 'returned_to_agent') c = E.transition(c, 'resume', {}, agB, { silent: true });
               var photos = [];
-              for (var i = 0; i < D.minPhotos(db, c); i++) photos.push({ id: U.uid('ph'), at: now, lat: c.checkIn.lat, lng: c.checkIn.lng, placeholder: true, label: 'building' });
+              var slots = wf.reports.photoSlots(c.inquiryTypes);
+              for (var i = 0; i < D.minPhotos(db, c); i++) photos.push({ id: U.uid('ph'), at: now, lat: c.checkIn.lat, lng: c.checkIn.lng, placeholder: true, label: slots[i % slots.length] || 'building' });
               var report = {};
               c.inquiryTypes.forEach(function (t) {
-                report[t] = { residence: { customerFound: 'yes', residenceConfirmed: 'yes', ownership: 'rented', yearsAtAddress: 4, neighbourConfirmation: 'yes', notes: 'Simulated visit.' },
+                report[t] = wf.reports.sample(t, c, now) || {
                   employment: { employerConfirmed: 'yes', jobTitle: 'Accountant', tenureYears: 3, hrContact: 'HR office', salaryConfirmed: 'yes' },
-                  business: { businessExists: 'yes', activityMatches: 'yes', estimatedSize: 'small', employees: 4 },
                   guarantor: { guarantorFound: 'yes', willingToGuarantee: 'yes', relationship: 'family' } }[t];
               });
               c = E.replaceCase(Object.assign({}, c, { photos: (c.photos || []).length >= photos.length ? c.photos : photos, report: report }));

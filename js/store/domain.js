@@ -88,7 +88,8 @@
     var dLat = (meters * Math.cos(angle)) / 111320;
     var dLng = (meters * Math.sin(angle)) / (111320 * Math.cos(geo.lat * Math.PI / 180));
     var lat = U.round(geo.lat + dLat, 6), lng = U.round(geo.lng + dLng, 6);
-    return { at: now, lat: lat, lng: lng, distanceM: U.distanceM(geo.lat, geo.lng, lat, lng) };
+    // GPS accuracy radius in metres; simulated from the same draw so the sequence is unchanged.
+    return { at: now, lat: lat, lng: lng, distanceM: U.distanceM(geo.lat, geo.lng, lat, lng), accuracyM: Math.round(4 + (meters * 7) % 16) };
   };
 
   domain.providerUsers = function (db, providerId, roles) {

@@ -105,6 +105,10 @@
       out.instructions = v.instructions || '';
       out.deadline = U.fromLocalInput(v.deadline);
       out.internalRef = v.internalRef || null;
+      out.accountNumber = v.accountNumber ? String(v.accountNumber).trim() : null;
+      out.customer.telephone = v.telephone ? String(v.telephone).replace(/[\s\-]/g, '') : null;
+      out.orderNumber = out.inquiryTypes.indexOf('business') >= 0 && v.orderNumber ? String(v.orderNumber).trim() : null;
+      out.businessPhone = out.inquiryTypes.indexOf('business') >= 0 && v.businessPhone ? String(v.businessPhone).replace(/[\s\-]/g, '') : null;
       out.governorate = (out.addresses.home || out.addresses.work || out.addresses.business || {}).governorate;
     } else {
       out.customer = { name: String(v.fullName).trim(), nationalId: String(v.nationalId).trim(), mobiles: U.asArray(v.mobiles).map(function (m) { return String(m).trim(); }).filter(Boolean) };
@@ -474,13 +478,13 @@
         return E.transition(c, 'check_in', { checkIn: D.simulateCheckIn(c, E.now()) }, a);
       });
     },
-    addPhoto: function (id, dataUrl) {
+    addPhoto: function (id, dataUrl, label) {
       return E.mutate(function () {
         var c = E.mustCase(id), a = E.actor();
         forAgent(c, a);
         if (c.status !== 'in_field') throw new Err('errors.checkInFirst');
         var near = D.simulateCheckIn(c, E.now());
-        var photo = { id: U.uid('ph'), at: E.now(), lat: near.lat, lng: near.lng, dataUrl: dataUrl };
+        var photo = { id: U.uid('ph'), at: E.now(), lat: near.lat, lng: near.lng, dataUrl: dataUrl, label: label || null };
         var next = Object.assign({}, c, { photos: (c.photos || []).concat([photo]), updatedAt: E.now() });
         E.replaceCase(next);
         E.audit('case.photo_added', 'case', c.id, c.ref, null, { photos: next.photos.length }, null, a);
@@ -503,17 +507,34 @@
         forAgent(c, a);
         if (c.status !== 'in_field') throw new Err('errors.checkInFirst');
         if ((c.inquiryTypes || []).indexOf(type) < 0) throw new Err('errors.notFound');
-        var form = C.REPORT_FORMS[type];
-        var clean = {};
-        form.fields.forEach(function (f) {
-          var v = values[f.name];
-          if (v === undefined || v === '') return;
-          clean[f.name] = f.type === 'number' ? +v : v;
-        });
         var report = Object.assign({}, c.report || {});
-        report[type] = clean;
+        report[type] = wf.reports.clean(C.REPORT_FORMS[type], values, { now: E.now() });
         var next = Object.assign({}, c, { report: report, updatedAt: E.now() });
         E.replaceCase(next);
+        return next;
+      });
+    },
+    /** Read a document photo (OCR). Simulated here; a real backend calls an OCR service. */
+    scanDocument: function (id, doc) {
+      return E.run(function () {
+        var c = E.mustCase(id), a = E.actor();
+        forAgent(c, a);
+        if (c.status !== 'in_field') throw new Err('errors.checkInFirst');
+        if (!C.OCR_DOCS[doc]) throw new Err('errors.notFound');
+        return { doc: doc, at: E.now(), fields: wf.reports.simulateOcr(doc, c, E.now()) };
+      });
+    },
+    /** The bank's own credit decision after reading the report. */
+    setClientDecision: function (id, decision, note) {
+      return E.mutate(function () {
+        var c = E.mustCase(id), a = E.actor();
+        if (!wf.isEntityRole(a.role) || a.entityId !== c.entityId || !wf.entityServes(a.role, c.service)) throw new Err('errors.forbidden');
+        if (c.service !== 'investigation' || ['delivered', 'accepted_by_entity', 'closed'].indexOf(c.status) < 0) throw new Err('errors.decisionAfterDelivery');
+        if (C.CLIENT_DECISIONS.indexOf(decision) < 0) throw new Err('errors.required');
+        var before = c.clientDecision ? c.clientDecision.value : null;
+        var next = Object.assign({}, c, { clientDecision: { value: decision, note: note || '', at: E.now(), by: a.userId, byName: a.name }, updatedAt: E.now() });
+        E.replaceCase(next);
+        E.audit('case.client_decision', 'case', c.id, c.ref, { decision: before }, { decision: decision }, note || null, a);
         return next;
       });
     },

@@ -2,7 +2,7 @@
    ICM.ui.forms, so fields can be changed here without touching any page.
 
    Field types: text, textarea, number, select, checkboxes, yesno, checkbox, date, datetime,
-   phone, nationalId, phones (a list of mobiles), address (governorate/city/street/landmark),
+   phone, anyPhone (mobile, landline or hotline), nationalId, phones (a list of mobiles), address (governorate/city/street/landmark),
    governorate, photo.
    Options: `options` (array of ids, label key `${labelBase}.${id}`) or `list` (name of a runtime
    config list: governorates, inquiryTypes, productTypes, actionTypes, declineReasons).
@@ -26,7 +26,9 @@
       { id: 'customer', fields: [
         { name: 'fullName', type: 'text', required: true },
         { name: 'nationalId', type: 'nationalId', required: true },
-        { name: 'mobile', type: 'phone', required: true }
+        { name: 'mobile', type: 'phone', required: true },
+        { name: 'telephone', type: 'anyPhone' },
+        { name: 'accountNumber', type: 'text' }
       ] },
       { id: 'inquiry', fields: [
         { name: 'inquiryTypes', type: 'checkboxes', list: 'inquiryTypes', required: true, full: true }
@@ -39,6 +41,8 @@
       { id: 'details', fields: [
         { name: 'employerName', type: 'text', showIf: function (v) { return has(v, 'employment'); }, requiredIf: function (v) { return has(v, 'employment'); } },
         { name: 'businessName', type: 'text', showIf: function (v) { return has(v, 'business'); }, requiredIf: function (v) { return has(v, 'business'); } },
+        { name: 'businessPhone', type: 'anyPhone', showIf: function (v) { return has(v, 'business'); } },
+        { name: 'orderNumber', type: 'text', showIf: function (v) { return has(v, 'business'); } },
         { name: 'guarantorName', type: 'text', showIf: function (v) { return has(v, 'guarantor'); }, requiredIf: function (v) { return has(v, 'guarantor'); } },
         { name: 'guarantorNationalId', type: 'nationalId', showIf: function (v) { return has(v, 'guarantor'); } },
         { name: 'guarantorMobile', type: 'phone', showIf: function (v) { return has(v, 'guarantor'); }, requiredIf: function (v) { return has(v, 'guarantor'); } },
@@ -98,28 +102,14 @@
   };
 
   // ---------------- Agent report forms (one per inquiry type) ----------------
+  // Residence and Business are defined in js/config/reportForms.js (client templates).
   ICM.config.REPORT_FORMS = {
-    residence: { id: 'report_residence', fields: [
-      { name: 'customerFound', type: 'yesno', required: true },
-      { name: 'residenceConfirmed', type: 'yesno', required: true },
-      { name: 'ownership', type: 'select', options: ['owned', 'rented', 'family'], labelBase: 'forms.report_residence.ownershipOpt', required: true },
-      { name: 'yearsAtAddress', type: 'number', min: 0, max: 80, required: true },
-      { name: 'neighbourConfirmation', type: 'yesno', required: true },
-      { name: 'notes', type: 'textarea', full: true }
-    ] },
     employment: { id: 'report_employment', fields: [
       { name: 'employerConfirmed', type: 'yesno', required: true },
       { name: 'jobTitle', type: 'text', required: true },
       { name: 'tenureYears', type: 'number', min: 0, max: 60, required: true },
       { name: 'hrContact', type: 'text' },
       { name: 'salaryConfirmed', type: 'yesno', required: true },
-      { name: 'notes', type: 'textarea', full: true }
-    ] },
-    business: { id: 'report_business', fields: [
-      { name: 'businessExists', type: 'yesno', required: true },
-      { name: 'activityMatches', type: 'yesno', required: true },
-      { name: 'estimatedSize', type: 'select', options: ['micro', 'small', 'medium', 'large'], labelBase: 'forms.report_business.sizeOpt', required: true },
-      { name: 'employees', type: 'number', min: 0 },
       { name: 'notes', type: 'textarea', full: true }
     ] },
     guarantor: { id: 'report_guarantor', fields: [
@@ -162,8 +152,8 @@
   // ---------------- Bulk upload templates ----------------
   ICM.config.BULK_TEMPLATES = {
     investigation: {
-      columns: ['full_name', 'national_id', 'mobile', 'inquiry_types', 'governorate', 'city', 'street', 'landmark', 'employer_name', 'business_name', 'guarantor_name', 'guarantor_mobile', 'instructions', 'internal_ref'],
-      example: ['Ahmed Mohamed Ali', '29001010112345', '01001234567', 'residence', 'Giza', 'Dokki', '12 Tahrir St', 'Near the metro', '', '', '', '', 'Visit after 5pm', 'REF-1001']
+      columns: ['full_name', 'national_id', 'mobile', 'inquiry_types', 'governorate', 'city', 'street', 'landmark', 'employer_name', 'business_name', 'guarantor_name', 'guarantor_mobile', 'instructions', 'internal_ref', 'account_number', 'telephone', 'business_phone', 'order_number'],
+      example: ['Ahmed Mohamed Ali', '29001010112345', '01001234567', 'residence', 'Giza', 'Dokki', '12 Tahrir St', 'Near the metro', '', '', '', '', 'Visit after 5pm', 'REF-1001', '3118007', '0233456789', '', '']
     },
     collection: {
       columns: ['full_name', 'national_id', 'mobile', 'mobile_2', 'governorate', 'city', 'street', 'landmark', 'contract_number', 'product_type', 'original_amount', 'overdue_amount', 'instalment_amount', 'days_past_due', 'collateral', 'internal_ref'],

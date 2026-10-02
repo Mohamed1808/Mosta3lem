@@ -36,10 +36,12 @@
       transition: '(caseId, action, payload) -> Case',
       assign: '(caseIds[], agentId) -> Case[]',
       checkIn: '(caseId) -> Case',
-      addPhoto: '(caseId, dataUrl) -> Case',
+      addPhoto: '(caseId, dataUrl, slotLabel?) -> Case',
       removePhoto: '(caseId, photoId) -> Case',
       saveReport: '(caseId, inquiryType, values) -> Case',
       simulateFieldVisit: '(caseId) -> CheckIn',
+      scanDocument: '(caseId, docType) -> { doc, at, fields }   (OCR of a document photo; simulated in the mock)',
+      setClientDecision: '(caseId, APPROVED|REJECTED|PENDING, note?) -> Case   (entity, after delivery)',
       logAction: '(caseId, values) -> Case',
       addPromise: '(caseId, values) -> Case',
       addPayment: '(caseId, values) -> Case',
@@ -73,6 +75,9 @@
       setCheck: '(providerId, field, value) -> Provider',
       enforce: '(providerId, level, reason) -> Provider',
       setAutomatic: '(providerId) -> Provider'
+    },
+    exports: {
+      investigations: '(filters) -> [{ type, sheet, headers, rows }]   (entity or admin; client template layout)'
     },
     registration: {
       submit: '(values) -> { ref, providerId, userId }   (public self sign-up; signs the owner in)',

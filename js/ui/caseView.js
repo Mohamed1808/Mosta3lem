@@ -5,12 +5,30 @@
   var h = ICM.h, t = ICM.t, U = ICM.util, icon = ICM.icon, C = ICM.config;
   var ui = ICM.ui;
 
+  function optLabel(form, f, v) { return t((f.labelBase || ('forms.' + form.id + '.' + f.name + 'Opt')) + '.' + v); }
+
   function answer(form, f, v) {
     if (v == null || v === '') return '-';
-    if (f.type === 'yesno') return t('common.' + v);
-    if (f.type === 'select') return t((f.labelBase || ('forms.' + form.id + '.' + f.name + 'Opt')) + '.' + v);
-    if (f.type === 'number' && !isNaN(+v)) return U.num(+v);
-    return String(v);
+    switch (f.type) {
+      case 'yesno': return t('common.' + v);
+      case 'select': return optLabel(form, f, v);
+      case 'number': case 'computed': return isNaN(+v) ? String(v) : U.num(+v);
+      case 'date': return U.fmtDate(new Date(v).getTime());
+      case 'ocrDoc': case 'signature': case 'photo': return h`<img class="report-img ${f.type}" src="${v}" alt="${t('forms.' + form.id + '.' + f.name)}">`;
+      case 'license':
+        return v.has === 'yes' ? h`<bdi dir="ltr">${v.number || '-'}</bdi>${v.photo ? h`<div><img class="report-img" src="${v.photo}" alt=""></div>` : ''}` : t('common.no');
+      case 'repeat':
+        return h`<div class="stack tight">${v.map(function (row) {
+          return h`<div>${f.fields.map(function (sf) { return row[sf.name] ? (sf.type === 'select' ? optLabel(form, sf, row[sf.name]) : row[sf.name]) : null; }).filter(Boolean).join(' · ')}</div>`;
+        })}</div>`;
+      default: return String(v);
+    }
+  }
+
+  function answerRows(form, fields, vals) {
+    return fields.filter(function (f) { return ICM.wf.isVisible(f, vals) && f.type !== 'ocrDoc'; }).map(function (f) {
+      return h`<dt>${t('forms.' + form.id + '.' + f.name)}</dt><dd>${answer(form, f, vals[f.name])}</dd>`;
+    });
   }
 
   ui.reportView = function (c) {
@@ -18,10 +36,26 @@
     if (!types.some(function (tp) { return c.report && c.report[tp]; })) return ui.empty(t('evidence.noReport'), null, 'clipboard');
     return h`<div class="stack">${types.map(function (tp) {
       var form = C.REPORT_FORMS[tp], vals = (c.report || {})[tp] || {};
-      return h`<div><h3 class="mb-8">${ui.L('inquiryTypes', tp)}</h3><dl class="dl">${form.fields.map(function (f) {
-        return h`<dt>${t('forms.' + form.id + '.' + f.name)}</dt><dd>${answer(form, f, vals[f.name])}</dd>`;
-      })}</dl></div>`;
+      if (!form.sections) return h`<div><h3 class="mb-8">${ui.L('inquiryTypes', tp)}</h3><dl class="dl">${answerRows(form, form.fields, vals)}</dl></div>`;
+      var docs = ICM.wf.formFields(form).filter(function (f) { return f.type === 'ocrDoc' && vals[f.name]; });
+      return h`<div><h3 class="mb-8">${ui.L('inquiryTypes', tp)}</h3>
+        ${docs.length ? h`<div class="doc-strip mb-8">${docs.map(function (f) { return h`<figure><img class="report-img ocrDoc" src="${vals[f.name]}" alt=""><figcaption class="xs faint">${t('ocr.doc.' + f.doc)}</figcaption></figure>`; })}</div>` : ''}
+        ${form.sections.map(function (sec) {
+          var rows = answerRows(form, sec.fields, vals);
+          return rows.length ? h`<div class="report-sec"><h4>${t('forms.' + form.id + '.sections.' + sec.id)}</h4><dl class="dl">${rows}</dl></div>` : '';
+        })}</div>`;
     })}</div>`;
+  };
+
+  /** Download Residence and Business investigations as the client's Excel template. */
+  ui.exportInvestigations = async function (filters) {
+    if (!window.XLSX) throw new ICM.engine.ServiceError('errors.xlsxMissing');
+    var sheets = await ICM.services.exports.investigations(filters);
+    var wb = window.XLSX.utils.book_new();
+    sheets.forEach(function (sh) { window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet([sh.headers].concat(sh.rows)), sh.sheet); });
+    var d = new Date(ICM.clock.now());
+    window.XLSX.writeFile(wb, 'investigations-' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '.xlsx');
+    ui.toast(t('export.done', { home: sheets[0].rows.length, corp: sheets[1].rows.length }), 'success');
   };
 
   ui.checkInView = function (ci) {
@@ -38,10 +72,17 @@
       [t('case.nationalId'), cu.nationalId ? h`<span class="mono">${cu.nationalId}</span>` : ui.masked(null)],
       [t('case.mobiles'), cu.mobiles && cu.mobiles.length ? h`<span class="mono" dir="ltr">${cu.mobiles.join(', ')}</span>` : ui.masked(null)]
     ];
+    if (cu.telephone) rows.push([t('forms.investigationRequest.telephone'), h`<span class="mono" dir="ltr">${cu.telephone}</span>`]);
+    if (c.accountNumber !== undefined && c.service === 'investigation') rows.push([t('forms.investigationRequest.accountNumber'), c.accountNumber ? h`<span class="mono">${c.accountNumber}</span>` : (c.masked ? ui.masked(null) : '-')]);
     if (c.service === 'investigation') {
       rows.push([t('case.inquiryTypes'), ui.types(c.inquiryTypes)]);
       if (c.employerName !== undefined && (c.inquiryTypes || []).indexOf('employment') >= 0) rows.push([t('forms.investigationRequest.employerName'), ui.masked(c.employerName)]);
-      if ((c.inquiryTypes || []).indexOf('business') >= 0) rows.push([t('forms.investigationRequest.businessName'), ui.masked(c.businessName)]);
+      if ((c.inquiryTypes || []).indexOf('business') >= 0) {
+        rows.push([t('forms.investigationRequest.businessName'), ui.masked(c.businessName)]);
+        if (c.businessPhone) rows.push([t('forms.investigationRequest.businessPhone'), h`<span class="mono" dir="ltr">${c.businessPhone}</span>`]);
+        if (c.orderNumber) rows.push([t('forms.investigationRequest.orderNumber'), h`<span class="mono">${c.orderNumber}</span>`]);
+      }
+      if (c.clientDecision) rows.push([t('decision.title'), h`${ui.badge(t('decision.' + c.clientDecision.value), c.clientDecision.value === 'APPROVED' ? 'success' : c.clientDecision.value === 'REJECTED' ? 'danger' : 'pending')}${c.clientDecision.note ? h`<div class="faint small">${c.clientDecision.note}</div>` : ''}`]);
       if ((c.inquiryTypes || []).indexOf('guarantor') >= 0) rows.push([t('case.guarantor'), c.guarantor ? h`${c.guarantor.name}<div class="faint small mono" dir="ltr">${c.guarantor.mobile || ''}</div>${c.guarantor.relationship ? h`<div class="faint small">${c.guarantor.relationship}</div>` : ''}` : ui.masked(null)]);
       rows.push([t('case.deadline'), U.fmtDateTime(c.deadline || c.dueAt)]);
     } else {

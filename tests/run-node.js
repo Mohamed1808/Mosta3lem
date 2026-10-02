@@ -8,10 +8,10 @@ const root = path.join(__dirname, '..');
 const files = [
   'js/core/util.js', 'js/core/i18n.js',
   'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js',
-  'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js',
+  'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js',
   'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js',
   'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js',
-  'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js',
+  'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/reports.js',
   'tests/runner.js', 'tests/workflow.test.js'
 ].concat(process.argv.slice(2));
 

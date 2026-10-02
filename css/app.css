@@ -543,3 +543,50 @@ html[dir="rtl"] .tree-row { padding: 4px 14px 4px 0; }
   .org-arrow { display: none; }
   .org-node { flex: 1; }
 }
+
+/* ---------- investigation report templates ---------- */
+.ocr-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 10px 12px; background: var(--surface-2); }
+.ocr-box.invalid { border-color: var(--bad); }
+.ocr-box .grow { flex: 1; min-width: 150px; }
+.ocr-box label.btn { cursor: pointer; }
+.ocr-thumb { width: 72px; height: 48px; object-fit: cover; border-radius: 3px; border: 1px solid var(--border); }
+.ocr-icon { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+.ocr-tag, .calc-tag { display: inline-flex; align-items: center; gap: 3px; margin-inline-start: 6px; padding: 0 5px; border-radius: 3px; font-size: 10.5px; font-weight: 500; line-height: 16px; vertical-align: 1px; }
+.ocr-tag { background: var(--pend-bg); color: var(--pend); }
+.ocr-tag .icon { width: 11px; height: 11px; }
+.calc-tag { background: var(--surface-3); color: var(--text-2); }
+.field.ocr-filled .input, .field.ocr-filled .select { border-color: var(--pend); background: #f1f9fb; }
+.input.computed { background: var(--surface-2); color: var(--text-2); }
+
+.sig-box { position: relative; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+.sig-box.invalid { border-color: var(--bad); }
+.sig-pad { display: block; width: 100%; height: 150px; touch-action: none; cursor: crosshair; }
+.sig-img { position: absolute; inset: 0 0 auto 0; height: 150px; width: 100%; object-fit: contain; pointer-events: none; background: var(--surface); }
+.sig-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-top: 1px dashed var(--border); }
+
+.license-box .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.repeat { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.repeat-row { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; background: var(--surface-2); }
+
+.slots { display: flex; flex-direction: column; gap: 6px; }
+.slot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); cursor: pointer; font-size: 13.5px; }
+.slot .icon { width: 18px; height: 18px; color: var(--accent); }
+.slot.done { border-color: #b6dcc5; background: var(--ok-bg); }
+.slot.done .icon { color: var(--ok); }
+
+.report-img { max-height: 70px; max-width: 160px; border-radius: 3px; border: 1px solid var(--border); background: #fff; }
+.report-img.signature { max-height: 56px; }
+.doc-strip { display: flex; gap: 12px; flex-wrap: wrap; }
+.doc-strip figure { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.report-sec { padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
+.report-sec h4 { font-size: 12.5px; font-weight: 600; color: var(--text-2); margin: 0 0 8px; }
+
+.decision-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; background: var(--surface-2); }
+.decision-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.decision-btns .btn.on { font-weight: 600; }
+.decision-btns .btn.on.d-approved { background: var(--ok-bg); border-color: #b6dcc5; color: var(--ok); }
+.decision-btns .btn.on.d-rejected { background: var(--bad-bg); border-color: #efc2bd; color: var(--bad); }
+.decision-btns .btn.on.d-pending { background: var(--pend-bg); border-color: #b5dde6; color: var(--pend); }
+@media (max-width: 720px) {
+  .license-box .form-grid { grid-template-columns: minmax(0, 1fr); }
+}

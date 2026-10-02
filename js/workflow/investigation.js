@@ -39,8 +39,7 @@
     return (c.inquiryTypes || []).every(function (type) {
       var form = forms[type];
       if (!form) return true;
-      var values = (c.report || {})[type] || {};
-      return Object.keys(wf.validateFields(form.fields, values)).length === 0;
+      return Object.keys(wf.reports.validate(form, (c.report || {})[type] || {})).length === 0;
     });
   }
 

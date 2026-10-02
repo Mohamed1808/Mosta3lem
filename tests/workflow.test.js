@@ -4,8 +4,9 @@
   var ICM = root.ICM, wf = ICM.wf;
   var H = 60 * 60 * 1000, D = 24 * H;
 
+  var testCustomer = { customer: { name: 'Test Name', nationalId: '29001010112345' }, governorate: 'giza' };
   var goodReport = {
-    residence: { customerFound: 'yes', residenceConfirmed: 'yes', ownership: 'owned', yearsAtAddress: 5, neighbourConfirmation: 'yes' }
+    residence: wf.reports.sample('residence', testCustomer, Date.UTC(2026, 8, 30), ICM.util.prng(11).next)
   };
 
   function makeCase(service, status, extra) {
@@ -519,6 +520,112 @@
     });
     it('keeps the supervisor national ID optional', function () {
       expect(Object.keys(wf.validateTeamMember('provider_supervisor', { name: 'Salma Reda', phone: '01233334444', services: ['investigation'] }, opts)).length).toBe(0);
+    });
+  });
+
+  describe('investigation report templates', function () {
+    var C = ICM.config, R = wf.reports;
+    var NOW = new Date('2026-10-02T12:00:00').getTime();
+    var RES = C.REPORT_FORMS.residence, BUS = C.REPORT_FORMS.business;
+    var caseLike = { customer: { name: 'Hossam Adel Mahmoud', nationalId: '29003150112345' }, governorate: 'cairo', businessName: 'Delta Print House' };
+    var res = function (over) { return Object.assign({}, R.sample('residence', caseLike, NOW, ICM.util.prng(3).next), over || {}); };
+    var bus = function (over) { return Object.assign({}, R.sample('business', caseLike, NOW, ICM.util.prng(4).next), over || {}); };
+    var errs = function (def, v) { return R.validate(def, v, { now: NOW }); };
+    var cols = function (def) {
+      var out = [];
+      R.fields(def).forEach(function (f) { if (f.col) out.push(f.col); (f.fields || []).forEach(function (sf) { if (sf.col) out.push(sf.col); }); });
+      return out;
+    };
+
+    it('maps every report field to a header of the client template', function () {
+      ['residence', 'business'].forEach(function (tp) {
+        var headers = C.EXPORT_SHEETS[tp].headers;
+        expect(cols(C.REPORT_FORMS[tp]).every(function (c) { return headers.indexOf(c) >= 0; })).toBe(true);
+      });
+      expect(C.EXPORT_SHEETS.residence.headers.length).toBe(68);
+      expect(C.EXPORT_SHEETS.business.headers.length).toBe(68);
+    });
+    it('accepts complete demo reports', function () {
+      expect(Object.keys(errs(RES, res())).length).toBe(0);
+      expect(Object.keys(errs(BUS, bus())).length).toBe(0);
+    });
+    it('needs the ID card scan and the commercial register and tax card scans', function () {
+      expect(errs(RES, res({ idCardScan: '' })).idCardScan).toBe('errors.required');
+      expect(errs(BUS, bus({ crScan: '' })).crScan).toBe('errors.required');
+      expect(errs(BUS, bus({ taxScan: '' })).taxScan).toBe('errors.required');
+    });
+    it('asks for the spouse only when married', function () {
+      expect(errs(RES, res({ maritalStatus: 'MARRIED', spouseName: '' })).spouseName).toBe('errors.required');
+      expect(errs(RES, res({ maritalStatus: 'SINGLE', spouseName: '' })).spouseName).toBe(undefined);
+    });
+    it('needs a rejection reason only when the recommendation is rejected', function () {
+      expect(errs(RES, res({ recommendation: 'REJECTED', rejectionReason: '' })).rejectionReason).toBe('errors.required');
+      expect(errs(RES, res({ recommendation: 'APPROVED', rejectionReason: '' })).rejectionReason).toBe(undefined);
+    });
+    it('asks for the relationship when someone was met', function () {
+      expect(errs(RES, res({ intervieweeName: 'Said', intervieweeRelation: '' })).intervieweeRelation).toBe('errors.required');
+      expect(errs(RES, res({ onBehalfOf: 'Mona', onBehalfRelation: '' })).onBehalfRelation).toBe('errors.required');
+    });
+    it('calculates the age from the national ID', function () {
+      expect(R.compute(RES, { idNationalId: '29003150112345' }, { now: NOW }).age).toBe(36);
+      expect(R.compute(RES, { idNationalId: '' }, { now: NOW }).age).toBe(undefined);
+    });
+    it('totals male and female workers', function () {
+      expect(R.compute(BUS, { maleWorkers: 7, femaleWorkers: '3' }).numberOfWorkers).toBe(10);
+      expect(R.compute(BUS, { maleWorkers: 7 }).numberOfWorkers).toBe(undefined);
+    });
+    it('needs a yes or no for each licence, and the number when it exists', function () {
+      expect(errs(BUS, bus({ importCard: undefined })).importCard).toBe('errors.required');
+      expect(errs(BUS, bus({ importCard: { has: 'yes', number: '' } })).importCard).toBe('errors.licenseNumberRequired');
+      expect(errs(BUS, bus({ importCard: { has: 'no' } })).importCard).toBe(undefined);
+    });
+    it('validates each reference row', function () {
+      var e = errs(RES, res({ references: [{ name: '', relation: 'BROTHER', mobile: '0123' }] }));
+      expect(e['references.0.name']).toBe('errors.required');
+      expect(e['references.0.mobile']).toBe('errors.mobileFormat');
+      expect(errs(RES, res({ references: [{}, {}, {}, {}, {}, {}] })).references).toBe('errors.max');
+    });
+    it('drops hidden answers and empty reference rows when saving', function () {
+      var c = R.clean(RES, res({ maritalStatus: 'SINGLE', spouseName: 'Old value', references: [{ name: 'Ali', relation: 'FRIEND' }, { name: '', mobile: '' }] }), { now: NOW });
+      expect(c.spouseName).toBe(undefined);
+      expect(c.references.length).toBe(1);
+      expect(typeof c.yearsOfResidence).toBe('number');
+    });
+    it('main centre, stores and branches need their addresses when present', function () {
+      expect(errs(BUS, bus({ storesCount: 2, storesAddresses: '' })).storesAddresses).toBe('errors.required');
+      expect(errs(BUS, bus({ storesCount: 0, storesAddresses: '' })).storesAddresses).toBe(undefined);
+      expect(errs(BUS, bus({ visitorSignature: '' })).visitorSignature).toBe('errors.required');
+    });
+    it('reads the customer from the ID card (simulated OCR)', function () {
+      var o = R.simulateOcr('national_id_card', caseLike, NOW, ICM.util.prng(5).next);
+      expect(o.idName).toBe('Hossam Adel Mahmoud');
+      expect(o.idNationalId).toBe('29003150112345');
+      expect(/^\d{4}-\d{2}-\d{2}$/.test(o.idIssueDate)).toBe(true);
+    });
+    it('reads a consistent commercial register and tax card (simulated OCR)', function () {
+      var cr = R.simulateOcr('commercial_register_extract', caseLike, NOW, ICM.util.prng(6).next);
+      var opts = R.fields(BUS).filter(function (f) { return f.name === 'legalForm'; })[0].options;
+      expect(opts.indexOf(cr.legalForm) >= 0).toBe(true);
+      expect(new Date(cr.crExpiryDate).getFullYear() - new Date(cr.lastRenewalDate).getFullYear()).toBe(5);
+      expect(cr.paidUpCapital <= cr.issuedCapital && cr.issuedCapital <= cr.authorizedCapital).toBe(true);
+      expect(cr.tradeName).toBe('Delta Print House');
+      expect(Object.keys(cr).sort().join()).toBe(C.OCR_DOCS.commercial_register_extract.fills.slice().sort().join());
+      expect(/^\d{3}-\d{3}-\d{3}$/.test(R.simulateOcr('tax_card', caseLike, NOW).taxCardNumber)).toBe(true);
+    });
+    it('reads gender from the national ID and matches the demo title to it', function () {
+      expect(R.isMale('29003150112355')).toBe(true);
+      expect(R.isMale('29003150112365')).toBe(false);
+      expect(R.isMale('123')).toBe(null);
+      var woman = R.sample('residence', { customer: { name: 'Mona Adel Farouk', nationalId: '29510100112348' } }, NOW, ICM.util.prng(8).next);
+      expect(woman.title === 'Mrs' || woman.title === 'Miss').toBe(true);
+    });
+    it('lists photo slots across inquiry types without repeats', function () {
+      expect(R.photoSlots(['residence', 'business']).join()).toBe('building,entrance,door,signboard,premises');
+    });
+    it('accepts a landline, mobile or hotline as the customer telephone', function () {
+      var f = [{ name: 'telephone', type: 'anyPhone' }];
+      expect(wf.validateFields(f, { telephone: '0233456789' }).telephone).toBe(undefined);
+      expect(wf.validateFields(f, { telephone: '123' }).telephone).toBe('errors.phoneFormat');
     });
   });
 })();

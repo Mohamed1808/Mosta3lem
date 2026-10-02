@@ -24,7 +24,7 @@ for (const file of walk(path.join(root, 'js'))) {
 const ctx = { console, Intl, Date, Math, JSON };
 ctx.window = ctx; ctx.globalThis = ctx; ctx.localStorage = { getItem: () => null, setItem: () => {} }; ctx.document = { documentElement: {} };
 vm.createContext(ctx);
-['js/core/util.js', 'js/core/i18n.js', 'js/i18n/en.js', 'js/i18n/ar.js', 'js/i18n/registration.en.js', 'js/i18n/registration.ar.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js']
+['js/core/util.js', 'js/core/i18n.js', 'js/i18n/en.js', 'js/i18n/ar.js', 'js/i18n/registration.en.js', 'js/i18n/registration.ar.js', 'js/i18n/investigation.en.js', 'js/i18n/investigation.ar.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js', 'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js']
   .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f }));
 const ICM = ctx.ICM, C = ICM.config;
 const add = (k) => used.add(k);
@@ -79,8 +79,19 @@ function formKeys(form) {
     if (f.type === 'checkbox') add('forms.' + form.id + '.' + f.name);
     if (f.options) f.options.forEach((o) => add((f.labelBase || ('forms.' + form.id + '.' + f.name + 'Opt')) + '.' + o));
     if (f.hint) add(f.hint);
+    if (f.ocr) add('ocr.short.' + f.ocr);
+    if (f.doc) add('ocr.doc.' + f.doc);
+    if (f.type === 'repeat') {
+      add('forms.' + form.id + '.' + f.name + 'Row'); add('forms.' + form.id + '.' + f.name + 'Add');
+      f.fields.forEach((sf) => {
+        add('forms.' + form.id + '.' + f.name + 'Fields.' + sf.name);
+        if (sf.options) sf.options.forEach((o) => add((sf.labelBase || ('forms.' + form.id + '.' + f.name + 'Fields.' + sf.name + 'Opt')) + '.' + o));
+      });
+    }
   });
 }
+C.CLIENT_DECISIONS.forEach((d) => add('decision.' + d));
+Object.values(C.PHOTO_SLOTS).flat().forEach((s) => add('evidence.label.' + s));
 Object.values(C.FORMS).forEach(formKeys);
 Object.values(C.REPORT_FORMS).forEach(formKeys);
 Object.values(C.COLLECTION_FORMS).forEach(formKeys);

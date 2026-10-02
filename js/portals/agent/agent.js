@@ -64,7 +64,9 @@
   function investigationTask(d, ctx) {
     var c = d.case;
     var minP = c.minPhotos || 0, photos = c.photos || [];
-    var formsOk = (c.inquiryTypes || []).every(function (tp) { return Object.keys(wf.validateFields(C.REPORT_FORMS[tp].fields, (c.report || {})[tp] || {})).length === 0; });
+    var now = ICM.clock.now();
+    var formsOk = (c.inquiryTypes || []).every(function (tp) { return Object.keys(wf.reports.validate(C.REPORT_FORMS[tp], (c.report || {})[tp] || {}, { now: now })).length === 0; });
+    var slots = wf.reports.photoSlots(c.inquiryTypes);
     var parts = [];
     if (c.status === 'returned_to_agent') parts.push(h`<div class="mb-16">${ui.notice(h`<strong>${t('review.returnedWith')}</strong> ${c.reviewComment || ''}`, 'warn')}<button type="button" class="btn btn-primary big-action mt-8" data-action="resume">${icon('play')}${t('action.resume')}</button></div>`);
     if (c.reworkReason && ['assigned', 'in_field'].indexOf(c.status) >= 0) parts.push(h`<div class="mb-16">${ui.notice(h`<strong>${t('review.reworkReason')}</strong> ${c.reworkReason}`, 'warn')}</div>`);
@@ -76,6 +78,10 @@
 
     if (c.status === 'in_field' || photos.length) {
       parts.push(h`<div class="agent-section"><h3>${t('evidence.photos', { n: photos.length, min: minP })}</h3>
+        ${c.status === 'in_field' ? h`<div class="slots mb-8">${slots.map(function (sl) {
+          var done = photos.some(function (p) { return p.label === sl; });
+          return h`<label class="slot ${done ? 'done' : ''}">${done ? icon('check') : icon('camera')}<span class="grow">${t('evidence.label.' + sl)}</span><span class="xs">${done ? t('agent.slotDone') : t('agent.slotTake')}</span><input type="file" accept="image/*" capture="environment" class="sr-only" data-change="photo" data-label="${sl}"></label>`;
+        })}</div>` : ''}
         <div class="photos">${photos.map(function (p) { return ui.photo(p, { removable: c.status === 'in_field' }); })}</div>
         ${c.status === 'in_field' ? h`<label class="btn btn-block mt-8" style="position:relative">${icon('camera')}${t('agent.addPhoto')}<input type="file" accept="image/*" capture="environment" data-change="photo" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label><p class="xs faint mt-8">${t('agent.photoStamp')}</p>` : ''}
       </div>`);
@@ -83,7 +89,7 @@
     if (c.status === 'in_field') {
       (c.inquiryTypes || []).forEach(function (tp) {
         var form = C.REPORT_FORMS[tp];
-        var done = Object.keys(wf.validateFields(form.fields, (c.report || {})[tp] || {})).length === 0;
+        var done = Object.keys(wf.reports.validate(form, (c.report || {})[tp] || {}, { now: now })).length === 0;
         var errs = ctx.state.errors && ctx.state.errors[tp];
         parts.push(h`<div class="agent-section"><h3>${t('agent.reportFor', { type: ui.L('inquiryTypes', tp) })} ${done ? ui.badge(t('agent.saved'), 'success') : ''}</h3>
           <form data-submit="saveReport" data-type="${tp}" class="card"><div class="card-b">${ui.forms.render('rep_' + tp, form, (c.report || {})[tp] || {}, errs, { cols: 1 })}</div>
@@ -162,7 +168,7 @@
         var f = el.files && el.files[0];
         if (!f) return;
         var url = await U.readImage(f, 640);
-        await S.cases.addPhoto(ctx.params.id, url);
+        await S.cases.addPhoto(ctx.params.id, url, el.getAttribute('data-label') || null);
         ui.toast(t('agent.photoAdded'), 'success');
         ctx.reload();
       },
@@ -176,11 +182,27 @@
         var tp = form.getAttribute('data-type');
         var def = C.REPORT_FORMS[tp];
         var values = ui.forms.collect(form.querySelector('[data-form-key]'), def);
-        var errors = wf.validateFields(def.fields, values);
+        var errors = wf.reports.validate(def, values, { now: ICM.clock.now() });
         ctx.state.errors[tp] = errors;
         await S.cases.saveReport(ctx.params.id, tp, values);
         ui.toast(Object.keys(errors).length ? t('agent.savedIncomplete') : t('agent.answersSaved'), Object.keys(errors).length ? 'danger' : 'success');
         ctx.reload();
+      },
+      /** Photograph a document; the OCR result fills its fields for the agent to check. */
+      ocrScan: async function (el, ev, ctx) {
+        var file = el.files && el.files[0];
+        if (!file) return;
+        var url = await U.readImage(file, 900);
+        var res = await S.cases.scanDocument(ctx.params.id, el.getAttribute('data-doc'));
+        var box = el.closest('[data-form-key]');
+        var change = Object.assign({}, res.fields);
+        change[el.getAttribute('data-field')] = url;
+        ui.forms.refreshWith(box, change, Object.keys(res.fields));
+        // Save straight away so the scan is not lost if the agent leaves before saving.
+        var form = box.closest('form[data-submit=saveReport]');
+        var tp = form.getAttribute('data-type');
+        await S.cases.saveReport(ctx.params.id, tp, ui.forms.collect(box, C.REPORT_FORMS[tp]));
+        ui.toast(t('ocr.done', { n: Object.keys(res.fields).length }), 'success');
       },
       submitReport: async function (el, ev, ctx) {
         var ok = await ui.confirm({ title: t('action.submit_report'), message: t('agent.submitBody'), confirmLabel: t('action.submit_report') });

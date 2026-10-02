@@ -54,6 +54,11 @@
       collateral: null,
       instructions: null,
       internalRef: null,
+      accountNumber: null,
+      orderNumber: null,
+      businessPhone: null,
+      report: {},
+      clientDecision: null,
       checkIn: null,
       photos: (c.photos || []).map(function (p) { return { id: p.id, at: p.at, hidden: true }; })
     });

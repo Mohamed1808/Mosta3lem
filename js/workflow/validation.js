@@ -42,6 +42,22 @@
       if (!wf.isVisible(f, values)) return;
       var v = values[f.name];
       var req = wf.isRequired(f, values);
+      if (f.type === 'license') {
+        var lic = v || {};
+        if (lic.has !== 'yes' && lic.has !== 'no') { if (req) errors[f.name] = 'errors.required'; }
+        else if (lic.has === 'yes' && empty(lic.number)) errors[f.name] = 'errors.licenseNumberRequired';
+        return;
+      }
+      if (f.type === 'repeat') {
+        var rows = Array.isArray(v) ? v : [];
+        if (req && !rows.length) errors[f.name] = 'errors.required';
+        if (f.max && rows.length > f.max) errors[f.name] = 'errors.max';
+        rows.forEach(function (row, i) {
+          var sub = wf.validateFields(f.fields, row || {}, opts);
+          Object.keys(sub).forEach(function (k) { errors[f.name + '.' + i + '.' + k] = sub[k]; });
+        });
+        return;
+      }
       if (f.type === 'address') {
         var a = v || {};
         var any = !empty(a.governorate) || !empty(a.city) || !empty(a.street);
@@ -58,6 +74,7 @@
       switch (f.type) {
         case 'nationalId': e = wf.validateNationalId(v); break;
         case 'phone': e = wf.validateMobile(v); break;
+        case 'anyPhone': e = wf.validateAnyPhone(v); break;
         case 'phones':
           [].concat(v).filter(function (x) { return !empty(x); }).some(function (x) { e = wf.validateMobile(x); return !!e; });
           break;

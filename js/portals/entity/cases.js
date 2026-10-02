@@ -270,7 +270,7 @@
       var services = ['investigation', 'collection'].filter(function (s) { return serves(ctx, s); });
       var statuses = U.uniq((services.length > 1 ? C.INVESTIGATION_STATUSES.concat(C.COLLECTION_STATUSES) : services[0] === 'investigation' ? C.INVESTIGATION_STATUSES : C.COLLECTION_STATUSES));
       var providers = U.uniq(d.all.filter(function (c) { return c.providerId; }).map(function (c) { return c.providerId + '|' + c.providerName; }));
-      return h`${ui.pageHead(t('nav.cases'), t('cases.count', { n: d.rows.length }), h`<a class="btn btn-primary" href="#/client/new">${icon('plus')}${t('nav.newRequest')}</a>`)}
+      return h`${ui.pageHead(t('nav.cases'), t('cases.count', { n: d.rows.length }), h`${serves(ctx, 'investigation') ? h`<button type="button" class="btn" data-action="exportInv" title="${t('export.hint')}">${icon('download')}${t('export.button')}</button>` : ''}<a class="btn btn-primary" href="#/client/new">${icon('plus')}${t('nav.newRequest')}</a>`)}
         <div class="filters">
           <div class="field wide"><label for="q">${t('common.search')}</label><div class="searchbox">${icon('search')}<input id="q" class="input" name="q" value="${f.q || ''}" placeholder="${t('cases.searchHint')}" data-input="filterText"></div></div>
           ${services.length > 1 ? h`<div class="field"><label>${t('case.service')}</label>${ui.select('service', [{ value: '', label: t('common.all') }].concat(services.map(function (s) { return { value: s, label: t('service.' + s) }; })), f.service, { change: 'filter' })}</div>` : ''}
@@ -288,7 +288,13 @@
     actions: {
       filter: function (el, ev, ctx) { ctx.state.f[el.name] = el.value; ctx.reload(); },
       filterText: function (el, ev, ctx) { ctx.state.f.q = el.value; ctx.reload(); },
-      clearFilters: function (el, ev, ctx) { ctx.state.f = {}; ctx.navigate('#/client/cases'); }
+      clearFilters: function (el, ev, ctx) { ctx.state.f = {}; ctx.navigate('#/client/cases'); },
+      exportInv: async function (el, ev, ctx) {
+        var f = Object.assign({}, ctx.state.f);
+        if (f.from) f.from = new Date(f.from).getTime();
+        if (f.to) f.to = U.endOfDay(new Date(f.to).getTime());
+        await ui.exportInvestigations(f);
+      }
     }
   };
 
@@ -328,6 +334,12 @@
       if (s) out.push(ui.notice(h`<strong>${s.kind === 'discount' ? t('settlement.discountText', { pct: s.discountPct }) : t('settlement.instalmentsText', { count: s.instalmentCount })}</strong><div class="small">${s.note}</div>${s.kind === 'discount' ? h`<div class="small">${t('settlement.newTarget', { amount: U.money(Math.round(c.overdueAmount * (1 - s.discountPct / 100))) })}</div>` : ''}`, 'warn', 'handshake'));
       out.push(h`<button type="button" class="btn btn-primary btn-block" data-action="approveSettlement">${t('action.approve_settlement')}</button>`);
       out.push(h`<button type="button" class="btn btn-block" data-action="rejectSettlement">${t('action.reject_settlement')}</button>`);
+    }
+    if (c.service === 'investigation' && ['delivered', 'accepted_by_entity', 'closed'].indexOf(c.status) >= 0) {
+      var cur = c.clientDecision ? c.clientDecision.value : 'PENDING';
+      out.push(h`<div class="decision-box"><div class="small muted mb-8">${t('decision.title')}</div><div class="decision-btns">${ICM.config.CLIENT_DECISIONS.map(function (dv) {
+        return h`<button type="button" class="btn btn-sm ${cur === dv ? 'on d-' + dv.toLowerCase() : ''}" data-action="setDecision" data-value="${dv}" aria-pressed="${cur === dv ? 'true' : 'false'}">${t('decision.' + dv)}</button>`;
+      })}</div><div class="xs faint mt-8">${t('decision.hint')}</div></div>`);
     }
     if (d.canRate) out.push(h`<button type="button" class="btn btn-primary btn-block" data-action="rate">${icon('star')}${t('rating.rateProvider', { name: d.provider.name })}</button>`);
     if (c.status === 'closed' && c.batchId && !c.ratingId) out.push(ui.notice(h`${t('case.rateViaBatch')} <a href="#/client/batches/${c.batchId}">${c.batchRef}</a>`, 'info'));
@@ -384,6 +396,13 @@
         if (!v) return;
         await S.cases.transition(ctx.params.id, 'cancel', { reason: v.reason });
         ui.toast(t('case.cancelled'), 'success'); ctx.reload();
+      },
+      setDecision: async function (el, ev, ctx) {
+        var dv = el.getAttribute('data-value');
+        var v = await ui.confirm({ title: t('decision.setTitle', { decision: t('decision.' + dv) }), message: t('decision.setBody'), reason: dv === 'REJECTED' ? 'required' : 'optional', reasonLabel: t('common.note'), confirmLabel: t('common.confirm'), danger: dv === 'REJECTED' });
+        if (!v) return;
+        await S.cases.setClientDecision(ctx.params.id, dv, v.reason);
+        ui.toast(t('decision.saved'), 'success'); ctx.reload();
       },
       rate: async function (el, ev, ctx) { var d = await S.cases.get(ctx.params.id); if (await ui.dialogs.rateCase(d)) ctx.reload(); },
       dispute: async function (el, ev, ctx) { var d = await S.cases.get(ctx.params.id); if (await ui.dialogs.dispute('case', d.case.id, d.case.ref)) ctx.reload(); }

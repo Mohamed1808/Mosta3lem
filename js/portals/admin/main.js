@@ -224,12 +224,18 @@
         <div class="field"><label>${t('common.to')}</label><input class="input" type="date" name="to" value="${f.to || ''}" data-change="filter"></div>
         <label class="check small" style="align-self:center"><input type="checkbox" name="disputed" data-change="filterCheck" ${f.disputed ? 'checked' : ''}>${t('dispute.flag')}</label>
       </div>`;
-      return h`${ui.pageHead(t('nav.allCases'), t('cases.count', { n: d.rows.length }))}
+      return h`${ui.pageHead(t('nav.allCases'), t('cases.count', { n: d.rows.length }), ctx.session.user.role === 'platform_admin' ? h`<button type="button" class="btn" data-action="exportInv" title="${t('export.hint')}">${icon('download')}${t('export.button')}</button>` : null)}
         ${ui.tabs([{ id: 'cases', label: t('nav.cases'), count: d.rows.length }, { id: 'batches', label: t('nav.batches'), count: d.batches.length }], tab, 'tab')}
         ${tab === 'cases' ? h`${filters}${ui.card(null, P.entity.caseTable(d.rows, '#/admin/cases/', { entity: false }), { flush: true })}` : ui.card(null, P.entity.batchTable(d.batches, '#/admin/cases?batch=', true), { flush: true })}`;
     },
     actions: {
       tab: function (el, ev, ctx) { ctx.state.tab = el.getAttribute('data-value'); ctx.reload(); },
+      exportInv: async function (el, ev, ctx) {
+        var f = Object.assign({}, ctx.state.f);
+        if (f.from) f.from = new Date(f.from).getTime();
+        if (f.to) f.to = U.endOfDay(new Date(f.to).getTime());
+        await ui.exportInvestigations(f);
+      },
       filter: function (el, ev, ctx) { ctx.state.f[el.name] = el.value; ctx.state.tab = 'cases'; ctx.reload(); },
       filterCheck: function (el, ev, ctx) { ctx.state.f[el.name] = el.checked; ctx.reload(); },
       q: function (el, ev, ctx) { ctx.state.f.q = el.value; ctx.reload(); }
