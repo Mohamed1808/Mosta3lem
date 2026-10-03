@@ -101,53 +101,19 @@
       history: { investigation: { delivered: 240, onTime: 222, firstTime: 215, accepted: 230, evidence: 232 } },
       admin: 'Hany Wagdy', supervisor: 'Salma Reda',
       agents: [['Mostafa Ali', ['cairo', 'giza']], ['Amr Saeed', ['giza', 'qalyubia']], ['Nourhan Ibrahim', ['alexandria']], ['Walid Hegazy', ['dakahlia', 'gharbia', 'sharqia', 'monufia']]] },
-    { id: 'prv_amana', name: 'Al Amana Field Checks', kind: 'company', city: 'Giza', services: ['investigation'], joined: 540,
-      govs: { cairo: 20, giza: 20, faiyum: 10, beni_suef: 10, minya: 12, assiut: 12, sohag: 10, qena: 8 },
-      inv: { residence: 320, employment: 380, business: 450, guarantor: 300 }, sla: { residence: 48, employment: 72, business: 72, guarantor: 48 },
-      history: { investigation: { delivered: 150, onTime: 100, firstTime: 100, accepted: 140, evidence: 115 } },
-      admin: 'Magdy Farouk', supervisor: 'Eman Adly',
-      agents: [['Ramy Shawky', ['cairo', 'giza']], ['Hossam Gaber', ['assiut', 'minya']], ['Samir Tawfik', ['sohag', 'qena']], ['Fatma Zidan', ['faiyum', 'beni_suef', 'giza']]] },
     { id: 'prv_recovery', name: 'Recovery Partners Egypt', kind: 'company', city: 'Cairo', services: ['collection'], joined: 900,
       govs: { cairo: 40, giza: 35, alexandria: 25, qalyubia: 20, dakahlia: 15, sharqia: 15, ismailia: 10, port_said: 10 },
       coll: { b1_30: 8, b31_60: 12, b61_90: 17, b90p: 26 }, fixedFee: 150, firstContactHours: 24,
       history: { collection: { closed: 180, recoveryNormSum: 150, ptpKept: 300, ptpBroken: 90, complaints: 6, onTime: 165, recoveredAmount: 5400000, overdueAmount: 7800000 } },
       admin: 'Adel Morsy', supervisor: 'Rehab Anwar',
       agents: [['Tarek Helmy', ['cairo']], ['Yasser Fawzy', ['giza', 'qalyubia']], ['Mahmoud Saad', ['alexandria']], ['Ibrahim Nour', ['dakahlia', 'sharqia', 'ismailia', 'port_said']]] },
-    { id: 'prv_cairocollect', name: 'Cairo Collect Co.', kind: 'company', city: 'Cairo', services: ['collection'], joined: 400,
-      govs: { cairo: 25, giza: 25, qalyubia: 15, gharbia: 10, monufia: 10 },
-      coll: { b1_30: 6, b31_60: 9, b61_90: 13, b90p: 20 }, fixedFee: 100, firstContactHours: 48,
-      history: { collection: { closed: 120, recoveryNormSum: 66, ptpKept: 105, ptpBroken: 100, complaints: 18, onTime: 80, recoveredAmount: 1900000, overdueAmount: 5200000 } },
-      admin: 'Fady Mikhail', supervisor: 'Reem Salah',
-      agents: [['Sayed Ramadan', ['cairo', 'qalyubia']], ['Hamada Eid', ['giza']], ['Ashraf Kandil', ['gharbia', 'monufia']]] },
-    { id: 'prv_nile', name: 'Nile Assurance Group', kind: 'company', city: 'Alexandria', services: ['investigation', 'collection'], joined: 610,
-      govs: { cairo: 20, giza: 20, alexandria: 15, sharqia: 10, dakahlia: 10, gharbia: 10, ismailia: 8, suez: 8, assiut: 6 },
-      inv: { residence: 380, employment: 430, business: 520, guarantor: 360 }, sla: { residence: 48, employment: 60, business: 72, guarantor: 48 },
-      coll: { b1_30: 9, b31_60: 13, b61_90: 18, b90p: 28 }, fixedFee: 200, firstContactHours: 24,
-      history: {
-        investigation: { delivered: 90, onTime: 75, firstTime: 72, accepted: 85, evidence: 80 },
-        collection: { closed: 70, recoveryNormSum: 48, ptpKept: 80, ptpBroken: 40, complaints: 5, onTime: 60, recoveredAmount: 2100000, overdueAmount: 3400000 }
-      },
-      admin: 'Ola Hassan', supervisor: 'Bassem Youssef',
-      agents: [['Ali Mahran', ['cairo', 'giza'], ['investigation']], ['Shady Nasr', ['alexandria', 'sharqia'], ['investigation']], ['Medhat Zaher', ['cairo', 'giza'], ['collection']], ['Rasha Kamal', ['dakahlia', 'gharbia'], ['collection']]] },
     { id: 'prv_fl_omar', name: 'Omar Hassan', kind: 'freelancer', city: 'Giza', services: ['investigation'], joined: 40,
-      govs: { giza: 6, cairo: 4 }, inv: { residence: 300, employment: 340, business: 400, guarantor: 290 }, sla: { residence: 30, employment: 48, business: 48, guarantor: 30 },
-      history: { investigation: { delivered: 6, onTime: 5, firstTime: 5, accepted: 6, evidence: 6 } } },
-    { id: 'prv_fl_mariam', name: 'Mariam Adel', kind: 'freelancer', city: 'Alexandria', services: ['investigation'], joined: 300,
-      govs: { alexandria: 8, beheira: 6 }, inv: { residence: 310, employment: 350, business: 420, guarantor: 300 }, sla: { residence: 40, employment: 60, business: 60, guarantor: 40 },
-      history: { investigation: { delivered: 60, onTime: 42, firstTime: 46, accepted: 58, evidence: 50 } } },
-    { id: 'prv_fl_karim', name: 'Karim Fathy', kind: 'freelancer', city: 'Cairo', services: ['collection'], joined: 260,
-      govs: { cairo: 8, giza: 8, qalyubia: 5 }, coll: { b1_30: 7, b31_60: 10, b61_90: 15, b90p: 22 }, fixedFee: 80, firstContactHours: 12,
-      history: { collection: { closed: 40, recoveryNormSum: 26, ptpKept: 45, ptpBroken: 30, complaints: 3, onTime: 33, recoveredAmount: 600000, overdueAmount: 1100000 } } }
+      govs: { giza: 15, cairo: 10 }, inv: { residence: 300, employment: 340, business: 400, guarantor: 290 }, sla: { residence: 30, employment: 48, business: 48, guarantor: 30 },
+      history: { investigation: { delivered: 6, onTime: 5, firstTime: 5, accepted: 6, evidence: 6 } } }
   ];
 
-  var APPLICATIONS = [
-    { id: 'prv_app_deltafield', name: 'Delta Field Research', kind: 'company', city: 'Mansoura', services: ['investigation'], joined: 3,
-      govs: { dakahlia: 15, damietta: 10, kafr_el_sheikh: 10 }, inv: { residence: 330, employment: 380, business: 460, guarantor: 320 }, sla: { residence: 48, employment: 72, business: 72, guarantor: 48 },
-      docs: { commercial_register: 'uploaded', tax_card: 'uploaded', insurance: 'missing' }, contact: 'Hesham Barakat' },
-    { id: 'prv_app_sara', name: 'Sara Mahmoud', kind: 'freelancer', city: 'Zagazig', services: ['investigation'], joined: 1,
-      govs: { sharqia: 5 }, inv: { residence: 290, employment: 330, business: 390, guarantor: 280 }, sla: { residence: 36, employment: 60, business: 60, guarantor: 36 },
-      docs: { national_id: 'uploaded', training_certificate: 'missing' }, contact: 'Sara Mahmoud' }
-  ];
+  // Pending applications: none in the demo; register one from the sign-in page.
+  var APPLICATIONS = [];
 
   // ---------------------------------------------------------------- builder
   function build(T) {
@@ -272,7 +238,7 @@
       return (year >= 2000 ? '3' : '2') + String(year % 100).padStart(2, '0') + String(R2.int(1, 12)).padStart(2, '0') + String(R2.int(1, 28)).padStart(2, '0') + g.code + String(R2.int(1000, 9999)) + String(R2.int(1, 9));
     }
     var HQ = { Cairo: ['cairo', 'nasr_city'], Giza: ['giza', 'dokki'], Alexandria: ['alexandria', 'smouha'], Mansoura: ['dakahlia', 'mansoura'], Zagazig: ['sharqia', 'zagazig'] };
-    var CITY_COVERAGE = { prv_fl_omar: { giza: ['dokki', 'haram', 'faisal', 'october'], cairo: ['downtown', 'zamalek'] }, prv_fl_mariam: { alexandria: [], beheira: ['damanhour', 'kafr_el_dawar'] }, prv_app_sara: { sharqia: ['zagazig', 'belbeis', 'minya_el_qamh'] } };
+    var CITY_COVERAGE = { prv_fl_omar: { giza: ['dokki', 'haram', 'faisal', 'october'], cairo: ['downtown', 'zamalek'] } };
     var regN = 0;
     db.providers.forEach(function (p) {
       var hq = HQ[p.city] || ['cairo', 'nasr_city'];
@@ -587,43 +553,22 @@
       { entity: 'ent_delta', gov: 'cairo', types: ['employment'], status: 'draft', ageH: 5 },
       { entity: 'ent_tahrir', gov: 'giza', types: ['residence', 'employment'], status: 'submitted', ageH: 1 },
       { entity: 'ent_horus', gov: 'cairo', types: ['residence'], provider: 'prv_sphinx', status: 'awaiting_acceptance', offerAt: T - 1 * H },
-      { entity: 'ent_delta', gov: 'alexandria', types: ['residence'], provider: 'prv_fl_mariam', status: 'awaiting_acceptance', offerAt: T - 3.4 * H },
       { entity: 'ent_tahrir', gov: 'giza', types: ['guarantor'], provider: 'prv_fl_omar', status: 'awaiting_acceptance', offerAt: T - 0.7 * H },
-      { entity: 'ent_delta', gov: 'dakahlia', types: ['business'], provider: 'prv_nile', status: 'awaiting_acceptance', offerAt: T - 2 * H },
-      { entity: 'ent_horus', gov: 'assiut', types: ['residence'], provider: 'prv_amana', status: 'declined', ageH: 20, lastH: 16 },
-      { entity: 'ent_tahrir', gov: 'cairo', types: ['employment'], provider: 'prv_nile', status: 'expired', ageH: 30, lastH: 22 },
-      { entity: 'ent_horus', gov: 'giza', types: ['residence'], provider: 'prv_amana', status: 'accepted', ageH: 6 },
       { entity: 'ent_delta', gov: 'cairo', types: ['employment'], provider: 'prv_sphinx', status: 'accepted', ageH: 4 },
-      { entity: 'ent_tahrir', gov: 'alexandria', types: ['residence'], provider: 'prv_nile', status: 'accepted', ageH: 8 },
       { entity: 'ent_horus', gov: 'cairo', types: ['residence'], provider: 'prv_sphinx', status: 'assigned', ageH: 14 },
       { entity: 'ent_delta', gov: 'giza', types: ['residence', 'guarantor'], provider: 'prv_sphinx', status: 'assigned', ageH: 20, sla: 'risk' },
-      { entity: 'ent_tahrir', gov: 'assiut', types: ['business'], provider: 'prv_amana', status: 'assigned', ageH: 26 },
-      { entity: 'ent_horus', gov: 'alexandria', types: ['residence'], provider: 'prv_fl_mariam', status: 'assigned', ageH: 10 },
       { entity: 'ent_delta', gov: 'cairo', types: ['residence'], provider: 'prv_sphinx', status: 'in_field', ageH: 22 },
-      { entity: 'ent_tahrir', gov: 'minya', types: ['employment'], provider: 'prv_amana', status: 'in_field', ageH: 60, sla: 'breach' },
       { entity: 'ent_horus', gov: 'giza', types: ['residence'], provider: 'prv_fl_omar', status: 'in_field', ageH: 9 },
       { entity: 'ent_delta', gov: 'giza', types: ['employment'], provider: 'prv_sphinx', status: 'submitted_for_review', ageH: 30 },
-      { entity: 'ent_horus', gov: 'cairo', types: ['business'], provider: 'prv_nile', status: 'submitted_for_review', ageH: 34, sla: 'risk' },
-      { entity: 'ent_tahrir', gov: 'alexandria', types: ['residence'], provider: 'prv_fl_mariam', status: 'submitted_for_review', ageH: 20 },
-      { entity: 'ent_delta', gov: 'cairo', types: ['residence'], provider: 'prv_amana', status: 'returned_to_agent', ageH: 36 },
       { entity: 'ent_horus', gov: 'giza', types: ['guarantor'], provider: 'prv_fl_omar', status: 'returned_to_agent', ageH: 25 },
-      { entity: 'ent_delta', gov: 'giza', types: ['residence'], provider: 'prv_amana', status: 'delivered', ageH: 50, key: 'disputedCase' },
-      { entity: 'ent_horus', gov: 'cairo', types: ['employment'], provider: 'prv_sphinx', status: 'delivered', ageH: 44 },
-      { entity: 'ent_tahrir', gov: 'giza', types: ['residence'], provider: 'prv_nile', status: 'delivered', ageH: 40 },
+      { entity: 'ent_horus', gov: 'cairo', types: ['employment'], provider: 'prv_sphinx', status: 'delivered', ageH: 44, key: 'disputedCase' },
       { entity: 'ent_delta', gov: 'alexandria', types: ['business'], provider: 'prv_sphinx', status: 'rework_requested', ageH: 60 },
       { entity: 'ent_tahrir', gov: 'cairo', types: ['residence'], provider: 'prv_sphinx', status: 'accepted_by_entity', ageH: 70 },
       { entity: 'ent_horus', gov: 'giza', types: ['residence'], provider: 'prv_sphinx', status: 'closed', closedDaysAgo: 3, rate: 5 },
-      { entity: 'ent_delta', gov: 'cairo', types: ['employment'], provider: 'prv_amana', status: 'closed', closedDaysAgo: 8, late: true, rate: 1, key: 'amanaOneStar' },
-      { entity: 'ent_tahrir', gov: 'giza', types: ['residence'], provider: 'prv_nile', status: 'closed', closedDaysAgo: 12, rate: 4 },
-      { entity: 'ent_horus', gov: 'alexandria', types: ['residence'], provider: 'prv_fl_mariam', status: 'closed', closedDaysAgo: 20, rate: 4 },
       { entity: 'ent_horus', gov: 'cairo', types: ['guarantor'], provider: 'prv_fl_omar', status: 'closed', closedDaysAgo: 1 },
       { entity: 'ent_delta', gov: 'dakahlia', types: ['business'], provider: 'prv_sphinx', status: 'closed', closedDaysAgo: 35, rate: 5 },
-      { entity: 'ent_tahrir', gov: 'assiut', types: ['residence'], provider: 'prv_amana', status: 'closed', closedDaysAgo: 40, rework: true, rate: 3 },
       { entity: 'ent_delta', gov: 'giza', types: ['residence', 'employment'], provider: 'prv_sphinx', status: 'closed', closedDaysAgo: 55, rate: 4 },
-      { entity: 'ent_tahrir', gov: 'cairo', types: ['employment'], provider: 'prv_nile', status: 'closed', closedDaysAgo: 62, rate: 4 },
-      { entity: 'ent_horus', gov: 'giza', types: ['residence'], provider: 'prv_amana', status: 'closed', closedDaysAgo: 70, rate: 3 },
       { entity: 'ent_horus', gov: 'giza', types: ['residence'], status: 'cancelled_entity', ageH: 30 },
-      { entity: 'ent_delta', gov: 'cairo', types: ['residence'], provider: 'prv_amana', status: 'cancelled_admin', ageH: 48 }
     ];
     var keyed = {};
     INV.forEach(function (o) { var c = seedCase('investigation', o); c._rate = o.rate; if (o.key) keyed[o.key] = c; });
@@ -634,35 +579,18 @@
     var COL = [
       { entity: 'ent_horus', gov: 'cairo', dpd: 25, status: 'draft', ageH: 3 },
       { entity: 'ent_tahrir', gov: 'giza', dpd: 45, provider: 'prv_recovery', status: 'awaiting_acceptance', offerAt: T - 1 * H },
-      { entity: 'ent_delta', gov: 'cairo', dpd: 75, provider: 'prv_cairocollect', status: 'awaiting_acceptance', offerAt: T - 2.2 * H },
-      { entity: 'ent_horus', gov: 'qalyubia', dpd: 120, provider: 'prv_fl_karim', status: 'awaiting_acceptance', offerAt: T - 0.5 * H },
-      { entity: 'ent_tahrir', gov: 'cairo', dpd: 40, provider: 'prv_cairocollect', status: 'declined', ageH: 12, lastH: 9 },
       { entity: 'ent_delta', gov: 'alexandria', dpd: 95, provider: 'prv_recovery', status: 'expired', ageH: 20, lastH: 14 },
-      { entity: 'ent_horus', gov: 'giza', dpd: 35, provider: 'prv_nile', status: 'accepted', ageH: 5 },
       { entity: 'ent_delta', gov: 'dakahlia', dpd: 50, provider: 'prv_recovery', status: 'accepted', ageH: 3 },
       { entity: 'ent_horus', gov: 'cairo', dpd: 55, provider: 'prv_recovery', status: 'assigned', ageH: 10, authority: { mode: 'discount', maxDiscountPct: 20 }, product: 'auto_loan' },
-      { entity: 'ent_tahrir', gov: 'giza', dpd: 28, provider: 'prv_fl_karim', status: 'assigned', ageH: 8 },
-      { entity: 'ent_delta', gov: 'qalyubia', dpd: 110, provider: 'prv_cairocollect', status: 'assigned', ageH: 12 },
       { entity: 'ent_horus', gov: 'cairo', dpd: 65, provider: 'prv_recovery', status: 'active', ageH: 240, ops: PTP_KEPT },
-      { entity: 'ent_horus', gov: 'giza', dpd: 95, provider: 'prv_cairocollect', status: 'active', ageH: 200, ops: PTP_BROKEN },
       { entity: 'ent_tahrir', gov: 'alexandria', dpd: 33, provider: 'prv_recovery', status: 'active', ageH: 120 },
-      { entity: 'ent_tahrir', gov: 'cairo', dpd: 82, provider: 'prv_cairocollect', status: 'active', ageH: 400, sla: 'breach', ops: PTP_BROKEN },
-      { entity: 'ent_delta', gov: 'dakahlia', dpd: 47, provider: 'prv_nile', status: 'active', ageH: 150, ops: PTP_KEPT },
-      { entity: 'ent_delta', gov: 'cairo', dpd: 130, provider: 'prv_fl_karim', status: 'active', ageH: 300, sla: 'risk', product: 'sme_loan' },
       { entity: 'ent_horus', gov: 'qalyubia', dpd: 40, provider: 'prv_recovery', status: 'active', ageH: 90, ops: [{ a: 'action', type: 'whatsapp', note: 'Payment link sent.' }, { a: 'action', type: 'reached' }, { a: 'promise', frac: 0.5, dueInD: 9 }] },
-      { entity: 'ent_tahrir', gov: 'giza', dpd: 58, provider: 'prv_nile', status: 'active', ageH: 70 },
       { entity: 'ent_horus', gov: 'cairo', dpd: 88, provider: 'prv_recovery', status: 'awaiting_entity_approval', ageH: 260, authority: { mode: 'discount', maxDiscountPct: 15 }, ops: PTP_KEPT, settle: { kind: 'discount', discountPct: 10, note: 'Customer can pay the rest in one transfer if we waive 10%.' } },
-      { entity: 'ent_delta', gov: 'giza', dpd: 70, provider: 'prv_cairocollect', status: 'awaiting_entity_approval', ageH: 180, authority: { mode: 'instalments' }, settle: { kind: 'instalments', instalmentCount: 6, note: 'Customer lost a job and proposes six monthly instalments.' } },
       { entity: 'ent_horus', gov: 'cairo', dpd: 30, provider: 'prv_recovery', status: 'closed', closedDaysAgo: 4, outcome: 'fully_recovered', closeOps: [{ a: 'payment', all: true }] },
-      { entity: 'ent_tahrir', gov: 'giza', dpd: 60, provider: 'prv_cairocollect', status: 'closed', closedDaysAgo: 9, outcome: 'partially_recovered', closeOps: [{ a: 'payment', frac: 0.3 }], rate: 1, key: 'cairoOneStarTahrir' },
-      { entity: 'ent_horus', gov: 'giza', dpd: 100, provider: 'prv_cairocollect', status: 'closed', closedDaysAgo: 15, outcome: 'unrecoverable', reason: 'Customer relocated abroad, no assets found.', rate: 1, key: 'cairoOneStarHorus' },
+      { entity: 'ent_tahrir', gov: 'giza', dpd: 60, provider: 'prv_recovery', status: 'closed', closedDaysAgo: 9, outcome: 'partially_recovered', closeOps: [{ a: 'payment', frac: 0.3 }], rate: 1, key: 'oneStarDisputed' },
+      { entity: 'ent_horus', gov: 'giza', dpd: 100, provider: 'prv_recovery', status: 'closed', closedDaysAgo: 15, outcome: 'unrecoverable', reason: 'Customer relocated abroad, no assets found.', rate: 1, key: 'oneStarOpen' },
       { entity: 'ent_delta', gov: 'alexandria', dpd: 45, provider: 'prv_recovery', status: 'closed', closedDaysAgo: 22, outcome: 'fully_recovered', authority: { mode: 'discount', maxDiscountPct: 20 }, closeOps: [{ a: 'request_settlement', kind: 'discount', discountPct: 12, note: 'Lump sum offer.' }, { a: 'approve_settlement' }, { a: 'payment', all: true }], rate: 5 },
-      { entity: 'ent_delta', gov: 'cairo', dpd: 150, provider: 'prv_fl_karim', status: 'closed', closedDaysAgo: 30, outcome: 'partially_recovered', closeOps: [{ a: 'payment', frac: 0.4 }], rate: 4 },
-      { entity: 'ent_tahrir', gov: 'dakahlia', dpd: 75, provider: 'prv_nile', status: 'closed', closedDaysAgo: 38, outcome: 'partially_recovered', closeOps: [{ a: 'payment', frac: 0.55 }], rate: 4 },
       { entity: 'ent_horus', gov: 'cairo', dpd: 20, provider: 'prv_recovery', status: 'closed', closedDaysAgo: 48, outcome: 'fully_recovered', closeOps: [{ a: 'payment', all: true }], rate: 4 },
-      { entity: 'ent_delta', gov: 'giza', dpd: 130, provider: 'prv_nile', status: 'closed', closedDaysAgo: 66, outcome: 'unrecoverable', reason: 'Collateral sold, customer insolvent.', rate: 3 },
-      { entity: 'ent_tahrir', gov: 'cairo', dpd: 95, provider: 'prv_cairocollect', status: 'closed', closedDaysAgo: 75, outcome: 'returned_to_entity', reason: 'Customer disputes the contract, legal review needed.', rate: 2 },
-      { entity: 'ent_horus', gov: 'giza', dpd: 42, provider: 'prv_fl_karim', status: 'closed', closedDaysAgo: 2, outcome: 'fully_recovered', closeOps: [{ a: 'payment', all: true }] },
       { entity: 'ent_tahrir', gov: 'giza', dpd: 36, provider: 'prv_recovery', status: 'recalled', ageH: 200 },
       { entity: 'ent_delta', gov: 'cairo', dpd: 22, status: 'cancelled_entity', ageH: 40 }
     ];
@@ -705,16 +633,16 @@
     // C: split by governorate, offers pending
     var bC = addBatch('ent_horus', 'investigation', 'New auto loans, week 39', T - 2 * H);
     bC.assignMode = 'split';
-    var offC1 = makeOffer(providerById('prv_amana'), [{ entityId: 'ent_horus', service: 'investigation' }], T - 1.5 * H, bC.id, 'giza');
-    var offC2 = makeOffer(providerById('prv_nile'), [{ entityId: 'ent_horus', service: 'investigation' }], T - 1.5 * H, bC.id, 'alexandria');
+    var offC1 = makeOffer(providerById('prv_fl_omar'), [{ entityId: 'ent_horus', service: 'investigation' }], T - 1.5 * H, bC.id, 'giza');
+    var offC2 = makeOffer(providerById('prv_sphinx'), [{ entityId: 'ent_horus', service: 'investigation' }], T - 1.5 * H, bC.id, 'alexandria');
     offC1.caseIds = []; offC2.caseIds = [];
-    [['giza', offC1, 'prv_amana'], ['giza', offC1, 'prv_amana'], ['giza', offC1, 'prv_amana'], ['alexandria', offC2, 'prv_nile'], ['alexandria', offC2, 'prv_nile']].forEach(function (s) {
+    [['giza', offC1, 'prv_fl_omar'], ['giza', offC1, 'prv_fl_omar'], ['alexandria', offC2, 'prv_sphinx'], ['alexandria', offC2, 'prv_sphinx']].forEach(function (s) {
       var c = seedCase('investigation', { entity: 'ent_horus', gov: s[0], types: ['residence'], provider: s[2], status: 'awaiting_acceptance', offerAt: T - 1.5 * H, batchId: bC.id, offerId: s[1].id });
       bC.caseIds.push(c.id); s[1].caseIds.push(c.id);
     });
     bC.groups = [
-      { key: 'giza', governorates: ['giza'], providerId: 'prv_amana', offerId: offC1.id, caseIds: offC1.caseIds.slice() },
-      { key: 'alexandria', governorates: ['alexandria'], providerId: 'prv_nile', offerId: offC2.id, caseIds: offC2.caseIds.slice() }
+      { key: 'giza', governorates: ['giza'], providerId: 'prv_fl_omar', offerId: offC1.id, caseIds: offC1.caseIds.slice() },
+      { key: 'alexandria', governorates: ['alexandria'], providerId: 'prv_sphinx', offerId: offC2.id, caseIds: offC2.caseIds.slice() }
     ];
 
     // ---------- ratings on seeded closed cases
@@ -744,18 +672,18 @@
       if (c._rate) {
         var r = ratingFor(c, c._rate, c.closedAt + R.int(2, 30) * H);
         c.ratingId = r.id;
-        if (c.service === 'collection' && c._rate === 1 && c === keyed.cairoOneStarTahrir) r.tags = ['customer_complaint'];
+        if (c.service === 'collection' && c._rate === 1 && c === keyed.oneStarDisputed) r.tags = ['customer_complaint'];
       }
       delete c._rate;
     });
-    // CairoCollect: make its low ratings read clearly
-    if (keyed.cairoOneStarTahrir) {
-      var r1 = db.ratings.filter(function (r) { return r.caseId === keyed.cairoOneStarTahrir.id; })[0];
+    // Recovery Partners: two low ratings that read clearly (one is disputed below)
+    if (keyed.oneStarDisputed) {
+      var r1 = db.ratings.filter(function (r) { return r.caseId === keyed.oneStarDisputed.id; })[0];
       r1.feedback = 'The customer filed a complaint about repeated calls late at night. Recovery was minimal.';
       r1.tags = ['customer_complaint', 'poor_updates'];
     }
-    if (keyed.cairoOneStarHorus) {
-      var r2 = db.ratings.filter(function (r) { return r.caseId === keyed.cairoOneStarHorus.id; })[0];
+    if (keyed.oneStarOpen) {
+      var r2 = db.ratings.filter(function (r) { return r.caseId === keyed.oneStarOpen.id; })[0];
       r2.feedback = 'No field visit was logged before the case was closed as unrecoverable.';
       r2.tags = ['poor_updates'];
       r2.reply = null;
@@ -764,14 +692,8 @@
     // ---------- historical (archived) ratings
     var HIST = [
       ['prv_sphinx', 'investigation', 12, [4, 5, 5, 4, 5, 4, 5, 3, 5, 4, 5, 4]],
-      ['prv_amana', 'investigation', 10, [3, 4, 3, 2, 4, 3, 3, 4, 2, 3]],
       ['prv_recovery', 'collection', 11, [4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 5]],
-      ['prv_cairocollect', 'collection', 9, [2, 3, 2, 3, 3, 2, 3, 3, 2]],
-      ['prv_nile', 'investigation', 6, [4, 4, 3, 5, 4, 4]],
-      ['prv_nile', 'collection', 4, [4, 3, 4, 4]],
-      ['prv_fl_omar', 'investigation', 1, [5]],
-      ['prv_fl_mariam', 'investigation', 6, [4, 4, 3, 4, 4, 3]],
-      ['prv_fl_karim', 'collection', 4, [4, 3, 4, 3]]
+      ['prv_fl_omar', 'investigation', 1, [5]]
     ];
     var archiveN = 100;
     HIST.forEach(function (h) {
@@ -790,17 +712,9 @@
       ['prv_sphinx', 'ent_delta', 5, 4, 'Complete addresses and clear instructions.'],
       ['prv_sphinx', 'ent_horus', 4, 5, 'Pays on time, occasionally missing landmarks.'],
       ['prv_sphinx', 'ent_tahrir', 4, 3, 'Good data, invoices settled late twice.'],
-      ['prv_amana', 'ent_delta', 3, 4, 'Several applications had outdated work addresses.'],
-      ['prv_amana', 'ent_tahrir', 4, 3, ''],
-      ['prv_amana', 'ent_horus', 2, 4, 'Mobile numbers were often switched off.'],
       ['prv_recovery', 'ent_horus', 5, 5, 'Excellent contract data and quick settlement decisions.'],
       ['prv_recovery', 'ent_tahrir', 4, 4, ''],
-      ['prv_recovery', 'ent_delta', 4, 3, 'Settlement approvals take several days.'],
-      ['prv_cairocollect', 'ent_tahrir', 3, 2, 'Payments to us are usually late.'],
-      ['prv_nile', 'ent_delta', 4, 4, ''],
-      ['prv_nile', 'ent_tahrir', 3, 4, 'Customer phone numbers need verification before sending.'],
-      ['prv_fl_mariam', 'ent_horus', 5, 4, ''],
-      ['prv_fl_karim', 'ent_delta', 4, 5, 'Clear authority limits, easy to work with.']
+      ['prv_recovery', 'ent_delta', 4, 3, 'Settlement approvals take several days.']
     ];
     clientPairs.forEach(function (x) {
       var u = db.users.filter(function (u) { return u.providerId === x[0] && (u.role === 'provider_admin' || u.role === 'freelancer'); })[0];
@@ -825,12 +739,12 @@
       dc.disputeIds = [d1.id];
       dc.timeline = dc.timeline.concat([wf.entry(actor(userById(dc.createdBy)), T - 20 * H, 'dispute_opened', { note: d1.details })]);
     }
-    var ratedTahrir = db.ratings.filter(function (r) { return keyed.cairoOneStarTahrir && r.caseId === keyed.cairoOneStarTahrir.id; })[0];
+    var ratedTahrir = db.ratings.filter(function (r) { return keyed.oneStarDisputed && r.caseId === keyed.oneStarDisputed.id; })[0];
     if (ratedTahrir) {
-      var fady = db.users.filter(function (u) { return u.providerId === 'prv_cairocollect' && u.role === 'provider_admin'; })[0];
+      var owner = db.users.filter(function (u) { return u.providerId === ratedTahrir.providerId && u.role === 'provider_admin'; })[0];
       db.disputes.push({
         id: id('dsp'), ref: ICM.domain.nextRef(db, 'dispute'), kind: 'rating', caseId: ratedTahrir.caseId, caseRef: ratedTahrir.caseRef, ratingId: ratedTahrir.id,
-        raisedBy: fady.id, raisedByName: fady.name, raisedByParty: 'provider', entityId: ratedTahrir.entityId, providerId: 'prv_cairocollect',
+        raisedBy: owner.id, raisedByName: owner.name, raisedByParty: 'provider', entityId: ratedTahrir.entityId, providerId: ratedTahrir.providerId,
         reason: 'rating_unfair',
         details: 'The complaint mentioned in the review was never raised with us, and our call log shows no calls after 8 pm.',
         status: 'open', outcome: null, resolutionNote: null, createdAt: T - 30 * H, resolvedAt: null, resolvedBy: null, responses: []

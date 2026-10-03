@@ -138,7 +138,7 @@ async function runInvestigation(caseId, providerId, opts) {
   await scenario('3. Offer expiry and auto-select', async () => {
     await as('Tamer Lotfy');
     const c = await S.cases.createDraft('investigation', invValues('giza'));
-    await S.cases.sendOffer(c.id, 'prv_amana');
+    await S.cases.sendOffer(c.id, 'prv_fl_omar');
     await as('Laila Hosny');
     await S.demo.advance(5 * H);
     await as('Tamer Lotfy');
@@ -215,14 +215,14 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(plan.groups.length === 3, 'batch split into ' + plan.groups.length + ' governorate groups');
     const assignments = {};
     plan.groups.forEach((g) => {
-      const pick = g.eligible.providers.find((p) => p.id === (g.governorate === 'alexandria' ? 'prv_nile' : 'prv_sphinx')) || g.eligible.providers[0];
+      const pick = g.eligible.providers.find((p) => p.id === (g.governorate === 'giza' ? 'prv_fl_omar' : 'prv_sphinx')) || g.eligible.providers[0];
       assignments[g.governorate] = pick.id;
     });
     await S.batches.assign(b.id, 'split', assignments);
     const provs = new Set(Object.values(assignments));
     ok(provs.size === 2, 'split across 2 providers: ' + [...provs].join(', '));
     for (const pid of provs) {
-      await as_id(usersOf(pid, 'provider_admin')[0].id);
+      await as_id((usersOf(pid, 'provider_admin')[0] || usersOf(pid, 'freelancer')[0]).id);
       const inbox = await S.offers.inbox('investigation');
       for (const o of inbox.filter((o) => o.batchId === b.id && o.status === 'pending')) await S.offers.accept(o.id);
     }
@@ -262,15 +262,15 @@ async function runInvestigation(caseId, providerId, opts) {
 
   // ---------------------------------------------------------------- 7
   await scenario('7. Rating dispute upheld', async () => {
-    await as('Fady Mikhail');
+    await as('Adel Morsy');
     const rs = await S.ratings.received('collection');
     const oneStar = rs.find((r) => r.overall === 1 && r.status === 'active' && !r.disputed);
     ok(!!oneStar, 'provider finds a 1-star rating');
-    const before = score('prv_cairocollect', 'collection').score;
+    const before = score('prv_recovery', 'collection').score;
     const dsp = await S.disputes.open({ kind: 'rating', ratingId: oneStar.id, reason: 'rating_unfair', details: 'No complaint was ever raised.' });
     await as('Laila Hosny');
     await S.disputes.resolve(dsp.id, 'upheld', 'Evidence supports the provider.');
-    const after = score('prv_cairocollect', 'collection').score;
+    const after = score('prv_recovery', 'collection').score;
     const r = ICM.store.db.ratings.find((x) => x.id === oneStar.id);
     ok(r.status === 'removed' && after > before, 'rating removed, score ' + before + ' -> ' + after);
   });
@@ -278,15 +278,17 @@ async function runInvestigation(caseId, providerId, opts) {
   // ---------------------------------------------------------------- 8
   await scenario('8. Automatic enforcement', async () => {
     await as('Laila Hosny');
-    const cc = ICM.store.db.scores.prv_cairocollect.overall;
-    await S.config.updateScoring({ suspendBelow: 50, reduceBelow: 55, warnBelow: 60 });
-    const p = ICM.store.db.providers.find((x) => x.id === 'prv_cairocollect');
-    ok(p.enforcement.level === 'suspended', 'Cairo Collect (score ' + cc + ') suspended automatically');
+    const cc = ICM.store.db.scores.prv_recovery.overall;
+    await S.config.updateScoring({ suspendBelow: 85, reduceBelow: 90, warnBelow: 95 });
+    const p = ICM.store.db.providers.find((x) => x.id === 'prv_recovery');
+    ok(p.enforcement.level === 'suspended', 'Recovery Partners (score ' + cc + ') suspended automatically');
     await as('Youssef Kamel');
     const m = await S.marketplace.eligible({ service: 'collection', demand: { cairo: 1 }, buckets: ['b31_60'] });
-    ok(!m.providers.some((x) => x.id === 'prv_cairocollect'), 'it disappears from the marketplace');
+    ok(!m.providers.some((x) => x.id === 'prv_recovery'), 'it disappears from the marketplace');
     await as('Laila Hosny');
     await S.config.updateScoring({ suspendBelow: 40, reduceBelow: 50, warnBelow: 60 });
+    await S.providers.setAutomatic('prv_recovery');
+    ok(ICM.store.db.providers.find((x) => x.id === 'prv_recovery').enforcement.level === 'none', 'back in good standing once the thresholds are restored');
   });
 
   // ---------------------------------------------------------------- 9

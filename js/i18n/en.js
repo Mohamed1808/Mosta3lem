@@ -491,10 +491,10 @@
         2: 'Rework: on a delivered report, request rework as the entity. The supervisor sends it back to the agent, the agent resubmits. The first-time acceptance rate drops on the provider profile.',
         3: 'Offer expiry: send an offer, then advance the clock 5 hours here. The entity is notified; use Auto-select best on the case.',
         4: 'Collection: as Youssef Kamel create a collection with a 20% discount authority for Recovery Partners. As Tarek Helmy log a call and a promise, advance a day, record a partial payment and request a 15% discount. Approve as Youssef, pay the rest, close as Rehab Anwar, rate as Youssef.',
-        5: 'Bulk: download the sample file on Bulk upload, fix the 3 bad rows, create the batch, split by governorate, accept as providers, simulate field work here, accept all and close the batch with a rating.',
+        5: 'Bulk: download the sample file on Bulk upload, fix the 3 bad rows, create the batch, split by governorate (Giza to Omar Hassan, the rest to Sphinx), accept as providers, simulate field work here, accept all and close the batch with a rating.',
         6: 'Individual provider: send a Giza residence case to Omar Hassan. His report goes to the QA queue (Ziad Ezzat), not a supervisor.',
-        7: 'Rating dispute: as Fady Mikhail (Cairo Collect) dispute a 1-star rating. Uphold it as admin; the rating leaves the score.',
-        8: 'Enforcement: raise the suspension threshold to 50 (reduce 55) in Scoring. Cairo Collect is suspended and leaves the marketplace.',
+        7: 'Rating dispute: as Adel Morsy (Recovery Partners) dispute a 1-star rating. Uphold it as admin; the rating leaves the score.',
+        8: 'Enforcement: raise the suspension threshold to 85 (reduce 90, warn 95) in Scoring. Recovery Partners is suspended and leaves the marketplace. Set it back to 40, 50 and 60 afterwards.',
         9: 'SLA: advance the clock on an accepted case; it turns amber at 80% and red at the deadline. Entity, provider and admin are notified.',
         10: 'Arabic: switch the language in the header and repeat scenario 1. The layout mirrors right to left.'
       }
