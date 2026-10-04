@@ -107,12 +107,16 @@
     });
   };
 
-  /** Pick an agent for one or more cases. */
-  W.assign = async function (caseIds, service, governorate, currentAgentId) {
+  /**
+   * Pick an agent for one or more cases. where: the cases' places ([{ gov, city }]) or a
+   * governorate id. Agents who cover every place, down to the city, come first.
+   */
+  W.assign = async function (caseIds, service, where, currentAgentId) {
     var team = await S.providers.team(service);
+    var places = Array.isArray(where) ? where : where ? [{ gov: where, city: null }] : [];
+    var covers = function (a) { return places.length > 0 && places.every(function (pl) { return ICM.wf.coversPlace(ICM.wf.coverageOf(a), pl.gov, pl.city); }); };
     var agents = team.filter(function (a) { return a.active; }).sort(function (a, b) {
-      var la = a.governorates.indexOf(governorate) >= 0 ? 0 : 1, lb = b.governorates.indexOf(governorate) >= 0 ? 0 : 1;
-      return la - lb || a.stats.open - b.stats.open;
+      return (covers(a) ? 0 : 1) - (covers(b) ? 0 : 1) || a.stats.open - b.stats.open;
     });
     return new Promise(function (resolve) {
       var saved = false;
@@ -122,8 +126,8 @@
           <p class="small muted">${t('assign.intro')}</p>
           ${ui.table([
             { label: '', render: function (a) { return h`<input type="radio" name="agentId" value="${a.id}" ${a.id === currentAgentId ? 'checked' : ''} aria-label="${a.name}">`; } },
-            { label: t('common.name'), render: function (a) { return h`<strong>${a.name}</strong>${a.governorates.indexOf(governorate) >= 0 ? h` ${ui.badge(t('assign.coversArea'), 'success')}` : ''}`; } },
-            { label: t('assign.areas'), render: function (a) { return h`<span class="small">${a.governorates.map(ui.gov).join(', ')}</span>`; } },
+            { label: t('common.name'), render: function (a) { return h`<strong>${a.name}</strong>${covers(a) ? h` ${ui.badge(t('assign.coversArea'), 'success')}` : ''}`; } },
+            { label: t('assign.areas'), render: function (a) { return h`<span class="small">${ui.coverage.text(ICM.wf.coverageOf(a), 3)}</span>`; } },
             { label: t('assign.load'), num: true, render: function (a) { return U.num(a.stats.open); } },
             { label: t('metric.onTime'), num: true, render: function (a) { return ui.pct(a.stats.onTimeRate); } }
           ], agents, { empty: t('assign.noAgents') })}

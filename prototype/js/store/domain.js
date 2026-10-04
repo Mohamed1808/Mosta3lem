@@ -21,6 +21,18 @@
     return (a.home && a.home.governorate) || (a.work && a.work.governorate) || (a.business && a.business.governorate) || null;
   };
 
+  /** City id of a case's primary address, or null when its city is not on the governorate's list. */
+  domain.caseCity = function (c) {
+    var gov = domain.caseGov(c);
+    if (c.city) return ICM.config.cityIdOf(gov, c.city) || null;
+    var a = c.addresses || {};
+    var x = [a.home, a.work, a.business].filter(function (k) { return k && k.governorate === gov; })[0];
+    return x ? ICM.config.cityIdOf(gov, x.city) : null;
+  };
+
+  /** Where a case is: { gov, city }. */
+  domain.casePlace = function (c) { return { gov: domain.caseGov(c), city: domain.caseCity(c) }; };
+
   /** Price of an investigation for a provider: sum of its inquiry type prices in the case's zone. */
   domain.investigationPrice = function (db, provider, inquiryTypes, govId) {
     var zone = domain.zoneOf(db, govId);

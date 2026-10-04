@@ -224,7 +224,7 @@
     actions: {
       acceptOffer: async function (el, ev, ctx) { if (await acceptOffer(el.getAttribute('data-id'), ctx, 1)) ctx.reload(); },
       declineOffer: async function (el, ev, ctx) { if (await declineOffer(el.getAttribute('data-id'), ctx)) ctx.navigate(base(ctx) + '/offers'); },
-      assign: async function (el, ev, ctx) { var d = await S.cases.get(ctx.params.id); if (await ui.flows.assign([d.case.id], d.case.service, d.case.governorate, d.case.agentId)) ctx.reload(); },
+      assign: async function (el, ev, ctx) { var d = await S.cases.get(ctx.params.id); if (await ui.flows.assign([d.case.id], d.case.service, d.case.place ? [d.case.place] : d.case.governorate, d.case.agentId)) ctx.reload(); },
       selfAssign: async function (el, ev, ctx) { await S.cases.assign([ctx.params.id], ctx.session.user.agentId); ctx.reload(); },
       review: async function (el, ev, ctx) { if (await ui.flows.review(ctx.params.id)) ctx.reload(); },
       logAction: async function (el, ev, ctx) { var d = await S.cases.get(ctx.params.id); if (await ui.flows.logAction(d.case)) ctx.reload(); },
@@ -292,7 +292,7 @@
         var d = await P.provider.assignment.load(ctx);
         var ids = d.cases.filter(function (c) { return c.status !== 'assigned' && ctx.state.sel[c.id]; });
         if (!ids.length) return;
-        if (await ui.flows.assign(ids.map(function (c) { return c.id; }), ctx.service, ids[0].governorate)) { ctx.state.sel = {}; ctx.reload(); }
+        if (await ui.flows.assign(ids.map(function (c) { return c.id; }), ctx.service, ids.map(function (c) { return c.place; }).filter(Boolean))) { ctx.state.sel = {}; ctx.reload(); }
       }
     }
   };

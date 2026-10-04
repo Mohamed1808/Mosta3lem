@@ -45,9 +45,10 @@ export function FormSheet({ visible, title, def, initial, intro, submitLabel, da
   );
 }
 
-/** Pick a field agent for one or more cases. Agents who cover the case area come first. */
-export function AgentPicker({ visible, caseIds, service, governorate, currentAgentId, onClose }: {
-  visible: boolean; caseIds: string[]; service: string; governorate?: string; currentAgentId?: string | null; onClose: (saved: boolean) => void;
+/** Pick a field agent for one or more cases. Agents who cover the cases' governorates and cities come first. */
+export function AgentPicker({ visible, caseIds, service, governorate, places, currentAgentId, onClose }: {
+  visible: boolean; caseIds: string[]; service: string; governorate?: string; places?: { gov: string; city: string | null }[];
+  currentAgentId?: string | null; onClose: (saved: boolean) => void;
 }) {
   const t = useT();
   const d = useDir();
@@ -56,8 +57,11 @@ export function AgentPicker({ visible, caseIds, service, governorate, currentAge
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const q = useQuery<any[]>(() => (visible ? services().providers.team(service) : Promise.resolve([])), [visible, service]);
+  // An agent covers the cases when their coverage includes each case's governorate and city.
+  const where: { gov: string; city: string | null }[] = places && places.length ? places : governorate ? [{ gov: governorate, city: null }] : [];
+  const coversAll = (a: any) => where.length > 0 && where.every((pl) => icm().wf.coversPlace(icm().wf.coverageOf(a), pl.gov, pl.city));
   const agents = (q.data || []).filter((a) => a.active).sort((a, b) => {
-    const la = governorate && a.governorates.indexOf(governorate) >= 0 ? 0 : 1, lb = governorate && b.governorates.indexOf(governorate) >= 0 ? 0 : 1;
+    const la = coversAll(a) ? 0 : 1, lb = coversAll(b) ? 0 : 1;
     return la - lb || a.stats.open - b.stats.open;
   });
   const save = async () => {
@@ -74,7 +78,7 @@ export function AgentPicker({ visible, caseIds, service, governorate, currentAge
         <Txt v="sm" c="muted">{t('assign.intro')}</Txt>
         {q.loading && !q.data ? <Loading /> : agents.length ? agents.map((a) => {
           const on = pick === a.id;
-          const covers = governorate && a.governorates.indexOf(governorate) >= 0;
+          const covers = coversAll(a);
           return (
             <Pressable key={a.id} onPress={() => setPick(a.id)} accessibilityRole="radio" accessibilityState={{ selected: on }}
               style={{ flexDirection: d.row, gap: 12, alignItems: 'center', padding: 12, borderRadius: radius.md, borderWidth: 1, borderColor: on ? colors.accent : colors.border, backgroundColor: on ? colors.accentSoft : colors.surface }}>

@@ -50,7 +50,7 @@ export default function Assign() {
         ) : <Empty text={t('assign.allAssigned')} icon="check" />}
         {shown.length ? <Txt v="xs" c="faint" style={{ marginTop: space.sm }}>{t('assign.routeHint')}</Txt> : null}
       </View>
-      {picking ? <AgentPicker visible caseIds={ids} service={service || 'investigation'} governorate={shown.find((c) => sel[c.id])?.governorate}
+      {picking ? <AgentPicker visible caseIds={ids} service={service || 'investigation'} places={shown.filter((c) => sel[c.id] && c.place).map((c) => c.place)}
         onClose={(saved) => { setPicking(false); if (saved) setSel({}); }} /> : null}
     </Screen>
   );

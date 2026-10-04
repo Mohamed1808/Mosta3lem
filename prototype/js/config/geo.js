@@ -81,4 +81,16 @@
     var x = ICM.config.citiesOf(govId).filter(function (k) { return k.id === cityId; })[0];
     return x ? x : null;
   };
+  /**
+   * The city id for an address city written as an id or as its English or Arabic name
+   * ("Dokki", "dokki", "الدقي"). null when it is not on the governorate's list.
+   */
+  ICM.config.cityIdOf = function (govId, text) {
+    var s = String(text == null ? '' : text).trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!s) return null;
+    var x = ICM.config.citiesOf(govId).filter(function (k) {
+      return k.id === s || k.en.toLowerCase() === s || k.ar === s;
+    })[0];
+    return x ? x.id : null;
+  };
 })();

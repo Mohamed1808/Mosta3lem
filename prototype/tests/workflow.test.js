@@ -644,6 +644,30 @@
     });
   });
 
+  describe('city matching', function () {
+    it('finds the city id from an id, an English name or an Arabic name', function () {
+      var C = ICM.config;
+      expect(C.cityIdOf('giza', 'Dokki')).toBe('dokki');
+      expect(C.cityIdOf('giza', '  dokki ')).toBe('dokki');
+      expect(C.cityIdOf('giza', 'الدقي')).toBe('dokki');
+      expect(C.cityIdOf('giza', '6th of October')).toBe('october');
+      expect(C.cityIdOf('cairo', 'Dokki')).toBe(null);
+      expect(C.cityIdOf('giza', '')).toBe(null);
+    });
+    it('covers a place by governorate, narrowed to cities when listed', function () {
+      var cov = { giza: ['dokki', 'haram'], cairo: [] };
+      expect(wf.coversPlace(cov, 'giza', 'dokki')).toBe(true);
+      expect(wf.coversPlace(cov, 'giza', 'agouza')).toBe(false);
+      expect(wf.coversPlace(cov, 'giza', null)).toBe(true);
+      expect(wf.coversPlace(cov, 'cairo', 'maadi')).toBe(true);
+      expect(wf.coversPlace(cov, 'alexandria', null)).toBe(false);
+    });
+    it('reads coverage from older records that only list governorates', function () {
+      expect(JSON.stringify(wf.coverageOf({ governorates: ['giza'] }))).toBe('{"giza":[]}');
+      expect(JSON.stringify(wf.coverageOf({ governorates: ['giza'], coverageCities: { giza: ['dokki'] } }))).toBe('{"giza":["dokki"]}');
+    });
+  });
+
   describe('provider settings', function () {
     var DAY = 86400000, NOW = new Date('2026-10-04T12:00:00').getTime();
     var doc = function (days, reminders) { return { type: 'commercial_register', expiresAt: NOW + days * DAY, reminders: reminders || {} }; };

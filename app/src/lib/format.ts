@@ -21,6 +21,12 @@ export function cityName(govId: string, cityId: string) {
   const c = icm().config.cityLabel(govId, cityId);
   return c ? U().label(c) : cityId;
 }
+/** "Dokki, Giza" for a case's place; just the governorate when the city is unknown. */
+export function placeText(place: { gov: string; city: string | null } | null | undefined, govId?: string) {
+  const g = (place && place.gov) || govId;
+  if (!g) return '-';
+  return place && place.city ? cityName(g, place.city) + t('common.listSep') + gov(g) : gov(g);
+}
 export function coverageText(cov: Record<string, string[]> | null | undefined, max?: number) {
   const govs = Object.keys(cov || {});
   const parts = govs.slice(0, max || govs.length).map((g) => {

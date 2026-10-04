@@ -237,7 +237,7 @@
       sortBy: 'Sort by', sort: { rank: 'Best match', score: 'Score', price: 'Price', availability: 'Availability', sla: 'SLA' },
       eligibleCount: '{n} eligible providers', hiddenFull: '{n} hidden: full capacity', hiddenSuspended: '{n} suspended',
       type: 'Type', minRating: 'Minimum rating', priceMin: 'Price from', priceMax: 'Price to', feeMin: 'Fee % from', feeMax: 'Fee % to',
-      noneEligible: 'No provider covers this governorate with spare capacity right now.', bestMatch: 'Best match',
+      noneEligible: 'No provider covers this area (governorate and city) with spare capacity right now.', bestMatch: 'Best match',
       feeText: '{pct}% + {fixed}', perCase: 'per case', feeTerms: 'of recovered, plus fixed fee', sla: 'SLA', spare: 'Spare capacity',
       profile: 'Profile', select: 'Select', selectThis: 'Select this provider', confirmTitle: 'Send offer',
       confirmBody: 'Send this case to {name} for {price}? They have {hours} hours to accept or decline.', sendOffer: 'Send offer',

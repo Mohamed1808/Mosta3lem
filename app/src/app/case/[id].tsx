@@ -154,7 +154,7 @@ function Actions({ d }: { d: any }) {
   return (
     <Card title={t('caseScreen.actions')}>
       <Stack gap={10}>{out}</Stack>
-      {sheet === 'assign' ? <AgentPicker visible caseIds={[c.id]} service={c.service} governorate={c.governorate} currentAgentId={c.agentId} onClose={() => setSheet(null)} /> : null}
+      {sheet === 'assign' ? <AgentPicker visible caseIds={[c.id]} service={c.service} governorate={c.governorate} places={c.place ? [c.place] : undefined} currentAgentId={c.agentId} onClose={() => setSheet(null)} /> : null}
       {sheet === 'action' ? <FormSheet visible title={t('collection.logAction')} def={C.COLLECTION_FORMS.action}
         intro={<Txt v="sm" c="muted">{t('collection.allowedIntro', { list: ['calls', 'messages', 'visits'].filter((k) => allowed[k]).map((k) => t('forms.collectionRequest.allowed.' + k)).join(t('common.listSep')) || '-' })}</Txt>}
         validate={(v) => (ALLOWED_BY[v.type] && !allowed[ALLOWED_BY[v.type]] ? { type: 'wf.err.actionNotAllowed' } : {})}
