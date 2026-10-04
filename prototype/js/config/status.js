@@ -39,7 +39,7 @@
     draft_invoice: 'neutral', issued: 'info', paid: 'success',
     open: 'warning', resolved: 'success',
     pending_acceptance: 'pending', in_progress: 'accent', partially_closed: 'info',
-    verified: 'success', rejected: 'danger', info_requested: 'warning',
+    verified: 'success', rejected: 'danger', info_requested: 'warning', awaiting_signoff: 'info',
     none: 'success', warned: 'warning', reduced: 'danger', suspended: 'danger',
     on_track: 'success', at_risk: 'warning', breached: 'danger', met: 'success', missed: 'danger',
     kept: 'success', broken: 'danger', approved: 'success'

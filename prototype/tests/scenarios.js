@@ -347,15 +347,47 @@ async function runInvestigation(caseId, providerId, opts) {
     await S.providers.requestInfo(r.providerId, 'Please attach the tax card.');
     await as('Sherif Mansour');
     ok(notifs(uid('Sherif Mansour'), 'notif.application_info_requested').length === 1, 'applicant notified of the request');
-    await S.registration.uploadDocument('tax_card', 'tax-card.pdf');
-    await S.registration.resubmit('Tax card attached.');
+    ok(app.canEdit === false, 'details are locked while the platform reviews them');
     app = await S.registration.mine();
-    ok(app.verification.status === 'pending', 'applicant answers and the application returns to review');
+    ok(app.canEdit === true && app.verification.status === 'info_requested', 'details open for changes after a request for information');
+    await S.registration.uploadDocument('tax_card', 'tax-card.pdf');
+    await S.registration.update(Object.assign({}, app.values, { companyName: 'Canal Field Partners LLC' }));
+    await S.registration.resubmit('Tax card attached, legal name corrected.');
+    app = await S.registration.mine();
+    ok(app.verification.status === 'pending' && app.name === 'Canal Field Partners LLC', 'applicant answers, corrects the name and the application returns to review');
+    fail = null;
+    try { await S.registration.update(app.values); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.applicationLocked', 'details lock again once the application is back in review');
+
+    await as('Laila Hosny');
+    fail = null;
+    try { await S.providers.approve(r.providerId); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.documentsMissing', 'operations cannot approve while documents are missing');
+    await S.providers.reject(r.providerId, 'Owner national ID is missing.');
+    await as('Sherif Mansour');
+    app = await S.registration.mine();
+    ok(app.verification.status === 'rejected' && app.canEdit && app.stage === 3, 'a rejected applicant can fix the application');
+    await S.registration.uploadDocument('owner_id_front', 'id-front.jpg', 'data:image/jpeg;base64,AAAA');
+    await S.registration.uploadDocument('owner_id_back', 'id-back.jpg');
+    await S.registration.resubmit('Owner ID attached.');
+    app = await S.registration.mine();
+    ok(app.verification.status === 'pending' && app.verification.documents.find((d) => d.type === 'owner_id_front').url, 'resent after a rejection, with the document image kept');
+
+    await as('Laila Hosny');
+    fail = null;
+    try { await S.providers.verify(r.providerId); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.notAwaitingSignoff', 'management cannot sign off before operations approves');
+    await S.providers.approve(r.providerId);
+    await as('Sherif Mansour');
+    app = await S.registration.mine();
+    s = await S.auth.currentUser();
+    ok(app.verification.status === 'awaiting_signoff' && app.stage === 2 && s.portal === 'applicant', 'operations approves; the applicant waits for management sign-off');
+    ok(notifs(uid('Sherif Mansour'), 'notif.application_ops_approved').length === 1, 'applicant told operations approved');
     await as('Laila Hosny');
     await S.providers.verify(r.providerId);
     await as('Sherif Mansour');
     s = await S.auth.currentUser();
-    ok(s.portal === 'provider' && s.home === '#/provider/investigation', 'after verification the owner opens the provider portal');
+    ok(s.portal === 'provider' && s.home === '#/provider/investigation', 'after management sign-off the owner opens the provider portal');
 
     const ind = {
       kind: 'individual', services: ['investigation'], fullName: 'Youssef Hamdy Salem', nationalId: '29406152112345', phone: '01555443322',

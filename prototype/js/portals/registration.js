@@ -71,7 +71,7 @@
   };
 
   // ================================================================ applicant: my application
-  var TRACK = ['submitted', 'review', 'decision'];
+  var TRACK = wf.APPLICATION_STAGES;
 
   P.applicant.application = {
     live: true,
@@ -80,9 +80,9 @@
     render: function (p, ctx) {
       var st = p.verification.status;
       var company = p.kind === 'company';
-      var canEdit = ['provider_admin', 'freelancer'].indexOf(p.me.role) >= 0;
+      var canEdit = p.canUpload;
       var lastNote = p.verification.notes.filter(function (n) { return n.kind === 'info_requested' || n.kind === 'rejected'; }).slice(-1)[0];
-      var stage = st === 'pending' ? 1 : st === 'info_requested' ? 1 : 2;
+      var stage = p.stage;
       var ltr = function (x) { return x ? h`<bdi dir="ltr">${x}</bdi>` : '-'; };
       var missing = p.verification.documents.filter(function (d) { return d.status === 'missing'; }).length;
       return h`${ui.pageHead(t('application.title'), h`${p.name} · <span class="mono">${p.registration ? p.registration.ref : ''}</span>`, h`${ui.status(st)}${ui.kindBadge(p.kind)}`)}
@@ -92,16 +92,17 @@
           return h`<li class="${cls}"><span class="n">${i < stage ? icon('check') : U.num(i + 1)}</span><span>${t('application.track.' + (k === 'review' && st === 'info_requested' ? 'info' : k === 'decision' && st === 'rejected' ? 'rejected' : k))}</span></li>`;
         })}</ol>
         ${st === 'pending' ? h`<div class="mb-16">${ui.notice(missing ? t('application.pendingMissing', { n: missing }) : t('application.pending'), 'info')}</div>` : ''}
-        ${st === 'rejected' ? h`<div class="mb-16">${ui.notice(h`<strong>${t('application.rejected')}</strong>${lastNote ? h`<div class="mt-8">${lastNote.text}</div>` : ''}`, 'bad')}</div>` : ''}
-        ${st === 'info_requested' ? ui.card(t('application.infoRequested'), h`<div class="stack">
-            ${ui.notice(h`<div class="xs faint">${lastNote ? U.fmtDateTime(lastNote.at) + ' · ' + lastNote.by : ''}</div><div class="mt-8">${lastNote ? lastNote.text : ''}</div>`, 'warn')}
-            ${canEdit ? h`<form data-submit="resubmit" class="stack tight">
-              <div class="field"><label for="ap-note">${t('application.yourReply')}<span class="req">*</span></label><textarea class="textarea" id="ap-note" name="note" rows="3" placeholder="${t('application.replyPlaceholder')}"></textarea></div>
-              <div class="row end"><button type="submit" class="btn btn-primary">${icon('send')}${t('application.resubmit')}</button></div></form>` : ''}
+        ${st === 'awaiting_signoff' ? h`<div class="mb-16">${ui.notice(t('application.signoff'), 'info')}</div>` : ''}
+        ${st === 'rejected' ? h`<div class="mb-16">${ui.notice(h`<strong>${t('application.rejected')}</strong>${lastNote ? h`<div class="mt-8">${lastNote.text}</div>` : ''}${p.canEdit ? h`<div class="mt-8">${t('application.rejectedFix')}</div>` : ''}`, 'bad')}</div>` : ''}
+        ${st === 'info_requested' || (st === 'rejected' && p.canEdit) ? ui.card(st === 'rejected' ? t('application.resend') : t('application.infoRequested'), h`<div class="stack">
+            ${st === 'info_requested' ? ui.notice(h`<div class="xs faint">${lastNote ? U.fmtDateTime(lastNote.at) + ' · ' + lastNote.by : ''}</div><div class="mt-8">${lastNote ? lastNote.text : ''}</div>`, 'warn') : ''}
+            ${p.canEdit ? h`<form data-submit="resubmit" class="stack tight">
+              <div class="field"><label for="ap-note">${t('application.yourReply')}<span class="req">*</span></label><textarea class="textarea" id="ap-note" name="note" rows="3" placeholder="${st === 'rejected' ? t('application.resendBody') : t('application.replyPlaceholder')}"></textarea></div>
+              <div class="row end"><button type="submit" class="btn btn-primary">${icon('send')}${st === 'rejected' ? t('application.resend') : t('application.resubmit')}</button></div></form>` : ''}
           </div>`, { cls: 'mb-16' }) : ''}
         <div class="grid cols-2 mb-16">
           ${ui.card(t('reg.sec.documents'), h`<div class="stack tight">${p.verification.documents.map(function (d) {
-            var locked = d.status === 'verified' || !canEdit || st === 'rejected';
+            var locked = d.status === 'verified' || !canEdit;
             return h`<div class="doc-pick"><div class="grow"><div class="strong small">${t('doc.' + d.type)}</div><div class="xs ${d.fileName ? '' : 'faint'}">${d.fileName || t('reg.noFile')}</div></div>
               ${ui.status(d.status === 'uploaded' ? 'pending' : d.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}
               ${locked ? '' : h`<label class="btn btn-sm">${icon('upload')}${d.fileName ? t('reg.replaceFile') : t('reg.attachFile')}<input type="file" accept="application/pdf,image/*" class="sr-only" data-change="uploadDoc" data-doc="${d.type}"></label>`}</div>`;

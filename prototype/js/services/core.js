@@ -144,6 +144,27 @@
       });
     },
     simulateBatchWork: function (batchId) { return S.batches._simulate(batchId); },
+    /**
+     * Demo only: act as the platform on the signed-in applicant's own application, so the
+     * whole review can be tried from the app. action: 'approve' (Operations), 'verify'
+     * (Management sign-off), 'requestInfo' or 'reject' (note required).
+     */
+    reviewMyApplication: function (action, note) {
+      var me = E.currentUser();
+      var admin = E.admins()[0];
+      if (!me || !me.providerId || !admin) return Promise.reject(new Err('errors.forbidden'));
+      var pid = me.providerId;
+      if (action === 'approve' || action === 'verify') {
+        var p = E.providerById(pid);
+        if (p && p.kind === 'freelancer') ICM.store.tx(function () { p.verification.idVerified = true; p.verification.certified = true; });
+      }
+      var fn = { approve: S.providers.approve, verify: S.providers.verify, requestInfo: S.providers.requestInfo, reject: S.providers.reject }[action];
+      if (!fn) return Promise.reject(new Err('errors.forbidden'));
+      E.setSession(admin.id);
+      var out;
+      try { out = fn(pid, note); } finally { E.setSession(me.id); }
+      return out;
+    },
     tick: function () { return E.run(function () { return E.tick(); }); }
   };
 

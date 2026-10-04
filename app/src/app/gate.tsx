@@ -1,4 +1,4 @@
-/** Shown to signed-in people whose part of the app is not built yet (banks, platform staff, applicants). */
+/** Shown to signed-in people whose part of the app is not built yet (banks and platform staff). */
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -10,12 +10,12 @@ import { Screen } from '@/ui/screen';
 export default function Gate() {
   const t = useT();
   const { session, signOut } = useApp();
-  const kind = session?.portal === 'entity' ? 'requester' : session?.portal === 'admin' ? 'admin' : 'applicant';
+  const kind = session?.portal === 'admin' ? 'admin' : 'requester';
   return (
     <Screen title={t('app.name')}>
       <View style={{ alignItems: 'center', paddingVertical: space.xxl }}>
         <Stack style={{ alignItems: 'center', maxWidth: 420 }}>
-          <Icon name={kind === 'requester' ? 'building' : kind === 'admin' ? 'shield' : 'clock'} size={40} />
+          <Icon name={kind === 'requester' ? 'building' : 'shield'} size={40} />
           <Txt v="h2" center>{t('gate.' + kind + 'Title')}</Txt>
           <Txt c="muted" center>{t('gate.' + kind + 'Body')}</Txt>
           <Txt v="sm" c="faint" center>{session?.user?.name}</Txt>

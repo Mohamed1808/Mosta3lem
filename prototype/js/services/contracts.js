@@ -25,7 +25,8 @@
       advance: '(ms) -> TickSummary   (admin)',
       resetClock: '() -> TickSummary   (admin)',
       reset: '() -> void   (restores the seed)',
-      simulateBatchWork: '(batchId) -> { advanced }   (admin; drives open batch cases through the workflow)'
+      simulateBatchWork: '(batchId) -> { advanced }   (admin; drives open batch cases through the workflow)',
+      reviewMyApplication: '(approve|verify|requestInfo|reject, note?) -> Provider   (demo: the platform reviews the signed-in applicant)'
     },
     cases: {
       list: '(filters) -> CaseRow[]   (masked for provider users)',
@@ -69,7 +70,8 @@
       list: '() -> Provider[]   (admin)',
       get: '(providerId) -> Provider   (admin)',
       applications: '() -> Provider[]   (admin)',
-      verify: '(providerId) -> Provider',
+      approve: '(providerId) -> Provider   (Operations: pending -> awaiting_signoff)',
+      verify: '(providerId) -> Provider   (Management sign-off: awaiting_signoff -> verified)',
       reject: '(providerId, reason) -> Provider',
       requestInfo: '(providerId, note) -> Provider',
       setCheck: '(providerId, field, value) -> Provider',
@@ -83,8 +85,9 @@
       submit: '(values) -> { ref, providerId, userId }   (public self sign-up; signs the owner in)',
       adminRegister: '(values, { verifyNow }) -> { ref, providerId, userId, status }   (admin)',
       mine: '() -> Provider application   (applicant)',
-      uploadDocument: '(type, fileName) -> Provider   (applicant)',
-      resubmit: '(note) -> Provider   (applicant, after a request for information)'
+      uploadDocument: '(type, fileName, dataUrl?) -> Provider   (applicant)',
+      update: '(values) -> Provider   (applicant, after a request for information or a rejection)',
+      resubmit: '(note) -> Provider   (applicant, after a request for information or a rejection)'
     },
     team: {
       structure: '() -> { owners, supervisors[{ agents }], unassigned, canManage }   (owner: all, supervisor: own team)',

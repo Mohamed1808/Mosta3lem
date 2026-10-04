@@ -37,8 +37,11 @@ function Navigator() {
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="login" />
         <Stack.Screen name="demo" />
+        <Stack.Screen name="register" />
       </Stack.Protected>
       <Stack.Protected guard={signedIn}>
+        <Stack.Screen name="application" />
+        <Stack.Screen name="application-edit" />
         <Stack.Screen name="(provider)" />
         <Stack.Screen name="gate" />
         <Stack.Screen name="case/[id]" />

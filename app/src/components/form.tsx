@@ -3,7 +3,7 @@
  * reportForms.js): text, numbers, dates, dropdowns, yes/no, calculated fields, document
  * scans, photos, licences, repeatable rows (references) and on-screen signatures.
  */
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -34,7 +34,8 @@ export function FormView({ def, values, errors = {}, onChange, flash = [], onSca
         if (!visible.length) return null;
         return (
           <Stack key={sec.id || 'all'} gap={space.lg}>
-            {sec.id ? <Txt v="h3">{t('forms.' + def.id + '.sections.' + sec.id)}</Txt> : null}
+            {sec.title ? <Txt v="h3">{t(sec.title)}</Txt> : sec.id ? <Txt v="h3">{t('forms.' + def.id + '.sections.' + sec.id)}</Txt> : null}
+            {sec.intro ? <Txt v="sm" c="muted">{t(sec.intro)}</Txt> : null}
             {visible.map((f: any) => (
               <Field key={f.name} f={f} formId={def.id} values={values} value={values[f.name]} error={errors[f.name]} errors={errors}
                 onValue={(v) => set(f.name, v)} flashed={flash.indexOf(f.name) >= 0} onScan={onScan} scanning={scanning === f.name} />
@@ -91,9 +92,15 @@ function Control({ f, formId, values, value, error, errors, onValue, flashed, on
       return <TextInput value={value || ''} onChangeText={onValue} multiline style={[...box, { minHeight: 90, textAlignVertical: 'top', textAlign: d.align }]} accessibilityLabel={label} />;
     case 'number':
       return <TextInput value={value == null ? '' : String(value)} onChangeText={(v) => onValue(v.replace(/[^0-9.]/g, ''))} keyboardType="numeric" style={[...box, { textAlign: d.align }]} accessibilityLabel={label} />;
-    case 'phone': case 'anyPhone': case 'nationalId':
-      return <TextInput value={value || ''} onChangeText={(v) => onValue(v.replace(/[^0-9]/g, ''))} keyboardType="phone-pad" maxLength={f.type === 'nationalId' ? 14 : 15}
-        placeholder={f.type === 'phone' ? '01XXXXXXXXX' : f.type === 'nationalId' ? t('forms.nidPlaceholder') : ''} style={[...box, { textAlign: 'left', writingDirection: 'ltr' }]} accessibilityLabel={label} />;
+    case 'phone': case 'anyPhone': case 'nationalId': case 'digits':
+      return <TextInput value={value || ''} onChangeText={(v) => onValue(v.replace(/[^0-9]/g, ''))} keyboardType={f.type === 'digits' ? 'number-pad' : 'phone-pad'}
+        maxLength={f.max || (f.type === 'nationalId' ? 14 : 15)}
+        placeholder={f.placeholder || (f.type === 'phone' ? '01XXXXXXXXX' : f.type === 'nationalId' ? t('forms.nidPlaceholder') : '')} style={[...box, { textAlign: 'left', writingDirection: 'ltr' }]} accessibilityLabel={label} />;
+    case 'email':
+      return <TextInput value={value || ''} onChangeText={(v) => onValue(v.trim())} keyboardType="email-address" autoCapitalize="none" autoComplete="email" autoCorrect={false}
+        style={[...box, { textAlign: 'left', writingDirection: 'ltr' }]} accessibilityLabel={label} />;
+    case 'checkbox':
+      return <CheckRow on={!!value} label={label} onPress={() => onValue(!value)} bad={bad} />;
     case 'date':
       return <TextInput value={value || ''} onChangeText={onValue} placeholder={t('form.datePlaceholder')} keyboardType="numbers-and-punctuation" maxLength={10} style={[...box, { textAlign: 'left', writingDirection: 'ltr' }]} accessibilityLabel={label} />;
     case 'select': case 'governorate':
@@ -171,6 +178,20 @@ function Control({ f, formId, values, value, error, errors, onValue, flashed, on
     default:
       return <TextInput value={value || ''} onChangeText={onValue} style={[...box, { textAlign: d.align }]} accessibilityLabel={label} />;
   }
+}
+
+/** A tick box with its label, for yes/no agreements and options. */
+export function CheckRow({ on, label, onPress, bad, children }: { on: boolean; label?: string; onPress: () => void; bad?: boolean; children?: ReactNode }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={label} hitSlop={6}>
+      <Row gap={10} center={false}>
+        <View style={{ width: 22, height: 22, borderRadius: 5, borderWidth: 2, borderColor: on ? colors.accent : bad ? colors.bad : colors.borderStrong, backgroundColor: on ? colors.accent : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+          {on ? <Icon name="check" size={14} color="#fff" /> : null}
+        </View>
+        <Grow>{children || <Txt>{label}</Txt>}</Grow>
+      </Row>
+    </Pressable>
+  );
 }
 
 function SelectControl({ options, value, onValue, label, bad, flashed }: { options: { value: string; label: string }[]; value: any; onValue: (v: any) => void; label: string; bad?: boolean; flashed?: boolean }) {

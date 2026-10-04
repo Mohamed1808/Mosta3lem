@@ -14,8 +14,24 @@ const en = {
   },
   gate: {
     requesterTitle: 'The requester side comes next', requesterBody: 'The screens for banks and finance companies are built after the service provider side. Sign out and use a provider account to try the app.',
-    adminTitle: 'Use the internal console', adminBody: 'Platform staff work in the internal web console, not in the mobile app.',
-    applicantTitle: 'Your application is under review', applicantBody: 'The platform team is checking your details. You can sign in again once it is approved.'
+    adminTitle: 'Use the internal console', adminBody: 'Platform staff work in the internal web console, not in the mobile app.'
+  },
+  signup: {
+    step: { type: 'Type and services', details: 'Details', area: 'Address and coverage', docs: 'Documents', confirm: 'Confirm and submit' },
+    leaveTitle: 'Leave registration?', leaveBody: 'What you entered so far will be lost.', leave: 'Leave',
+    docsIntro: 'Take a clear photo of each document, flat and in good light, with all four corners showing.',
+    docsLater: 'You can submit without some documents and add them later from your application. The platform approves an application only once all of them are attached.',
+    docsCount: '{n} of {total} documents attached', docsMissing: '{n} document(s) still missing. You can add them after you submit.',
+    docsNote: 'Photos are kept with your application. Verified documents cannot be replaced.',
+    terms: 'I have read and agree to the terms of use and the privacy policy.',
+    verifyTitle: 'Confirm your mobile', verifyBody: 'We send a code to {phone}. You sign in with this number.',
+    received: 'Application {ref} received',
+    editTitle: 'Edit your application', editDetails: 'Edit details', saveChanges: 'Save changes',
+    saved: 'Changes saved. Send the application again when you are ready.',
+    demo: {
+      title: 'Demo: the platform review', body: 'In the live app, operations and management review from the internal console. Use these to try each outcome.',
+      approve: 'Operations approves', verify: 'Management signs off', requestInfo: 'Ask for more information', reject: 'Reject', noteLabel: 'Message to the applicant'
+    }
   },
   tabs: { home: 'Home', offers: 'Offers', cases: 'Cases', tasks: 'My tasks', team: 'Team', more: 'More' },
   home: {
@@ -55,8 +71,24 @@ const ar: typeof en = {
   },
   gate: {
     requesterTitle: 'جانب الجهات الطالبة هو التالي', requesterBody: 'تُبنى شاشات البنوك وشركات التمويل بعد جانب مقدمي الخدمة. سجّل الخروج واستخدم حساب مقدم خدمة لتجربة التطبيق.',
-    adminTitle: 'استخدم لوحة التحكم الداخلية', adminBody: 'يعمل فريق المنصة من لوحة التحكم الداخلية على الويب، وليس من تطبيق الموبايل.',
-    applicantTitle: 'طلبك قيد المراجعة', applicantBody: 'يراجع فريق المنصة بياناتك، ويمكنك تسجيل الدخول مجددًا بعد الاعتماد.'
+    adminTitle: 'استخدم لوحة التحكم الداخلية', adminBody: 'يعمل فريق المنصة من لوحة التحكم الداخلية على الويب، وليس من تطبيق الموبايل.'
+  },
+  signup: {
+    step: { type: 'النوع والخدمات', details: 'البيانات', area: 'العنوان ونطاق التغطية', docs: 'المستندات', confirm: 'التأكيد والإرسال' },
+    leaveTitle: 'الخروج من التسجيل؟', leaveBody: 'ستفقد ما أدخلته حتى الآن.', leave: 'خروج',
+    docsIntro: 'التقط صورة واضحة لكل مستند، مستوية وفي إضاءة جيدة، مع ظهور الأركان الأربعة.',
+    docsLater: 'يمكنك إرسال الطلب دون بعض المستندات وإضافتها لاحقًا من صفحة طلبك. لا تعتمد المنصة الطلب إلا بعد إرفاقها كلها.',
+    docsCount: 'تم إرفاق {n} من {total} مستندات', docsMissing: 'ما زال {n} مستند ناقصًا. يمكنك إضافته بعد الإرسال.',
+    docsNote: 'تُحفظ الصور مع طلبك. لا يمكن استبدال المستندات المعتمدة.',
+    terms: 'قرأت وأوافق على شروط الاستخدام وسياسة الخصوصية.',
+    verifyTitle: 'تأكيد رقم الموبايل', verifyBody: 'نرسل رمزًا إلى {phone}. تسجل الدخول بهذا الرقم.',
+    received: 'تم استلام الطلب {ref}',
+    editTitle: 'تعديل طلبك', editDetails: 'تعديل البيانات', saveChanges: 'حفظ التعديلات',
+    saved: 'تم حفظ التعديلات. أعد إرسال الطلب عندما تكون جاهزًا.',
+    demo: {
+      title: 'نسخة تجريبية: مراجعة المنصة', body: 'في التطبيق الفعلي يراجع فريق العمليات والإدارة الطلب من لوحة التحكم الداخلية. استخدم هذه الأزرار لتجربة كل نتيجة.',
+      approve: 'موافقة العمليات', verify: 'اعتماد الإدارة', requestInfo: 'طلب معلومات إضافية', reject: 'رفض', noteLabel: 'رسالة إلى المتقدم'
+    }
   },
   tabs: { home: 'الرئيسية', offers: 'العروض', cases: 'الحالات', tasks: 'مهامي', team: 'الفريق', more: 'المزيد' },
   home: {

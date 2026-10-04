@@ -58,26 +58,34 @@
             <div class="card-b grid cols-3">
               ${ui.registrationDetails(p)}
               <div><div class="small muted mb-8">${t('profile.documents')}</div>${p.verification.documents.map(function (dc) {
-                return h`<div class="stat-row"><span>${t('doc.' + dc.type)}${dc.fileName ? h`<div class="xs faint">${dc.fileName}</div>` : ''}</span>${ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}</div>`;
+                return h`<div class="stat-row"><span>${t('doc.' + dc.type)}${dc.fileName ? h`<div class="xs faint">${dc.fileName}</div>` : ''}${dc.url ? h`<a href="${dc.url}" target="_blank" rel="noopener"><img src="${dc.url}" alt="${t('doc.' + dc.type)}" style="display:block;max-width:120px;max-height:80px;margin-top:4px;border-radius:4px"></a>` : ''}</span>${ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}</div>`;
               })}</div>
               <div class="stack tight">${fl ? h`<div class="small muted">${t('onboarding.freelancerChecks')}</div>
                 <label class="check"><input type="checkbox" data-change="check" data-id="${p.id}" data-field="idVerified" ${p.verification.idVerified ? 'checked' : ''}>${t('onboarding.idVerified')}</label>
                 <label class="check"><input type="checkbox" data-change="check" data-id="${p.id}" data-field="certified" ${p.verification.certified ? 'checked' : ''}>${t('onboarding.certified')}</label>` : ''}
-                ${p.verification.notes.map(function (n) { return h`<div class="xs faint">${U.fmtDate(n.at)} · ${n.by}: ${n.text}</div>`; })}</div>
+                ${p.verification.opsApproval ? h`<div class="small">${icon('check')} ${t('onboarding.opsApproved', { name: p.verification.opsApproval.by, date: U.fmtDate(p.verification.opsApproval.at) })}</div>` : ''}
+                ${p.verification.notes.filter(function (n) { return n.text; }).map(function (n) { return h`<div class="xs faint">${U.fmtDate(n.at)} · ${n.by}: ${n.text}</div>`; })}</div>
             </div>
-            ${p.verification.status !== 'rejected' ? h`<div class="card-f">
+            ${p.verification.status === 'pending' || p.verification.status === 'awaiting_signoff' ? h`<div class="card-f">
               <button type="button" class="btn btn-danger" data-action="reject" data-id="${p.id}">${t('onboarding.reject')}</button>
               <button type="button" class="btn" data-action="info" data-id="${p.id}">${t('onboarding.requestInfo')}</button>
-              <button type="button" class="btn btn-primary" data-action="verify" data-id="${p.id}">${icon('shieldCheck')}${t('onboarding.verify')}</button></div>` : ''}
+              ${p.verification.status === 'pending'
+                ? h`<button type="button" class="btn btn-primary" data-action="approve" data-id="${p.id}">${icon('check')}${t('onboarding.approve')}</button>`
+                : h`<button type="button" class="btn btn-primary" data-action="verify" data-id="${p.id}">${icon('shieldCheck')}${t('onboarding.signoff')}</button>`}</div>` : ''}
           </section>`;
         })}</div>` : ui.card(null, ui.empty(t('onboarding.none'), null, 'shieldCheck'))}`;
     },
     actions: {
       check: async function (el, ev, ctx) { await S.providers.setCheck(el.getAttribute('data-id'), el.getAttribute('data-field'), el.checked); ctx.reload(); },
-      verify: async function (el, ev, ctx) {
-        var ok = await ui.confirm({ title: t('onboarding.verify'), message: t('onboarding.verifyBody'), confirmLabel: t('onboarding.verify') });
+      approve: async function (el, ev, ctx) {
+        var ok = await ui.confirm({ title: t('onboarding.approve'), message: t('onboarding.approveBody'), confirmLabel: t('onboarding.approve') });
         if (!ok) return;
-        await S.providers.verify(el.getAttribute('data-id')); ui.toast(t('onboarding.verified'), 'success'); ctx.reload();
+        await S.providers.approve(el.getAttribute('data-id')); ui.toast(t('onboarding.approved'), 'success'); ctx.reload();
+      },
+      verify: async function (el, ev, ctx) {
+        var ok = await ui.confirm({ title: t('onboarding.signoff'), message: t('onboarding.signoffBody'), confirmLabel: t('onboarding.signoff') });
+        if (!ok) return;
+        await S.providers.verify(el.getAttribute('data-id')); ui.toast(t('onboarding.signedOff'), 'success'); ctx.reload();
       },
       reject: async function (el, ev, ctx) {
         var v = await ui.confirm({ title: t('onboarding.reject'), reason: 'required', danger: true, confirmLabel: t('onboarding.reject') });

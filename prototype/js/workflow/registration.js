@@ -142,7 +142,7 @@
         put(errors, 'mainPhone', wf.validateAnyPhone(v.mainPhone));
         put(errors, 'companyEmail', wf.validateEmail(v.companyEmail, false));
         if (blank(v.ownerName)) errors.ownerName = 'errors.required';
-        if (!blank(v.ownerNationalId)) put(errors, 'ownerNationalId', wf.validateNationalId(v.ownerNationalId));
+        put(errors, 'ownerNationalId', wf.validateNationalId(v.ownerNationalId));
         put(errors, 'ownerPhone', wf.validateMobile(v.ownerPhone));
         put(errors, 'ownerEmail', wf.validateEmail(v.ownerEmail, false));
         if (!v.focalSame) {
@@ -175,8 +175,23 @@
 
   /** Documents asked for at registration. Uploading can wait; verification cannot. */
   wf.registrationDocs = function (kind) {
-    return kind === 'company' ? ['commercial_register', 'tax_card'] : ['national_id', 'training_certificate'];
+    return kind === 'company'
+      ? ['commercial_register', 'tax_card', 'owner_id_front', 'owner_id_back']
+      : ['id_front', 'id_back', 'criminal_record'];
   };
+
+  /**
+   * Application review: Operations checks the application, then Management signs it off.
+   *   pending -> awaiting_signoff -> verified, with info_requested and rejected on the way.
+   * The applicant can answer a request for information, or fix and resend after a rejection.
+   */
+  wf.APPLICATION_STAGES = ['submitted', 'review', 'signoff', 'decision'];
+  wf.applicationStage = function (status) {
+    return { pending: 1, info_requested: 1, awaiting_signoff: 2, verified: 4, rejected: 3 }[status] || 0;
+  };
+  /** The applicant may change details and resend only when the platform handed it back. */
+  wf.applicationEditable = function (status) { return status === 'info_requested' || status === 'rejected'; };
+  wf.applicationOpen = function (status) { return status === 'pending' || status === 'info_requested' || status === 'awaiting_signoff'; };
 
   // ---------------------------------------------------------------- team members
   /**

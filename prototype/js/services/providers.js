@@ -151,16 +151,40 @@
           .sort(function (a, b) { return (b.verification.submittedAt || 0) - (a.verification.submittedAt || 0); });
       });
     },
+    /**
+     * Operations approves an application after checking the documents. It then waits for
+     * Management to sign it off (verify). Departments are not modelled yet, so any platform
+     * admin can do either step; each step records who did it.
+     */
+    approve: function (id) {
+      return E.mutate(function (db) {
+        var a = E.requireRole(['platform_admin']);
+        var p = E.providerById(id);
+        if (!p) throw new Err('errors.notFound');
+        if (p.verification.status !== 'pending') throw new Err('errors.notInReview');
+        if (p.kind === 'freelancer' && !(p.verification.idVerified && p.verification.certified)) throw new Err('errors.freelancerChecks');
+        if (p.verification.documents.some(function (d) { return d.status === 'missing'; })) throw new Err('errors.documentsMissing');
+        p.verification.status = 'awaiting_signoff';
+        p.verification.opsApproval = { by: a.name, userId: a.userId, at: E.now() };
+        p.verification.notes.push({ at: E.now(), by: a.name, text: '', kind: 'ops_approved' });
+        E.audit('provider.ops_approved', 'provider', p.id, p.name, { status: 'pending' }, { status: 'awaiting_signoff' }, null, a);
+        E.notify(E.admins().filter(function (u) { return u.id !== a.userId; }), 'notif.application_signoff', { name: p.name }, 'admin:onboarding');
+        E.notify(D.providerUsers(db, p.id, ['provider_admin', 'freelancer']), 'notif.application_ops_approved', {}, 'application:mine');
+        return p;
+      });
+    },
+    /** Management sign-off: the provider goes live in the marketplace. */
     verify: function (id) {
       return E.mutate(function (db) {
         var a = E.requireRole(['platform_admin']);
         var p = E.providerById(id);
         if (!p) throw new Err('errors.notFound');
-        if (p.kind === 'freelancer' && !(p.verification.idVerified && p.verification.certified)) throw new Err('errors.freelancerChecks');
+        if (p.verification.status !== 'awaiting_signoff') throw new Err('errors.notAwaitingSignoff');
         if (p.verification.documents.some(function (d) { return d.status === 'missing'; })) throw new Err('errors.documentsMissing');
         var before = p.verification.status;
         p.verification.status = 'verified';
         p.verification.verifiedAt = E.now();
+        p.verification.signoff = { by: a.name, userId: a.userId, at: E.now() };
         if (p.registration) p.joinedAt = E.now();
         p.verification.documents.forEach(function (d) { d.status = 'verified'; });
         p.enforcement = { level: 'none', source: 'auto', since: E.now() };
@@ -186,7 +210,9 @@
         var a = E.requireRole(['platform_admin']);
         if (!reason) throw new Err('wf.err.reasonRequired');
         var p = E.providerById(id);
+        if (!p) throw new Err('errors.notFound');
         var before = p.verification.status;
+        if (!wf.applicationOpen(before)) throw new Err('errors.notInReview');
         p.verification.status = 'rejected';
         p.verification.notes.push({ at: E.now(), by: a.name, text: reason, kind: 'rejected' });
         E.audit('provider.reject', 'provider', p.id, p.name, { status: before }, { status: 'rejected' }, reason, a);
@@ -199,7 +225,9 @@
         var a = E.requireRole(['platform_admin']);
         if (!note) throw new Err('wf.err.reasonRequired');
         var p = E.providerById(id);
+        if (!p) throw new Err('errors.notFound');
         var before = p.verification.status;
+        if (before !== 'pending' && before !== 'awaiting_signoff') throw new Err('errors.notInReview');
         p.verification.status = 'info_requested';
         p.verification.notes.push({ at: E.now(), by: a.name, text: note, kind: 'info_requested' });
         E.audit('provider.request_info', 'provider', p.id, p.name, { status: before }, { status: 'info_requested' }, note, a);
