@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 
 import { services } from '@/backend/engine';
+import { num } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { Avatar, Badge, Button, Card, Divider, Icon, KeyValue, ListItem, Row, Segmented, Stack, Txt, Grow } from '@/ui/core';
 import { useAction, useDialog } from '@/ui/dialogs';
@@ -15,6 +16,8 @@ export default function More() {
   const run = useAction();
   const unread = useQuery<number>(() => services().notifications.unreadCount()).data || 0;
   const u = session?.user || {};
+  const manager = ['provider_admin', 'provider_supervisor', 'freelancer'].indexOf(u.role) >= 0;
+  const counts = useQuery<any>(async () => (manager ? { clients: (await services().ratings.clientPending()).length, nav: await services().analytics.navCounts(null) } : null), [manager]).data;
   return (
     <Screen title={t('tabs.more')}>
       <Card>
@@ -35,6 +38,16 @@ export default function More() {
       </Card>
       <Card pad={false}>
         <ListItem left={<Icon name="bell" />} title={t('more.notifications')} right={unread ? <Badge label={String(unread)} tone="danger" /> : undefined} onPress={() => router.push('/notifications')} />
+        {manager ? (
+          <>
+            <Divider />
+            <ListItem left={<Icon name="star" />} title={t('nav.feedback')} onPress={() => router.push('/ratings')} />
+            <Divider />
+            <ListItem left={<Icon name="scale" />} title={t('dispute.title')} right={counts?.nav?.openDisputes ? <Badge label={num(counts.nav.openDisputes)} tone="warning" /> : undefined} onPress={() => router.push('/disputes')} />
+            <Divider />
+            <ListItem left={<Icon name="award" />} title={t('nav.rateClients')} right={counts?.clients ? <Badge label={num(counts.clients)} tone="pending" /> : undefined} onPress={() => router.push('/rate-clients')} />
+          </>
+        ) : null}
         {u.role === 'provider_admin' || u.role === 'freelancer' ? <><Divider /><ListItem left={<Icon name="settings" />} title={t('settingsApp.title')} sub={t('settingsApp.moreSub')} onPress={() => router.push('/settings')} /></> : null}
       </Card>
       <Card title={t('more.language')}>

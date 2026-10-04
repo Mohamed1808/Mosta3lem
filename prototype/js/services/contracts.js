@@ -27,6 +27,7 @@
       reset: '() -> void   (restores the seed)',
       simulateBatchWork: '(batchId) -> { advanced }   (admin; drives open batch cases through the workflow)',
       reviewMyApplication: '(approve|verify|requestInfo|reject, note?) -> Provider   (demo: the platform reviews the signed-in applicant)',
+      resolveMyDispute: '(disputeId, upheld|partial|rejected, note)   (demo: the platform decides a dispute of the signed-in provider)',
       reviewMyProvider: '(approvePrices|rejectPrices|verifyDocument|rejectDocument|expireDocument, type?, note?)   (demo: Operations on the signed-in provider)'
     },
     cases: {

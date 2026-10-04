@@ -57,6 +57,13 @@ const en = {
     company: 'Company', role: 'Role', phone: 'Mobile', noNotifications: 'No notifications yet', markAllRead: 'Mark all as read', simulated: 'Simulated backend: data lives on this device.'
   },
   teamScreen: { moveTo: 'Move to supervisor', moved: 'Agent moved' },
+  disputeApp: {
+    subtitle: 'Raised by banks about your cases, or by you about a rating. The platform decides.', openShort: 'Open disputes',
+    youRaised: 'You raised it', raisedAgainst: 'Raised by the client', opened: 'Opened', statements: 'Statements',
+    statementPlaceholder: 'Explain your side. Mention evidence such as photos, check-in times or messages.', yourStatement: 'Your statement',
+    sendStatement: 'Add statement', statementSent: 'Statement added',
+    demoTitle: 'Demo: the platform decision', demoBody: 'In the live app the platform team decides from the internal console. Use this to try each outcome.'
+  },
   settingsApp: {
     title: 'Settings', moreSub: 'Coverage, response times, prices and documents', coverage: 'Coverage', responseTimes: 'Response times', prices: 'Prices',
     pricesSub: 'Changes are approved by operations', priceWaitingShort: 'Change sent {date}, waiting for operations', hoursShort: '{n} h',
@@ -142,6 +149,13 @@ const ar: typeof en = {
     company: 'الشركة', role: 'الدور', phone: 'الموبايل', noNotifications: 'لا توجد إشعارات بعد', markAllRead: 'تحديد الكل كمقروء', simulated: 'خادم تجريبي: البيانات محفوظة على هذا الجهاز.'
   },
   teamScreen: { moveTo: 'نقل إلى مشرف', moved: 'تم نقل المندوب' },
+  disputeApp: {
+    subtitle: 'نزاعات فتحتها البنوك بخصوص حالاتك، أو فتحتها أنت بخصوص تقييم. المنصة هي التي تقرر.', openShort: 'نزاعات مفتوحة',
+    youRaised: 'فتحته أنت', raisedAgainst: 'فتحه العميل', opened: 'تاريخ الفتح', statements: 'الإفادات',
+    statementPlaceholder: 'اشرح موقفك، واذكر أي أدلة مثل الصور أو وقت تسجيل الوصول أو الرسائل.', yourStatement: 'إفادتك',
+    sendStatement: 'إضافة إفادة', statementSent: 'تمت إضافة الإفادة',
+    demoTitle: 'نسخة تجريبية: قرار المنصة', demoBody: 'في التطبيق الفعلي يقرر فريق المنصة من لوحة التحكم الداخلية. استخدم هذا لتجربة كل نتيجة.'
+  },
   settingsApp: {
     title: 'الإعدادات', moreSub: 'نطاق التغطية وأوقات الاستجابة والأسعار والمستندات', coverage: 'نطاق التغطية', responseTimes: 'أوقات الاستجابة', prices: 'الأسعار',
     pricesSub: 'يعتمد فريق العمليات أي تغيير', priceWaitingShort: 'أُرسل التغيير {date}، بانتظار فريق العمليات', hoursShort: '{n} س',

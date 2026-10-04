@@ -166,6 +166,20 @@
       return out;
     },
     /**
+     * Demo only: the platform decides a dispute that involves the signed-in provider, so the
+     * outcome can be tried from the app. outcome: 'upheld' | 'partial' | 'rejected'.
+     */
+    resolveMyDispute: function (disputeId, outcome, note) {
+      var me = E.currentUser();
+      var admin = E.admins()[0];
+      var d = E.disputeById(disputeId);
+      if (!me || !admin || !d || d.providerId !== me.providerId) return Promise.reject(new Err('errors.forbidden'));
+      E.setSession(admin.id);
+      var out;
+      try { out = S.disputes.resolve(disputeId, outcome, note); } finally { E.setSession(me.id); }
+      return out;
+    },
+    /**
      * Demo only: Operations decisions on the signed-in provider, from the app.
      * action: 'approvePrices' | 'rejectPrices' (note) | 'verifyDocument' (type) |
      * 'rejectDocument' (type, note) | 'expireDocument' (type: moves its expiry date to now).

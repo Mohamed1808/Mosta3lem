@@ -192,7 +192,7 @@
       <div class="head"><strong>${t('header.notifications')}</strong>${list.some(function (n) { return !n.read; }) ? h`<button type="button" class="btn btn-sm btn-ghost" data-action="markAllRead">${t('header.markAllRead')}</button>` : ''}</div>
       ${list.length ? list.map(function (n) {
         var params = Object.assign({}, n.params);
-        if (params.outcome) params.outcome = t('outcome.' + params.outcome);
+        if (params.outcome) params.outcome = /^(upheld|partial|rejected)$/.test(params.outcome) ? t('dispute.outcome.' + params.outcome) : t('outcome.' + params.outcome);
         if (params.decision) params.decision = t('status.' + params.decision);
         if (params.level) params.level = t('enforcement.' + params.level);
         if (params.doc) params.doc = t('doc.' + params.doc);

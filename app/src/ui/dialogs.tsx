@@ -83,7 +83,7 @@ function AskDialog({ opts, onDone }: { opts: AskOptions; onDone: (r: AskResult |
         {opts.note ? (
           <Stack gap={6}>
             <Txt v="sm" b c="muted">{(opts.noteLabel || t('common.note')) + (opts.note === 'required' ? ' *' : '')}</Txt>
-            <TextInput value={note} onChangeText={setNote} multiline style={[inputStyle, { minHeight: 80, textAlign: d.align, textAlignVertical: 'top' }]} />
+            <TextInput value={note} onChangeText={setNote} multiline accessibilityLabel={opts.noteLabel || t('common.note')} style={[inputStyle, { minHeight: 80, textAlign: d.align, textAlignVertical: 'top' }]} />
           </Stack>
         ) : null}
         {err ? <Txt v="sm" c="bad">{err}</Txt> : null}
