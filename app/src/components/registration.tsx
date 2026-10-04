@@ -159,7 +159,7 @@ export type DocFile = { name?: string | null; url?: string | null; status?: stri
  * One document: label, status, thumbnail and camera / library buttons.
  * onFile receives { name, url } with the photo as a data URL; omit it to show read only.
  */
-export function DocSlot({ type, file, onFile, locked }: { type: string; file?: DocFile | null; onFile?: (f: { name: string; url: string }) => Promise<void> | void; locked?: boolean }) {
+export function DocSlot({ type, file, onFile, locked, draft }: { type: string; file?: DocFile | null; onFile?: (f: { name: string; url: string }) => Promise<void> | void; locked?: boolean; draft?: boolean }) {
   const t = useT();
   const [busy, setBusy] = useState<'camera' | 'library' | null>(null);
   const has = !!(file && (file.url || file.name));
@@ -172,7 +172,7 @@ export function DocSlot({ type, file, onFile, locked }: { type: string; file?: D
     } finally { setBusy(null); }
   };
   const tone = status === 'verified' ? 'success' : status === 'missing' ? 'danger' : 'pending';
-  const badge = status === 'verified' ? 'docStatus.verified' : status === 'missing' ? 'docStatus.rejected' : 'docStatus.pending';
+  const badge = status === 'verified' ? 'docStatus.verified' : status === 'missing' ? 'docStatus.rejected' : draft ? 'signup.attached' : 'docStatus.pending';
   return (
     <View style={{ borderWidth: 1, borderColor: has ? colors.border : colors.borderStrong, borderStyle: has ? 'solid' : 'dashed', borderRadius: radius.md, padding: space.md, backgroundColor: has ? colors.surface : colors.surface2, gap: 10 }}>
       <Row gap={12}>

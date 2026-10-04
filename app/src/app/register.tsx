@@ -113,7 +113,7 @@ export default function Register() {
         <Stack>
           <Txt c="muted">{t('signup.docsIntro')}</Txt>
           {docTypes(values.kind).map((tp) => (
-            <DocSlot key={tp} type={tp} file={values.docs?.[tp]} onFile={(file) => setValues((v) => ({ ...v, docs: { ...(v.docs || {}), [tp]: file } }))} />
+            <DocSlot key={tp} type={tp} draft file={values.docs?.[tp]} onFile={(file) => setValues((v) => ({ ...v, docs: { ...(v.docs || {}), [tp]: file } }))} />
           ))}
           <Txt v="xs" c="faint">{t('signup.docsLater')}</Txt>
         </Stack>

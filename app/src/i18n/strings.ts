@@ -25,7 +25,7 @@ const en = {
     docsNote: 'Photos are kept with your application. Verified documents cannot be replaced.',
     terms: 'I have read and agree to the terms of use and the privacy policy.',
     verifyTitle: 'Confirm your mobile', verifyBody: 'We send a code to {phone}. You sign in with this number.',
-    received: 'Application {ref} received',
+    received: 'Application {ref} received', attached: 'Attached',
     editTitle: 'Edit your application', editDetails: 'Edit details', saveChanges: 'Save changes',
     saved: 'Changes saved. Send the application again when you are ready.',
     demo: {
@@ -82,7 +82,7 @@ const ar: typeof en = {
     docsNote: 'تُحفظ الصور مع طلبك. لا يمكن استبدال المستندات المعتمدة.',
     terms: 'قرأت وأوافق على شروط الاستخدام وسياسة الخصوصية.',
     verifyTitle: 'تأكيد رقم الموبايل', verifyBody: 'نرسل رمزًا إلى {phone}. تسجل الدخول بهذا الرقم.',
-    received: 'تم استلام الطلب {ref}',
+    received: 'تم استلام الطلب {ref}', attached: 'مُرفق',
     editTitle: 'تعديل طلبك', editDetails: 'تعديل البيانات', saveChanges: 'حفظ التعديلات',
     saved: 'تم حفظ التعديلات. أعد إرسال الطلب عندما تكون جاهزًا.',
     demo: {

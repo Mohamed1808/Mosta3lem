@@ -302,7 +302,7 @@ function CoveragePicker({ value, onValue, only, cityLimit, bad }: { value: Recor
         const cities = (icm().config.citiesOf(g.id) as any[]).filter((c) => !limit || limit.indexOf(c.id) >= 0);
         return (
           <View key={g.id} style={{ borderWidth: 1, borderColor: on ? colors.accent : bad ? colors.bad : colors.border, borderRadius: radius.md, padding: 10, backgroundColor: on ? '#FAFCFF' : colors.surface, gap: 8 }}>
-            <Pressable onPress={() => toggleGov(g.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}>
+            <Pressable onPress={() => toggleGov(g.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={icm().util.label(g)}>
               <Row gap={10}>
                 <View style={{ width: 20, height: 20, borderRadius: 4, borderWidth: 2, borderColor: on ? colors.accent : colors.borderStrong, backgroundColor: on ? colors.accent : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
                   {on ? <Icon name="check" size={13} color="#fff" /> : null}
@@ -317,7 +317,7 @@ function CoveragePicker({ value, onValue, only, cityLimit, bad }: { value: Recor
                   {cities.map((c) => {
                     const picked = (value[g.id] || []).indexOf(c.id) >= 0;
                     return (
-                      <Pressable key={c.id} onPress={() => toggleCity(g.id, c.id)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: picked ? colors.accent : colors.borderStrong, backgroundColor: picked ? colors.accentSoft : colors.surface }}>
+                      <Pressable key={c.id} onPress={() => toggleCity(g.id, c.id)} accessibilityRole="checkbox" accessibilityState={{ checked: picked }} accessibilityLabel={icm().util.label(c)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: picked ? colors.accent : colors.borderStrong, backgroundColor: picked ? colors.accentSoft : colors.surface }}>
                         <Txt v="xs" c={picked ? 'accent' : 'muted'}>{icm().util.label(c)}</Txt>
                       </Pressable>
                     );
