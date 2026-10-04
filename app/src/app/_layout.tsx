@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppProvider, useApp } from '@/state/app';
+import { OfflineProvider } from '@/sync/offline';
 import { colors } from '@/theme';
 import { Loading, Txt } from '@/ui/core';
 import { DialogProvider } from '@/ui/dialogs';
@@ -16,10 +17,12 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppProvider>
+        <OfflineProvider>
         <DialogProvider>
           <StatusBar style="dark" />
           <Navigator />
         </DialogProvider>
+        </OfflineProvider>
       </AppProvider>
     </SafeAreaProvider>
   );
@@ -56,6 +59,7 @@ function Navigator() {
         <Stack.Screen name="rate-clients" />
         <Stack.Screen name="earnings" />
         <Stack.Screen name="my-work" />
+        <Stack.Screen name="sync" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="settings/coverage" />
         <Stack.Screen name="settings/response" />

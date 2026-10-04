@@ -360,6 +360,19 @@
   };
 
   // ---------------------------------------------------------------- cases
+  /**
+   * When a field action really happened. Work done without signal is sent later with the
+   * phone's time; it is accepted when it is not in the future and not before the case was
+   * assigned. Otherwise the time it arrives counts.
+   */
+  function happenedAt(at, c) {
+    var now = E.now();
+    at = +at;
+    if (!at || !isFinite(at) || at > now + 60 * 1000) return now;
+    if (c.assignedAt && at < c.assignedAt) return now;
+    return Math.min(at, now);
+  }
+
   function forAgent(c, a) {
     if (!wf.doesFieldWork(a) || c.agentId !== a.agentId) throw new Err('errors.forbidden');
   }
@@ -488,8 +501,13 @@
       return E.mutate(function (db) {
         var c = E.mustCase(id), a = E.actor();
         forAgent(c, a);
-        if (fix != null && !D.validFix(fix)) throw new Err('errors.locationInvalid');
-        var ci = fix != null ? D.checkInFrom(db, c, fix, E.now()) : D.simulateCheckIn(c, E.now());
+        // fix may carry only a time (a simulated location recorded without signal).
+        var hasPos = fix != null && (fix.lat != null || fix.lng != null);
+        if (hasPos && !D.validFix(fix)) throw new Err('errors.locationInvalid');
+        // Done without signal: keep the time it really happened (see happenedAt).
+        var at = happenedAt(fix && fix.at, c);
+        var ci = hasPos ? D.checkInFrom(db, c, fix, at) : D.simulateCheckIn(c, at);
+        if (at < E.now() - 2 * 60 * 1000) ci.sentAt = E.now();
         return E.transition(c, 'check_in', { checkIn: ci }, a);
       });
     },
@@ -500,7 +518,7 @@
         forAgent(c, a);
         if (c.status !== 'in_field') throw new Err('errors.checkInFirst');
         var near = fix != null && D.validFix(fix) ? { lat: U.round(+fix.lat, 6), lng: U.round(+fix.lng, 6), accuracyM: fix.accuracyM == null ? null : Math.round(+fix.accuracyM), source: 'device' } : D.simulateCheckIn(c, E.now());
-        var photo = { id: U.uid('ph'), at: E.now(), lat: near.lat, lng: near.lng, accuracyM: near.accuracyM, source: near.source, dataUrl: dataUrl, label: label || null };
+        var photo = { id: U.uid('ph'), at: happenedAt(fix && fix.at, c), lat: near.lat, lng: near.lng, accuracyM: near.accuracyM, source: near.source, dataUrl: dataUrl, label: label || null };
         var next = Object.assign({}, c, { photos: (c.photos || []).concat([photo]), updatedAt: E.now() });
         E.replaceCase(next);
         E.audit('case.photo_added', 'case', c.id, c.ref, null, { photos: next.photos.length }, null, a);

@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { icm, services } from '@/backend/engine';
 import { CheckInLine, PhotoGrid, ReportView } from '@/components/case';
 import { useQuery, useT } from '@/state/app';
-import { Badge, Button, Card, Grow, Loading, Row, Stack, Txt } from '@/ui/core';
+import { Badge, Button, Card, Grow, Loading, Notice, Row, Stack, Txt } from '@/ui/core';
 import { useAction, useDialog } from '@/ui/dialogs';
 import { Screen } from '@/ui/screen';
 
@@ -35,6 +35,7 @@ export default function Review() {
           {a.indexOf('approve') >= 0 ? <Grow><Button label={t('reviewScreen.approve')} kind="primary" icon="check" onPress={approve} block /></Grow> : null}
         </Row>
       ) : undefined}>
+      {c.reportFinishedOfflineAt ? <Notice tone="info" text={t('gps.finishedOffline', { finished: icm().util.fmtDateTime(c.reportFinishedOfflineAt), sent: icm().util.fmtDateTime(c.reportSubmittedAt) })} /> : null}
       <Card title={t('evidence.title')}>
         <Stack>
           <CheckInLine ci={c.checkIn} />
