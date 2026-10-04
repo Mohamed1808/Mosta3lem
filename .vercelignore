@@ -1,4 +1,8 @@
-tests/
-tests.html
-serve.js
+prototype/tests/
+prototype/tests.html
+prototype/serve.js
+app/
+backend/
+console/
+shared/
 .claude/

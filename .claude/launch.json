@@ -4,7 +4,7 @@
     {
       "name": "ICM Marketplace",
       "runtimeExecutable": "C:/Program Files/nodejs/node.exe",
-      "runtimeArgs": ["serve.js", "3500"],
+      "runtimeArgs": ["prototype/serve.js", "3500"],
       "port": 3500
     }
   ]
