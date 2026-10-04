@@ -66,10 +66,14 @@
     application: {
       title: 'Your application',
       welcome: 'Application {ref} received. You are signed in as the applicant and can follow it here.',
-      track: { submitted: 'Submitted', review: 'Platform review', info: 'More information needed', decision: 'Approved', rejected: 'Not approved' },
-      pending: 'The platform team is reviewing your application. You get a notification when it is approved or if anything is missing.',
-      pendingMissing: 'The platform team is reviewing your application. {n} document(s) are still missing; attach them below to avoid delays.',
+      track: { submitted: 'Submitted', review: 'Operations review', signoff: 'Management sign-off', info: 'More information needed', decision: 'Approved', rejected: 'Not approved' },
+      pending: 'The operations team is reviewing your application. You get a notification when it moves on or if anything is missing.',
+      pendingMissing: 'The operations team is reviewing your application. {n} document(s) are still missing; attach them below to avoid delays.',
+      signoff: 'Operations approved your application. Management is doing the final sign-off.',
       rejected: 'Your application was not approved.',
+      rejectedFix: 'Fix what is listed above: update your details or replace documents, then send it again.',
+      resend: 'Send again for review', resendBody: 'Tell the team what you changed.', resent: 'Sent again for review',
+      approved: 'Your application is approved. You can now use the app as a provider.', open: 'Open the app',
       infoRequested: 'The platform needs more information', yourReply: 'Your reply', replyPlaceholder: 'Answer the question and mention any documents you attached.',
       replyRequired: 'Write a reply first', resubmit: 'Send back for review', resubmitted: 'Sent back for review',
       docsNote: 'PDF or photo. Only the file name is kept in this demo.',
@@ -96,7 +100,18 @@
       unassigned: 'Field agents without a supervisor', unassignedHint: 'Pick a supervisor for each of them.',
       deactivateSupervisorBody: 'The supervisor can no longer sign in. Move or deactivate their field agents first.'
     },
-    onboarding: { source: { self: 'Self-registered', admin: 'Registered by platform' } },
+    onboarding: {
+      source: { self: 'Self-registered', admin: 'Registered by platform' },
+      approve: 'Approve (Operations)', approveBody: 'Documents and details are checked. The application goes to management for the final sign-off.',
+      approved: 'Approved by operations. Waiting for management sign-off.',
+      signoff: 'Sign off (Management)', signoffBody: 'The provider goes live in the marketplace and can use the app.', signedOff: 'Signed off. The provider is live.',
+      opsApproved: 'Operations approved: {name}, {date}'
+    },
+    doc: {
+      owner_id_front: 'Owner national ID (front)', owner_id_back: 'Owner national ID (back)',
+      id_front: 'National ID (front)', id_back: 'National ID (back)', criminal_record: 'Criminal record certificate'
+    },
+    status: { awaiting_signoff: 'Awaiting sign-off' },
     admin: { registration: 'Registration' },
     profile: { registration: 'Registration details', registrationHint: 'Legal and contact details from registration. Contact the platform to change them.' },
     errors: {
@@ -108,16 +123,20 @@
       phoneTaken: 'This mobile number is already registered', nationalIdTaken: 'This national ID is already registered',
       documentLocked: 'This document is already verified', notAwaitingInfo: 'The platform has not asked for more information',
       outsideCompanyCoverage: 'Agents can only cover areas your company covers', agentHasOpenCases: 'This agent still has {n} open case(s). Reassign them first.',
-      supervisorHasAgents: 'Move or deactivate this supervisor\'s active field agents first', notYourAgent: 'This field agent reports to another supervisor'
+      supervisorHasAgents: 'Move or deactivate this supervisor\'s active field agents first', notYourAgent: 'This field agent reports to another supervisor',
+      notInReview: 'This application is not under review', notAwaitingSignoff: 'Operations has to approve this application first',
+      applicationLocked: 'You can change your application when the platform asks for more information or after it was not approved'
     },
     notif: {
-      application_new: 'New provider application: {name}', application_updated: '{name} replied to your request for information',
+      application_new: 'New provider application: {name}', application_updated: '{name} updated their application',
       application_rejected: 'Your application was not approved', application_info_requested: 'The platform needs more information about your application',
+      application_signoff: '{name} is ready for management sign-off', application_ops_approved: 'Operations approved your application. It is with management for the final sign-off.',
       agent_joined_team: '{name} joined your team'
     },
     audit: {
       action: {
         provider_registered: 'Provider registered', provider_registered_by_admin: 'Provider registered by admin', provider_resubmitted: 'Application resubmitted',
+        provider_ops_approved: 'Approved by operations', provider_application_updated: 'Application details changed',
         team_supervisor_added: 'Supervisor added', team_agent_added: 'Field agent added', team_member_updated: 'Team member updated',
         team_agent_moved: 'Agent moved to another supervisor', team_supervisor_activated: 'Supervisor activated', team_supervisor_deactivated: 'Supervisor deactivated'
       }

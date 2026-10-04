@@ -66,10 +66,14 @@
     application: {
       title: 'طلبك',
       welcome: 'تم استلام الطلب {ref}. تم تسجيل دخولك كمتقدم ويمكنك متابعته من هنا.',
-      track: { submitted: 'تم الإرسال', review: 'مراجعة المنصة', info: 'مطلوب معلومات إضافية', decision: 'تم الاعتماد', rejected: 'لم يُعتمد' },
-      pending: 'يراجع فريق المنصة طلبك. سيصلك إشعار عند اعتماده أو إذا كان هناك شيء ناقص.',
-      pendingMissing: 'يراجع فريق المنصة طلبك. ما زال {n} مستند ناقصًا، أرفقه بالأسفل لتجنب التأخير.',
+      track: { submitted: 'تم الإرسال', review: 'مراجعة العمليات', signoff: 'اعتماد الإدارة', info: 'مطلوب معلومات إضافية', decision: 'تم الاعتماد', rejected: 'لم يُعتمد' },
+      pending: 'يراجع فريق العمليات طلبك. سيصلك إشعار عند انتقاله للمرحلة التالية أو إذا كان هناك شيء ناقص.',
+      pendingMissing: 'يراجع فريق العمليات طلبك. ما زال {n} مستند ناقصًا، أرفقه بالأسفل لتجنب التأخير.',
+      signoff: 'وافق فريق العمليات على طلبك، والإدارة تقوم بالاعتماد النهائي.',
       rejected: 'لم يتم اعتماد طلبك.',
+      rejectedFix: 'صحّح ما هو مذكور أعلاه: عدّل بياناتك أو استبدل المستندات، ثم أرسل الطلب مرة أخرى.',
+      resend: 'إعادة الإرسال للمراجعة', resendBody: 'أخبر الفريق بما قمت بتغييره.', resent: 'أُعيد إرسال الطلب للمراجعة',
+      approved: 'تم اعتماد طلبك. يمكنك الآن استخدام التطبيق كمقدم خدمة.', open: 'فتح التطبيق',
       infoRequested: 'تحتاج المنصة إلى معلومات إضافية', yourReply: 'ردك', replyPlaceholder: 'أجب عن السؤال واذكر أي مستندات أرفقتها.',
       replyRequired: 'اكتب ردًا أولًا', resubmit: 'إعادة الإرسال للمراجعة', resubmitted: 'أُعيد الطلب للمراجعة',
       docsNote: 'ملف PDF أو صورة. يُحفظ اسم الملف فقط في هذه النسخة التجريبية.',
@@ -96,7 +100,18 @@
       unassigned: 'مندوبون ميدانيون بدون مشرف', unassignedHint: 'اختر مشرفًا لكل منهم.',
       deactivateSupervisorBody: 'لن يتمكن المشرف من تسجيل الدخول. انقل مندوبيه أو أوقفهم أولًا.'
     },
-    onboarding: { source: { self: 'سجّل بنفسه', admin: 'سجلته المنصة' } },
+    onboarding: {
+      source: { self: 'سجّل بنفسه', admin: 'سجلته المنصة' },
+      approve: 'موافقة (العمليات)', approveBody: 'تمت مراجعة المستندات والبيانات، وينتقل الطلب إلى الإدارة للاعتماد النهائي.',
+      approved: 'وافق فريق العمليات. بانتظار اعتماد الإدارة.',
+      signoff: 'اعتماد (الإدارة)', signoffBody: 'يظهر مقدم الخدمة في السوق ويمكنه استخدام التطبيق.', signedOff: 'تم الاعتماد. مقدم الخدمة مُفعّل الآن.',
+      opsApproved: 'موافقة العمليات: {name}، {date}'
+    },
+    doc: {
+      owner_id_front: 'بطاقة الرقم القومي للمالك (الوجه)', owner_id_back: 'بطاقة الرقم القومي للمالك (الظهر)',
+      id_front: 'بطاقة الرقم القومي (الوجه)', id_back: 'بطاقة الرقم القومي (الظهر)', criminal_record: 'صحيفة الحالة الجنائية (فيش جنائي)'
+    },
+    status: { awaiting_signoff: 'بانتظار الاعتماد' },
     admin: { registration: 'بيانات التسجيل' },
     profile: { registration: 'بيانات التسجيل', registrationHint: 'البيانات القانونية وبيانات التواصل من التسجيل. تواصل مع المنصة لتعديلها.' },
     errors: {
@@ -108,16 +123,20 @@
       phoneTaken: 'رقم الموبايل هذا مسجل بالفعل', nationalIdTaken: 'هذا الرقم القومي مسجل بالفعل',
       documentLocked: 'هذا المستند معتمد بالفعل', notAwaitingInfo: 'لم تطلب المنصة معلومات إضافية',
       outsideCompanyCoverage: 'لا يغطي المندوب إلا مناطق تغطية شركتك', agentHasOpenCases: 'لدى هذا المندوب {n} حالة مفتوحة. أعد تكليفها أولًا.',
-      supervisorHasAgents: 'انقل المندوبين النشطين لهذا المشرف أو أوقفهم أولًا', notYourAgent: 'هذا المندوب يتبع مشرفًا آخر'
+      supervisorHasAgents: 'انقل المندوبين النشطين لهذا المشرف أو أوقفهم أولًا', notYourAgent: 'هذا المندوب يتبع مشرفًا آخر',
+      notInReview: 'هذا الطلب ليس قيد المراجعة', notAwaitingSignoff: 'يجب أن يوافق فريق العمليات على الطلب أولًا',
+      applicationLocked: 'يمكنك تعديل طلبك عندما تطلب المنصة معلومات إضافية أو بعد عدم اعتماده'
     },
     notif: {
-      application_new: 'طلب انضمام جديد: {name}', application_updated: 'رد {name} على طلب المعلومات',
+      application_new: 'طلب انضمام جديد: {name}', application_updated: 'حدّث {name} طلبه',
       application_rejected: 'لم يتم اعتماد طلبك', application_info_requested: 'تحتاج المنصة إلى معلومات إضافية عن طلبك',
+      application_signoff: '{name} جاهز لاعتماد الإدارة', application_ops_approved: 'وافق فريق العمليات على طلبك، وهو الآن لدى الإدارة للاعتماد النهائي.',
       agent_joined_team: 'انضم {name} إلى فريقك'
     },
     audit: {
       action: {
         provider_registered: 'تسجيل مقدم خدمة', provider_registered_by_admin: 'تسجيل مقدم خدمة بواسطة المنصة', provider_resubmitted: 'إعادة إرسال الطلب',
+        provider_ops_approved: 'موافقة فريق العمليات', provider_application_updated: 'تعديل بيانات الطلب',
         team_supervisor_added: 'إضافة مشرف', team_agent_added: 'إضافة مندوب ميداني', team_member_updated: 'تعديل بيانات عضو في الفريق',
         team_agent_moved: 'نقل مندوب إلى مشرف آخر', team_supervisor_activated: 'تفعيل مشرف', team_supervisor_deactivated: 'إيقاف مشرف'
       }

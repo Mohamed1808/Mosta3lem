@@ -30,6 +30,7 @@ type AppState = {
   signIn: (userId: string) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => void;
+  syncSession: () => Promise<void>;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -44,6 +45,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(() => setRev((r) => r + 1), []);
 
+  /** Re-read the signed-in person; keeps the same object unless their part of the app changed. */
+  const syncSession = useCallback(async () => {
+    try {
+      const s: Session | null = await services().auth.currentUser();
+      setSession((prev) => (prev && s && prev.user.id === s.user.id && prev.portal !== s.portal ? s : prev));
+      if (s && s.provider) setService((cur) => cur || s.provider.services[0]);
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     let unsub: (() => void) | null = null;
     let tick: ReturnType<typeof setInterval> | null = null;
@@ -51,7 +61,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then(async (ICM) => {
         installStrings(ICM);
         setLangState(ICM.i18n.lang() === 'ar' ? 'ar' : 'en');
-        unsub = services().subscribe(() => setRev((r) => r + 1));
+        unsub = services().subscribe(() => {
+          setRev((r) => r + 1);
+          // An approval moves an applicant into the provider app, so re-read who is signed in
+          // once the change has finished.
+          setTimeout(() => { syncSession(); }, 0);
+        });
         const s = await services().auth.currentUser();
         setSession(s);
         setService(s && s.provider ? s.provider.services[0] : null);
@@ -62,7 +77,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
       .catch((e) => setError(String(e && e.message ? e.message : e)));
     return () => { if (unsub) unsub(); if (tick) clearInterval(tick); };
-  }, []);
+  }, [syncSession]);
 
   const setLang = useCallback((l: Lang) => {
     icm().i18n.setLang(l);
@@ -88,8 +103,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppState>(() => ({
     ready, error, session, lang, rtl: lang === 'ar', rev, service,
     setService: (s: string) => { setService(s); setRev((r) => r + 1); },
-    setLang, signIn, signOut, refresh,
-  }), [ready, error, session, lang, rev, service, setLang, signIn, signOut, refresh]);
+    setLang, signIn, signOut, refresh, syncSession,
+  }), [ready, error, session, lang, rev, service, setLang, signIn, signOut, refresh, syncSession]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

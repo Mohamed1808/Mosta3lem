@@ -36,7 +36,7 @@ export function Screen({ title, sub, back, right, children, scroll = true, foote
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {head}
       {scroll ? (
-        <ScrollView contentContainerStyle={contentStyle} keyboardShouldPersistTaps="handled"
+        <ScrollView contentContainerStyle={contentStyle} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
           refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}>
           {children}
         </ScrollView>

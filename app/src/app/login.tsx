@@ -91,6 +91,12 @@ export default function Login() {
 
           <View style={{ height: 1, backgroundColor: colors.border }} />
           <Stack gap={8}>
+            <Txt b>{t('login.registerTitle')}</Txt>
+            <Txt v="sm" c="muted">{t('login.registerBody')}</Txt>
+            <Button label={t('login.registerCta')} icon="plus" onPress={() => router.push('/register')} block />
+          </Stack>
+          <View style={{ height: 1, backgroundColor: colors.border }} />
+          <Stack gap={8}>
             <Txt v="sm" c="muted">{t('login.demoAccountsHint')}</Txt>
             <Button label={t('login.demoAccounts')} icon="users" onPress={() => router.push('/demo')} block />
           </Stack>

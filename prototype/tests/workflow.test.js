@@ -423,7 +423,7 @@
     var company = function (over) {
       return Object.assign({
         kind: 'company', services: ['investigation'], companyName: 'Delta Checks', taxId: '123-456-789', commercialRegNo: '45821',
-        mainPhone: '0223456789', ownerName: 'Hisham Nabil', ownerPhone: '01012345678', focalSame: true,
+        mainPhone: '0223456789', ownerName: 'Hisham Nabil', ownerPhone: '01012345678', ownerNationalId: '28003150112355', focalSame: true,
         addrGov: 'dakahlia', addrCity: 'mansoura', addrStreet: '12 El Gomhoreya St', coverage: { dakahlia: [], damietta: ['ras_el_bar'] }, terms: true
       }, over || {});
     };
@@ -436,6 +436,9 @@
     var check = function (v, opts) { return wf.validateRegistration(v, Object.assign({ now: NOW, requireTerms: true }, opts || {})); };
 
     it('accepts a complete company', function () { expect(Object.keys(check(company())).length).toBe(0); });
+    it('needs the owner national ID for a company', function () {
+      expect(check(company({ ownerNationalId: '' })).ownerNationalId).toBe('errors.required');
+    });
     it('accepts a complete individual', function () { expect(Object.keys(check(person())).length).toBe(0); });
     it('needs a provider type and at least one service', function () {
       var e = check(company({ kind: '', services: [] }), { steps: ['type'] });
@@ -494,8 +497,20 @@
       expect(e.addrStreet).toBe(undefined);
     });
     it('asks individuals and companies for different documents', function () {
-      expect(wf.registrationDocs('company').join()).toBe('commercial_register,tax_card');
-      expect(wf.registrationDocs('individual').join()).toBe('national_id,training_certificate');
+      expect(wf.registrationDocs('company').join()).toBe('commercial_register,tax_card,owner_id_front,owner_id_back');
+      expect(wf.registrationDocs('individual').join()).toBe('id_front,id_back,criminal_record');
+    });
+    it('application review: operations, then management sign-off', () => {
+      expect(wf.APPLICATION_STAGES.join()).toBe('submitted,review,signoff,decision');
+      expect(wf.applicationStage('pending')).toBe(1);
+      expect(wf.applicationStage('awaiting_signoff')).toBe(2);
+      expect(wf.applicationStage('verified')).toBe(4);
+      expect(wf.applicationEditable('info_requested')).toBe(true);
+      expect(wf.applicationEditable('rejected')).toBe(true);
+      expect(wf.applicationEditable('pending')).toBe(false);
+      expect(wf.applicationEditable('awaiting_signoff')).toBe(false);
+      expect(wf.applicationOpen('awaiting_signoff')).toBe(true);
+      expect(wf.applicationOpen('rejected')).toBe(false);
     });
   });
 

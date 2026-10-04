@@ -52,7 +52,7 @@
   ICM.config.OWNERSHIP = ['owned', 'rented', 'family'];
   ICM.config.ENTITY_TYPES = ['bank', 'auto_finance', 'consumer_finance', 'corporate'];
 
-  ICM.config.PROVIDER_DOCUMENTS = ['commercial_register', 'tax_card', 'insurance', 'national_id', 'training_certificate'];
+  ICM.config.PROVIDER_DOCUMENTS = ['commercial_register', 'tax_card', 'insurance', 'national_id', 'training_certificate', 'owner_id_front', 'owner_id_back', 'id_front', 'id_back', 'criminal_record'];
 
   // Amount ranges shown to providers before acceptance instead of the exact overdue amount.
   ICM.config.AMOUNT_RANGES = [

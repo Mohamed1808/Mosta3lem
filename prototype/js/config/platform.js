@@ -5,5 +5,5 @@
   ICM.config.PLATFORM_NAME = 'Mosta3lem';
   ICM.config.STORAGE_KEY = 'icm-db-v1';
   ICM.config.SESSION_KEY = 'icm-session-v1';
-  ICM.config.DATA_VERSION = 6;
+  ICM.config.DATA_VERSION = 7;
 })();

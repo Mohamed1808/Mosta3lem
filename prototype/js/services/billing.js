@@ -265,7 +265,7 @@
           totalEntities: db.entities.length,
           activeProviders: verified.filter(function (p) { return p.enforcement.level !== 'suspended'; }).length,
           suspendedProviders: verified.filter(function (p) { return p.enforcement.level === 'suspended'; }).length,
-          pendingApplications: db.providers.filter(function (p) { return p.verification.status === 'pending' || p.verification.status === 'info_requested'; }).length,
+          pendingApplications: db.providers.filter(function (p) { return wf.applicationOpen(p.verification.status); }).length,
           openDisputes: db.disputes.filter(function (d) { return d.status === 'open'; }).length,
           qaQueue: db.cases.filter(function (c) { return c.status === 'submitted_for_review' && E.providerById(c.providerId).kind === 'freelancer'; }).length,
           flaggedRatings: db.ratings.filter(function (r) { return r.flagged; }).length,
@@ -297,7 +297,7 @@
         }
         if (a.agentId) c.returned = db.cases.filter(function (x) { return x.agentId === a.agentId && x.status === 'returned_to_agent'; }).length;
         if (a.role === 'platform_admin' || a.role === 'platform_qa') {
-          c.onboarding = db.providers.filter(function (p) { return p.verification.status === 'pending' || p.verification.status === 'info_requested'; }).length;
+          c.onboarding = db.providers.filter(function (p) { return wf.applicationOpen(p.verification.status); }).length;
           c.qa = db.cases.filter(function (x) { return x.status === 'submitted_for_review' && E.providerById(x.providerId).kind === 'freelancer'; }).length;
           c.disputes = db.disputes.filter(function (d) { return d.status === 'open'; }).length;
           c.flagged = db.ratings.filter(function (r) { return r.flagged; }).length;

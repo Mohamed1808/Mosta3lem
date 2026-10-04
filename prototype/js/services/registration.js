@@ -19,16 +19,18 @@
   function taken(field, key) { throw new Err(key, { field: field }); }
 
   /** Phone numbers and national IDs identify people across the whole platform. */
-  function assertUnique(v, exceptProviderId) {
+  function assertUnique(v, except) {
     var db = E.db();
-    var others = db.providers.filter(function (p) { return p.id !== exceptProviderId && p.verification.status !== 'rejected'; });
+    except = except || {};
+    var others = db.providers.filter(function (p) { return p.id !== except.providerId && p.verification.status !== 'rejected'; });
     if (v.kind === 'company') {
       if (others.some(function (p) { return p.legal && p.legal.taxId === v.taxId; })) taken('taxId', 'errors.taxIdTaken');
       if (others.some(function (p) { return p.legal && p.legal.commercialRegNo === v.commercialRegNo; })) taken('commercialRegNo', 'errors.commercialRegTaken');
-      if (phoneUsed(v.ownerPhone)) taken('ownerPhone', 'errors.phoneTaken');
+      if (phoneUsed(v.ownerPhone, except.userId)) taken('ownerPhone', 'errors.phoneTaken');
     } else {
-      if (nationalIdUsed(v.nationalId)) taken('nationalId', 'errors.nationalIdTaken');
-      if (phoneUsed(v.phone)) taken('phone', 'errors.phoneTaken');
+      if (others.some(function (p) { return p.nationalId === v.nationalId; }) ||
+        E.db().agents.some(function (a) { return a.id !== except.agentId && a.nationalId === v.nationalId; })) taken('nationalId', 'errors.nationalIdTaken');
+      if (phoneUsed(v.phone, except.userId)) taken('phone', 'errors.phoneTaken');
     }
   }
   function phoneUsed(phone, exceptUserId) {
@@ -85,6 +87,66 @@
     return cov;
   }
 
+  /** A document value from the form: a file name, or { name, url } when the app sends the image. */
+  function docFile(x) {
+    if (!x) return null;
+    if (typeof x === 'string') return { name: x, url: null };
+    return x.name || x.url ? { name: x.name || null, url: x.url || null } : null;
+  }
+
+  /**
+   * Copy registration values onto the provider record, its login and (for an individual) its
+   * field agent record. Used when the application is created and when the applicant edits it.
+   */
+  function fillDetails(p, v, user, agent) {
+    var company = v.kind === 'company';
+    var services = C.SERVICES.filter(function (s) { return v.services.indexOf(s) >= 0; });
+    var coverage = cleanCoverage(v.coverage);
+    var govs = Object.keys(coverage);
+    var cap = {};
+    govs.forEach(function (g) { cap[g] = (p.capacity || {})[g] || (company ? 10 : 5); });
+    var sameServices = p.services && p.services.join() === services.join();
+    Object.assign(p, {
+      name: company ? v.companyName : v.fullName, city: cityName(v.addrGov, v.addrCity), services: services,
+      governorates: govs, capacity: cap, coverageCities: coverage,
+      pricing: sameServices && p.pricing ? p.pricing : defaultPricing(services), sla: sameServices && p.sla ? p.sla : defaultSla(services),
+      phone: company ? v.mainPhone : v.phone, email: (company ? v.companyEmail : v.email) || null,
+      address: { governorate: v.addrGov, city: v.addrCity, street: v.addrStreet, landmark: v.addrLandmark || '' }
+    });
+    if (company) {
+      p.legal = { taxId: v.taxId, commercialRegNo: v.commercialRegNo };
+      p.owner = { name: v.ownerName, nationalId: v.ownerNationalId || null, phone: v.ownerPhone, email: v.ownerEmail || null };
+      p.focalPoint = { name: v.focalName, title: v.focalTitle || '', phone: v.focalPhone, email: v.focalEmail || null, sameAsOwner: !!v.focalSame };
+      p.contactName = v.focalName;
+      Object.assign(user, { name: v.ownerName, phone: v.ownerPhone, email: v.ownerEmail || null, nationalId: v.ownerNationalId || null });
+    } else {
+      p.nationalId = v.nationalId;
+      p.contactName = v.fullName;
+      Object.assign(user, { name: v.fullName, phone: v.phone, email: v.email || null, nationalId: v.nationalId });
+      if (agent) Object.assign(agent, { name: v.fullName, governorates: govs.slice(), coverageCities: U.clone(coverage), services: services.slice(), nationalId: v.nationalId, phone: v.phone });
+    }
+  }
+
+  /** The registration values a provider was created with, for the edit form. */
+  function valuesOf(p) {
+    var company = p.kind === 'company';
+    var a = p.address || {};
+    var v = {
+      kind: company ? 'company' : 'individual', services: p.services.slice(), coverage: U.clone(p.coverageCities || {}),
+      addrGov: a.governorate || '', addrCity: a.city || '', addrStreet: a.street || '', addrLandmark: a.landmark || ''
+    };
+    if (company) {
+      Object.assign(v, {
+        companyName: p.name, taxId: p.legal.taxId, commercialRegNo: p.legal.commercialRegNo, mainPhone: p.phone, companyEmail: p.email || '',
+        ownerName: p.owner.name, ownerPhone: p.owner.phone, ownerNationalId: p.owner.nationalId || '', ownerEmail: p.owner.email || '',
+        focalSame: !!p.focalPoint.sameAsOwner, focalName: p.focalPoint.name, focalTitle: p.focalPoint.title || '', focalPhone: p.focalPoint.phone, focalEmail: p.focalPoint.email || ''
+      });
+    } else {
+      Object.assign(v, { fullName: p.name, nationalId: p.nationalId, phone: p.phone, email: p.email || '' });
+    }
+    return v;
+  }
+
   /** Create the provider, its owner login (and, for an individual, its field agent record). */
   function createApplication(raw, source, actor) {
     var db = E.db(), now = E.now();
@@ -92,47 +154,35 @@
     check(wf.validateRegistration(v, { governorates: govIds(), now: now, requireTerms: source === 'self' }));
     assertUnique(v);
     var company = v.kind === 'company';
-    var services = C.SERVICES.filter(function (s) { return v.services.indexOf(s) >= 0; });
-    var coverage = cleanCoverage(v.coverage);
-    var govs = Object.keys(coverage);
-    var cap = {};
-    govs.forEach(function (g) { cap[g] = company ? 10 : 5; });
     var pid = U.uid('prv');
     var docTypes = wf.registrationDocs(company ? 'company' : 'individual');
     var p = {
-      id: pid, name: company ? v.companyName : v.fullName, kind: company ? 'company' : 'freelancer',
-      city: cityName(v.addrGov, v.addrCity), services: services,
-      governorates: govs, capacity: cap, coverageCities: coverage,
-      pricing: defaultPricing(services), sla: defaultSla(services),
+      id: pid, kind: company ? 'company' : 'freelancer',
       verification: {
         status: 'pending', submittedAt: now, notes: [],
-        documents: docTypes.map(function (tp) { var f = v.docs[tp]; return { type: tp, status: f ? 'uploaded' : 'missing', fileName: f || null, uploadedAt: f ? now : null }; }),
+        documents: docTypes.map(function (tp) {
+          var f = docFile(v.docs[tp]);
+          return { type: tp, status: f ? 'uploaded' : 'missing', fileName: f ? f.name : null, url: f ? f.url : null, uploadedAt: f ? now : null };
+        }),
         idVerified: company ? null : false, certified: company ? null : false
       },
-      history: {}, enforcement: { level: 'none', source: 'auto', since: now }, joinedAt: now,
-      phone: company ? v.mainPhone : v.phone, email: (company ? v.companyEmail : v.email) || null, description: '',
-      address: { governorate: v.addrGov, city: v.addrCity, street: v.addrStreet, landmark: v.addrLandmark || '' },
+      history: {}, enforcement: { level: 'none', source: 'auto', since: now }, joinedAt: now, description: '',
       registration: { ref: D.nextRef(db, 'registration'), source: source, at: now, byUserId: actor ? actor.userId : null, byName: actor ? actor.name : null }
     };
-    var user;
+    var user, agent = null;
     if (company) {
-      p.legal = { taxId: v.taxId, commercialRegNo: v.commercialRegNo };
-      p.owner = { name: v.ownerName, nationalId: v.ownerNationalId || null, phone: v.ownerPhone, email: v.ownerEmail || null };
-      p.focalPoint = { name: v.focalName, title: v.focalTitle || '', phone: v.focalPhone, email: v.focalEmail || null, sameAsOwner: !!v.focalSame };
-      p.contactName = v.focalName;
-      user = { id: U.uid('u'), name: v.ownerName, role: 'provider_admin', owner: true, providerId: pid, active: true, phone: v.ownerPhone, email: v.ownerEmail || null, nationalId: v.ownerNationalId || null, createdAt: now };
-      db.users.push(user);
+      user = { id: U.uid('u'), role: 'provider_admin', owner: true, providerId: pid, active: true, createdAt: now };
     } else {
-      p.nationalId = v.nationalId;
-      p.contactName = v.fullName;
       var agentId = U.uid('ag');
-      user = { id: U.uid('u'), name: v.fullName, role: 'freelancer', providerId: pid, agentId: agentId, active: true, phone: v.phone, email: v.email || null, nationalId: v.nationalId, createdAt: now };
-      db.users.push(user);
-      db.agents.push({ id: agentId, providerId: pid, userId: user.id, name: v.fullName, governorates: govs.slice(), coverageCities: U.clone(coverage), services: services.slice(), active: true, nationalId: v.nationalId, phone: v.phone });
+      user = { id: U.uid('u'), role: 'freelancer', providerId: pid, agentId: agentId, active: true, createdAt: now };
+      agent = { id: agentId, providerId: pid, userId: user.id, active: true };
+      db.agents.push(agent);
     }
+    fillDetails(p, v, user, agent);
+    db.users.push(user);
     db.providers.push(p);
     var by = actor || D.actorOf(user);
-    E.audit(source === 'self' ? 'provider.registered' : 'provider.registered_by_admin', 'provider', p.id, p.name, null, { kind: p.kind, services: services, ref: p.registration.ref }, null, by);
+    E.audit(source === 'self' ? 'provider.registered' : 'provider.registered_by_admin', 'provider', p.id, p.name, null, { kind: p.kind, services: p.services, ref: p.registration.ref }, null, by);
     E.notify(E.admins().filter(function (u) { return !actor || u.id !== actor.userId; }), 'notif.application_new', { name: p.name }, 'admin:onboarding');
     return { provider: p, user: user };
   }
@@ -164,40 +214,76 @@
           if (p.kind === 'freelancer') { p.verification.idVerified = true; p.verification.certified = true; }
           p.verification.status = 'verified';
           p.verification.verifiedAt = E.now();
+          p.verification.opsApproval = { by: a.name, at: E.now(), inPerson: true };
+          p.verification.signoff = { by: a.name, at: E.now(), inPerson: true };
           E.audit('provider.verify', 'provider', p.id, p.name, { status: 'pending' }, { status: 'verified' }, null, a);
           E.notify(D.providerUsers(db, p.id), 'notif.provider_verified', {}, 'provider:dashboard');
         }
         return { ref: p.registration.ref, providerId: p.id, userId: r.user.id, status: p.verification.status };
       });
     },
-    /** The applicant's own application: status, what they sent, notes from the platform. */
+    /**
+     * The applicant's own application: status, what they sent, notes from the platform,
+     * plus the stage on the review track, the values for the edit form and what they may do.
+     */
     mine: function () {
       return E.run(function () {
-        var x = myApplicationProvider();
-        return Object.assign({}, x.p, { me: x.a });
+        var x = myApplicationProvider(), st = x.p.verification.status;
+        var owner = ['provider_admin', 'freelancer'].indexOf(x.a.role) >= 0;
+        return Object.assign({}, x.p, {
+          me: x.a, values: valuesOf(x.p), stage: wf.applicationStage(st),
+          canEdit: owner && wf.applicationEditable(st), canUpload: owner && st !== 'verified'
+        });
       });
     },
-    uploadDocument: function (type, fileName) {
+    /** Attach or replace a document. url: the image itself when the app sends it (a data URL). */
+    uploadDocument: function (type, fileName, url) {
       return E.mutate(function () {
         var x = myApplicationProvider();
         if (['provider_admin', 'freelancer'].indexOf(x.a.role) < 0) throw new Err('errors.forbidden');
+        if (x.p.verification.status === 'verified') throw new Err('errors.documentLocked');
         var d = x.p.verification.documents.filter(function (k) { return k.type === type; })[0];
         if (!d) throw new Err('errors.notFound');
         if (d.status === 'verified') throw new Err('errors.documentLocked');
-        d.status = 'uploaded'; d.fileName = fileName || d.fileName || null; d.uploadedAt = E.now();
+        d.status = 'uploaded'; d.fileName = fileName || d.fileName || null; d.url = url || null; d.uploadedAt = E.now();
         E.audit('provider.document_uploaded', 'provider', x.p.id, x.p.name, null, { type: type }, null, x.a);
         return x.p;
       });
     },
-    /** Answer a request for information and send the application back to review. */
+    /**
+     * Change the application's details after the platform asked for more information or did
+     * not approve it. The provider type cannot change; register again for that.
+     */
+    update: function (values) {
+      return E.mutate(function () {
+        var x = myApplicationProvider(), p = x.p;
+        if (['provider_admin', 'freelancer'].indexOf(x.a.role) < 0) throw new Err('errors.forbidden');
+        if (!wf.applicationEditable(p.verification.status)) throw new Err('errors.applicationLocked');
+        var v = wf.normalizeRegistration(Object.assign({}, values, { kind: p.kind === 'company' ? 'company' : 'individual' }));
+        check(wf.validateRegistration(v, { governorates: govIds(), now: E.now() }));
+        var user = E.userById(x.a.userId);
+        var agent = p.kind === 'freelancer' ? E.db().agents.filter(function (a) { return a.providerId === p.id; })[0] : null;
+        assertUnique(v, { providerId: p.id, userId: user.id, agentId: agent ? agent.id : null });
+        var before = { name: p.name, services: p.services.slice(), governorates: p.governorates.slice() };
+        fillDetails(p, v, user, agent);
+        E.audit('provider.application_updated', 'provider', p.id, p.name, before, { name: p.name, services: p.services, governorates: p.governorates }, null, x.a);
+        return p;
+      });
+    },
+    /**
+     * Send the application back to Operations: an answer to a request for information, or a
+     * fixed application after a rejection. Any earlier Operations approval no longer counts.
+     */
     resubmit: function (note) {
       return E.mutate(function () {
-        var x = myApplicationProvider();
-        if (x.p.verification.status !== 'info_requested') throw new Err('errors.notAwaitingInfo');
+        var x = myApplicationProvider(), ver = x.p.verification, before = ver.status;
+        if (!wf.applicationEditable(before)) throw new Err('errors.notAwaitingInfo');
         if (!note || !String(note).trim()) throw new Err('wf.err.reasonRequired');
-        x.p.verification.status = 'pending';
-        x.p.verification.notes.push({ at: E.now(), by: x.a.name, text: String(note).trim(), kind: 'resubmitted' });
-        E.audit('provider.resubmitted', 'provider', x.p.id, x.p.name, { status: 'info_requested' }, { status: 'pending' }, note, x.a);
+        ver.status = 'pending';
+        ver.opsApproval = null;
+        ver.submittedAt = E.now();
+        ver.notes.push({ at: E.now(), by: x.a.name, text: String(note).trim(), kind: 'resubmitted' });
+        E.audit('provider.resubmitted', 'provider', x.p.id, x.p.name, { status: before }, { status: 'pending' }, note, x.a);
         E.notify(E.admins(), 'notif.application_updated', { name: x.p.name }, 'admin:onboarding');
         return x.p;
       });
