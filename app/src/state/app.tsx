@@ -45,11 +45,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(() => setRev((r) => r + 1), []);
 
-  /** Re-read the signed-in person; keeps the same object unless their part of the app changed. */
+  /** Re-read the signed-in person; keeps the same object unless their part of the app or their field profile changed. */
   const syncSession = useCallback(async () => {
     try {
       const s: Session | null = await services().auth.currentUser();
-      setSession((prev) => (prev && s && prev.user.id === s.user.id && prev.portal !== s.portal ? s : prev));
+      setSession((prev) => (prev && s && prev.user.id === s.user.id && (prev.portal !== s.portal || (prev.user.agentId || null) !== (s.user.agentId || null)) ? s : prev));
       if (s && s.provider) setService((cur) => cur || s.provider.services[0]);
     } catch { /* ignore */ }
   }, []);

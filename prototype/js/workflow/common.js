@@ -12,6 +12,11 @@
   wf.ENTITY_ROLES = ['entity_admin', 'entity_credit', 'entity_operations', 'entity_collections'];
   wf.PROVIDER_MANAGER_ROLES = ['provider_admin', 'provider_supervisor', 'freelancer'];
   wf.FIELD_ROLES = ['agent', 'freelancer'];
+  /** Does this person do field work: an agent, an individual provider, or an owner with a field profile. */
+  wf.doesFieldWork = function (actor) {
+    if (!actor) return false;
+    return actor.role === 'agent' || actor.role === 'freelancer' || (actor.role === 'provider_admin' && !!actor.agentId);
+  };
   wf.PLATFORM_ROLES = ['platform_admin', 'platform_qa'];
   wf.PROVIDER_SIDE_ROLES = ['provider_admin', 'provider_supervisor', 'freelancer', 'agent'];
   wf.ALL_ROLES = wf.ENTITY_ROLES.concat(['provider_admin', 'provider_supervisor', 'agent', 'freelancer'], wf.PLATFORM_ROLES, ['system']);

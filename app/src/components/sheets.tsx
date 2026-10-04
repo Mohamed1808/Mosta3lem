@@ -86,7 +86,7 @@ export function AgentPicker({ visible, caseIds, service, governorate, places, cu
                 {on ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }} /> : null}
               </View>
               <Grow>
-                <Row wrap gap={6}><Txt b>{a.name}</Txt>{covers ? <Badge label={t('assign.coversArea')} tone="success" /> : null}</Row>
+                <Row wrap gap={6}><Txt b>{a.name}{a.owner ? ' ' + t('team.ownerTag') : ''}</Txt>{covers ? <Badge label={t('assign.coversArea')} tone="success" /> : null}</Row>
                 <Txt v="xs" c="muted" numberOfLines={2}>{coverageText(a.coverageCities || Object.fromEntries(a.governorates.map((g: string) => [g, []])), 3)}</Txt>
               </Grow>
               <View style={{ alignItems: 'center' }}>

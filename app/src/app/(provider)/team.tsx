@@ -18,7 +18,7 @@ export default function Team() {
   const t = useT();
   const { session } = useApp();
   const q = useQuery<any>(() => (session?.provider?.kind === 'company' ? services().team.structure() : Promise.resolve(null)), [session?.user?.id]);
-  const [sheet, setSheet] = useState<{ kind: 'supervisor' | 'agent' | 'move'; sup?: string; agent?: any } | null>(null);
+  const [sheet, setSheet] = useState<{ kind: 'supervisor' | 'agent' | 'move' | 'ownerField'; sup?: string; agent?: any } | null>(null);
   const d = q.data;
   if (!d) return <Screen title={t('nav.team')}>{q.error ? <Notice tone="danger" text={t(q.error.key || 'errors.generic')} /> : <Loading />}</Screen>;
   const owner = d.canManage;
@@ -35,6 +35,7 @@ export default function Team() {
         <OrgNode icon="users" label={t('team.supervisors')} value={num(activeSups.length)} />
         <OrgNode icon="smartphone" label={t('team.fieldAgents')} value={num(agentCount)} />
       </Row>
+      {owner ? <OwnerFieldCard d={d} onStart={() => setSheet({ kind: 'ownerField' })} /> : null}
       {owner && !d.supervisors.length ? <Notice tone="info" text={t('team.startHint')} /> : null}
       {d.supervisors.map((s: any) => <SupervisorCard key={s.id} s={s} d={d} onAdd={() => setSheet({ kind: 'agent', sup: s.id })} onMove={(a) => setSheet({ kind: 'move', agent: a })} />)}
       {d.unassigned.length ? (
@@ -46,6 +47,7 @@ export default function Team() {
       {sheet && sheet.kind === 'supervisor' ? <MemberSheet role="provider_supervisor" d={d} onClose={() => setSheet(null)} /> : null}
       {sheet && sheet.kind === 'agent' ? <MemberSheet role="agent" d={d} presetSup={sheet.sup} onClose={() => setSheet(null)} /> : null}
       {sheet && sheet.kind === 'move' ? <MoveSheet agent={sheet.agent} sups={activeSups} onClose={() => setSheet(null)} /> : null}
+      {sheet && sheet.kind === 'ownerField' ? <OwnerFieldSheet d={d} onClose={() => setSheet(null)} /> : null}
     </Screen>
   );
 }
@@ -144,6 +146,63 @@ function MemberSheet({ role, d, presetSup, onClose }: { role: 'agent' | 'provide
       submit={(v) => (isAgent ? services().team.addAgent(v) : services().team.addSupervisor(v))}
       success={(v) => (isAgent ? t('team.agentAdded', { name: v.name }) : t('team.supervisorAdded', { name: v.name }))}
       onClose={() => onClose()} />
+  );
+}
+
+/** The signed-in owner's own field work: on with their areas and load, or a way to start. */
+function OwnerFieldCard({ d, onStart }: { d: any; onStart: () => void }) {
+  const t = useT();
+  const { ask } = useDialog();
+  const run = useAction();
+  const me = d.owners.find((o: any) => o.id === d.me.userId);
+  if (!me) return null;
+  const fw = me.fieldWork;
+  return (
+    <Card>
+      <Stack gap={10}>
+        <Row gap={10}>
+          <Icon name="smartphone" color={fw ? colors.ok : colors.text3} />
+          <Grow><Txt b>{t('team.ownerFieldWork')}</Txt></Grow>
+          {fw ? <Badge label={t('team.ownerFieldWorkOn')} tone="success" /> : null}
+        </Row>
+        <Txt v="sm" c="muted">{t('team.ownerFieldWorkBody')}</Txt>
+        {fw ? (
+          <>
+            <Txt v="xs" c="muted">{coverageText(fw.coverageCities, 3)} · {(fw.services || []).map((s: string) => t('service.' + s)).join(t('common.listSep'))}</Txt>
+            <Row wrap gap={8}>
+              <Button small icon="edit" label={t('common.edit')} onPress={onStart} />
+              <Button small kind="ghost" label={t('team.ownerFieldWorkStop')} onPress={async () => {
+                if (await ask({ title: t('team.ownerFieldWorkStop'), confirmLabel: t('team.ownerFieldWorkStop') })) await run(() => services().team.setOwnerFieldWork(false), t('team.ownerFieldWorkStopped'));
+              }} />
+            </Row>
+          </>
+        ) : <Button small kind="primary" icon="play" label={t('team.ownerFieldWorkStart')} onPress={onStart} style={{ alignSelf: 'flex-start' }} />}
+      </Stack>
+    </Card>
+  );
+}
+
+/** Areas and services the owner covers personally, inside the company's coverage. */
+function OwnerFieldSheet({ d, onClose }: { d: any; onClose: () => void }) {
+  const t = useT();
+  const prov = d.provider;
+  const me = d.owners.find((o: any) => o.id === d.me.userId) || {};
+  const fields: any[] = [
+    { name: 'coverage', type: 'coverage', required: true, label: 'team.ownerCoverage', hint: 'team.agentCoverageHint', govs: prov.governorates, cityLimit: prov.coverageCities },
+  ];
+  if (prov.services.length > 1) fields.unshift({ name: 'services', type: 'checkboxes', required: true, label: 'team.ownerServices', choices: prov.services.map((s: string) => ({ value: s, label: t('service.' + s) })) });
+  const initial = me.fieldWork ? { coverage: me.fieldWork.coverageCities, services: me.fieldWork.services } : { coverage: {}, services: prov.services.slice() };
+  return (
+    <FormSheet visible title={t('team.ownerFieldWork')} def={{ id: 'ownerField', fields }} initial={initial} submitLabel={me.fieldWork ? t('signup.saveChanges') : t('team.ownerFieldWorkStart')}
+      validate={(v) => {
+        const e: Record<string, string | undefined> = {};
+        const c = icm().wf.validateCoverage(v.coverage || {});
+        if (c) e.coverage = c;
+        if (!(v.services || []).length) e.services = 'errors.serviceRequired';
+        return e;
+      }}
+      submit={(v) => services().team.setOwnerFieldWork(true, { coverage: v.coverage, services: v.services })}
+      success={t('team.ownerFieldWorkStarted')} onClose={() => onClose()} />
   );
 }
 

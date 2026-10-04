@@ -359,7 +359,7 @@
 
   // ---------------------------------------------------------------- cases
   function forAgent(c, a) {
-    if (!(a.role === 'agent' || a.role === 'freelancer') || c.agentId !== a.agentId) throw new Err('errors.forbidden');
+    if (!wf.doesFieldWork(a) || c.agentId !== a.agentId) throw new Err('errors.forbidden');
   }
 
   function detail(c, a) {
@@ -388,7 +388,7 @@
       canRate: isEntity && c.status === 'closed' && !c.ratingId && !c.batchId && !!c.providerId,
       canDispute: isEntity && !!c.providerId && !!c.acceptedAt && !openCaseDispute && ['cancelled', 'awaiting_acceptance'].indexOf(c.status) < 0,
       canOperate: c.service === 'collection' && !wf.collection.checkOperate(c, a),
-      canEditEvidence: c.service === 'investigation' && c.status === 'in_field' && (a.role === 'agent' || a.role === 'freelancer') && c.agentId === a.agentId,
+      canEditEvidence: c.service === 'investigation' && c.status === 'in_field' && wf.doesFieldWork(a) && c.agentId === a.agentId,
       canRateClient: !!a.providerId && wf.PROVIDER_MANAGER_ROLES.indexOf(a.role) >= 0 && c.providerId === a.providerId && c.status === 'closed' && !clientRated,
       reviewer: c.status === 'submitted_for_review' ? c.reviewerRole : null,
       now: now
@@ -602,8 +602,9 @@
         return E.db().cases.filter(function (c) {
           if (c.status !== 'submitted_for_review') return false;
           var p = E.providerById(c.providerId);
-          if (a.role === 'platform_qa' || a.role === 'platform_admin') return p && p.kind === 'freelancer';
-          if (a.role === 'provider_supervisor' || a.role === 'provider_admin') return c.providerId === a.providerId && p.kind === 'company' && D.caseInTeamScope(E.db(), a, c);
+          var qa = wf.reviewedByQa(c, { provider: p });
+          if (a.role === 'platform_qa' || a.role === 'platform_admin') return qa;
+          if (a.role === 'provider_supervisor' || a.role === 'provider_admin') return !qa && c.providerId === a.providerId && p.kind === 'company' && D.caseInTeamScope(E.db(), a, c);
           return false;
         }).map(function (c) { return decorate(c, a, now); }).filter(Boolean)
           .sort(function (x, y) { return x.reportSubmittedAt - y.reportSubmittedAt; });

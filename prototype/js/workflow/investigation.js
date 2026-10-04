@@ -14,8 +14,15 @@
   var ENTITY = wf.ENTITY_ROLES;
   var MANAGERS = wf.PROVIDER_MANAGER_ROLES;
   var ASSIGNERS = ['provider_admin', 'provider_supervisor', 'freelancer'];
-  var FIELD = wf.FIELD_ROLES;
+  // A company owner who also does field work acts on the cases assigned to them, like an agent.
+  var FIELD = wf.FIELD_ROLES.concat(['provider_admin']);
   var REVIEWERS = ['provider_admin', 'provider_supervisor', 'platform_qa', 'platform_admin'];
+
+  /** Field actions by an owner only on cases assigned to the owner's own field profile. */
+  function ownFieldCase(c, actor) {
+    if (actor.role !== 'provider_admin') return null;
+    return actor.agentId && actor.agentId === c.agentId ? null : 'wf.err.notOwner';
+  }
 
   var OPEN = ['draft', 'submitted', 'awaiting_acceptance', 'declined', 'expired', 'accepted', 'assigned', 'in_field',
     'submitted_for_review', 'returned_to_agent', 'delivered', 'rework_requested', 'accepted_by_entity'];
@@ -48,12 +55,22 @@
       c.checkIn.distanceM <= ICM.config.CHECKIN_MAX_DISTANCE_M;
   }
 
-  /** Company reports go to the provider's supervisor; freelancer reports go to platform QA. */
+  /**
+   * Who reviews a submitted report: platform QA for individual providers and for a company
+   * owner's own field work (nobody in the company sits above the owner); otherwise the
+   * company's supervisors and owner.
+   */
+  function reviewedByQa(c, ctx) {
+    if (c.reviewerRole) return c.reviewerRole === 'qa';
+    return !!(ctx.provider && ctx.provider.kind === 'freelancer');
+  }
+  wf.reviewedByQa = reviewedByQa;
+
   function reviewerWhen(c, actor, ctx) {
-    var freelancer = ctx.provider && ctx.provider.kind === 'freelancer';
+    var qa = reviewedByQa(c, ctx);
     var isPlatform = actor.role === 'platform_qa' || actor.role === 'platform_admin';
-    if (freelancer && !isPlatform) return 'wf.err.reviewerQa';
-    if (!freelancer && isPlatform) return 'wf.err.reviewerSupervisor';
+    if (qa && !isPlatform) return 'wf.err.reviewerQa';
+    if (!qa && isPlatform) return 'wf.err.reviewerSupervisor';
     return null;
   }
 
@@ -70,10 +87,10 @@
         n.assignedAt = ctx.now;
         if (prev.status === 'rework_requested') n.checkIn = null;
       } },
-    { action: 'check_in', from: ['assigned'], to: 'in_field', roles: FIELD,
+    { action: 'check_in', from: ['assigned'], to: 'in_field', roles: FIELD, when: ownFieldCase,
       guard: function (c, a, p) { return p.checkIn ? null : 'wf.err.checkInRequired'; },
       effect: function (n, p) { n.checkIn = p.checkIn; } },
-    { action: 'submit_report', from: ['in_field'], to: 'submitted_for_review', roles: FIELD,
+    { action: 'submit_report', from: ['in_field'], to: 'submitted_for_review', roles: FIELD, when: ownFieldCase,
       guard: function (c, a, p, ctx) {
         if (!c.checkIn) return 'wf.err.checkInRequired';
         if ((c.photos || []).length < minPhotos(c, ctx)) return 'wf.err.photosRequired';
@@ -82,14 +99,14 @@
       },
       effect: function (n, p, a, ctx) {
         n.reportSubmittedAt = ctx.now;
-        n.reviewerRole = ctx.provider && ctx.provider.kind === 'freelancer' ? 'qa' : 'supervisor';
+        n.reviewerRole = (ctx.provider && ctx.provider.kind === 'freelancer') || a.role === 'provider_admin' ? 'qa' : 'supervisor';
         n.reviewComment = null;
       } },
     { action: 'return_to_agent', from: ['submitted_for_review'], to: 'returned_to_agent', roles: REVIEWERS,
       when: reviewerWhen,
       guard: function (c, a, p) { return p.comment ? null : 'wf.err.commentRequired'; },
       effect: function (n, p) { n.reviewComment = p.comment; n.returnCount = (n.returnCount || 0) + 1; } },
-    { action: 'resume', from: ['returned_to_agent'], to: 'in_field', roles: FIELD },
+    { action: 'resume', from: ['returned_to_agent'], to: 'in_field', roles: FIELD, when: ownFieldCase },
     { action: 'approve', from: ['submitted_for_review'], to: 'delivered', roles: REVIEWERS,
       when: reviewerWhen,
       effect: function (n, p, a, ctx) {

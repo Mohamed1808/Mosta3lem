@@ -146,6 +146,14 @@
           <span class="org-arrow">${icon('chevronRight')}</span>
           <div class="org-node">${icon('smartphone')}<div><div class="xs faint">${t('team.fieldAgents')}</div><div class="strong small">${U.num(agentCount)}</div></div></div>
         </div>
+        ${owner ? (function () {
+          var me = d.owners.filter(function (o) { return o.id === d.me.userId; })[0];
+          if (!me) return '';
+          var fw = me.fieldWork;
+          return h`<section class="card mb-16"><div class="card-h"><div><h2>${t('team.ownerFieldWork')}</h2><div class="xs faint">${t('team.ownerFieldWorkBody')}</div></div>
+            <div class="row wrap">${fw ? h`${ui.badge(t('team.ownerFieldWorkOn'), 'success')}<span class="small">${ui.coverage.text(fw.coverageCities, 3)}</span><button type="button" class="btn btn-sm btn-ghost" data-action="ownerField" data-on="0">${t('team.ownerFieldWorkStop')}</button>`
+              : h`<button type="button" class="btn btn-sm btn-primary" data-action="ownerField" data-on="1">${t('team.ownerFieldWorkStart')}</button>`}</div></div></section>`;
+        })() : ''}
         ${owner && !d.supervisors.length ? h`<div class="mb-16">${ui.notice(t('team.startHint'), 'info')}</div>` : ''}
         <div class="stack">${d.supervisors.map(supCard)}
           ${d.unassigned.length ? h`<section class="card"><div class="card-h"><div><h2>${t('team.unassigned')}</h2><div class="xs faint">${t('team.unassignedHint')}</div></div></div><div class="card-b flush">${agentTable(d.unassigned)}</div></section>` : ''}</div>`;
@@ -173,6 +181,13 @@
         var on = el.getAttribute('data-on') === '1';
         if (!on && !(await ui.confirm({ title: t('team.deactivate'), message: t('team.deactivateBody'), danger: true, confirmLabel: t('team.deactivate') }))) return;
         await S.team.setActive(el.getAttribute('data-id'), on);
+        ctx.reload();
+      },
+      /** Start (covering the whole company area; the app lets the owner narrow it) or stop the owner's field work. */
+      ownerField: async function (el, ev, ctx) {
+        var on = el.getAttribute('data-on') === '1';
+        await S.team.setOwnerFieldWork(on);
+        ui.toast(on ? t('team.ownerFieldWorkStarted') : t('team.ownerFieldWorkStopped'), 'success');
         ctx.reload();
       },
       toggleSupervisor: async function (el, ev, ctx) {

@@ -32,6 +32,8 @@
     var a = { userId: 'u_' + role, name: role, role: role };
     if (wf.isEntityRole(role)) a.entityId = 'e1';
     if (role === 'provider_admin' || role === 'provider_supervisor') a.providerId = 'p1';
+    // The owner in these tests also does field work, with the case's agent profile.
+    if (role === 'provider_admin') a.agentId = 'a1';
     if (role === 'agent') { a.providerId = 'p1'; a.agentId = 'a1'; }
     if (role === 'freelancer') { a.providerId = 'p1'; a.agentId = 'a1'; }
     return Object.assign(a, over || {});
@@ -641,6 +643,26 @@
       var f = [{ name: 'telephone', type: 'anyPhone' }];
       expect(wf.validateFields(f, { telephone: '0233456789' }).telephone).toBe(undefined);
       expect(wf.validateFields(f, { telephone: '123' }).telephone).toBe('errors.phoneFormat');
+    });
+  });
+
+  describe('owner field work', function () {
+    var IM = wf.investigation;
+    var co = { now: 10 * H, provider: { id: 'p1', kind: 'company' } };
+    it('lets an owner act only on cases assigned to their own field profile', function () {
+      var c = makeCase('investigation', 'assigned');
+      expect(IM.check(c, 'check_in', actorFor('provider_admin', { agentId: null }), { checkIn: { at: 1 } }, co)).toBe('wf.err.notOwner');
+      expect(IM.check(c, 'check_in', actorFor('provider_admin', { agentId: 'a2' }), { checkIn: { at: 1 } }, co)).toBe('wf.err.notOwner');
+      expect(IM.check(c, 'check_in', actorFor('provider_admin'), { checkIn: { at: 1 } }, co)).toBe(null);
+      expect(wf.doesFieldWork(actorFor('provider_admin', { agentId: null }))).toBe(false);
+      expect(wf.doesFieldWork(actorFor('provider_admin'))).toBe(true);
+    });
+    it('sends an owner\'s own report to platform QA, not to the company', function () {
+      var c = Object.assign(makeCase('investigation', 'submitted_for_review'), { reviewerRole: 'qa' });
+      expect(wf.reviewedByQa(c, co)).toBe(true);
+      expect(IM.check(c, 'approve', actorFor('provider_supervisor'), {}, co)).toBe('wf.err.reviewerQa');
+      expect(IM.check(c, 'approve', actorFor('platform_qa'), {}, co)).toBe(null);
+      expect(wf.reviewedByQa(makeCase('investigation', 'submitted_for_review'), co)).toBe(false);
     });
   });
 

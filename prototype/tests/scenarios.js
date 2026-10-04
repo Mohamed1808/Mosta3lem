@@ -657,6 +657,62 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(row.place.gov === 'giza' && row.place.city === 'agouza', 'case rows carry the area (governorate and city) for agent matching');
   });
 
+  // ---------------------------------------------------------------- 15
+  await scenario('15. Company owner does field work', async () => {
+    await as('Hany Wagdy');
+    let fail = null;
+    try { await S.team.setOwnerFieldWork(true, { coverage: { matrouh: [] } }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.outsideCompanyCoverage', 'the owner can only cover areas the company covers');
+    const ag = await S.team.setOwnerFieldWork(true, { coverage: { cairo: [] }, services: ['investigation'] });
+    let team = await S.team.structure();
+    const hany = team.owners.find((u) => u.name === 'Hany Wagdy');
+    ok(hany.fieldWork && hany.fieldWork.id === ag.id && !team.unassigned.some((a) => a.id === ag.id), 'the owner gets a field profile, shown with the owner and not as an agent without a supervisor');
+    ok((await S.providers.team('investigation')).some((a) => a.id === ag.id), 'the owner appears in the agent list for assignment');
+
+    await as('Tamer Lotfy');
+    const c = await S.cases.createDraft('investigation', invValues('cairo'));
+    await S.cases.sendOffer(c.id, 'prv_sphinx');
+    await as('Hany Wagdy');
+    const offer = (await S.offers.inbox('investigation')).find((o) => o.caseIds.includes(c.id));
+    await S.offers.accept(offer.id);
+    await S.cases.assign([c.id], ag.id);
+    await as('Salma Reda');
+    fail = null;
+    try { await S.team.setActive(ag.id, false); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.ownerFieldProfile', 'a supervisor cannot switch off the owner\'s field work');
+    fail = null;
+    try { await S.cases.checkIn(c.id); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.forbidden', 'only the assigned person checks in');
+
+    await as('Hany Wagdy');
+    const ci = await S.cases.checkIn(c.id);
+    for (let i = 0; i < 3; i++) await S.cases.addPhoto(c.id, PHOTO);
+    await S.cases.saveReport(c.id, 'residence', goodResidence(c.id));
+    await S.cases.transition(c.id, 'submit_report');
+    let d = await S.cases.get(c.id);
+    ok(ci.status === 'in_field' && d.case.status === 'submitted_for_review' && d.case.reviewerRole === 'qa', 'the owner checks in, reports and submits; the report goes to platform QA');
+    fail = null;
+    try { await S.cases.transition(c.id, 'approve'); } catch (e) { fail = e.key; }
+    ok(fail === 'wf.err.reviewerQa', 'the owner cannot approve their own report');
+    fail = null;
+    try { await S.team.setOwnerFieldWork(false); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.agentHasOpenCases', 'field work cannot stop while the owner has an open case');
+
+    await as('Salma Reda');
+    ok(!(await S.cases.reviewQueue()).some((x) => x.id === c.id), 'it is not in the supervisor\'s review queue');
+    await as('Ziad Ezzat');
+    ok((await S.cases.reviewQueue()).some((x) => x.id === c.id), 'it is in the platform QA queue');
+    ok(notifs(uid('Ziad Ezzat'), 'notif.report_submitted').some((n) => n.params.ref === d.case.ref), 'platform QA is notified');
+    await S.cases.transition(c.id, 'approve');
+    d = await S.cases.get(c.id);
+    ok(d.case.status === 'delivered', 'QA approves and the report is delivered to the bank');
+
+    await as('Hany Wagdy');
+    await S.team.setOwnerFieldWork(false);
+    team = await S.team.structure();
+    ok(!team.owners.find((u) => u.name === 'Hany Wagdy').fieldWork && !(await S.providers.team('investigation')).some((a) => a.id === ag.id && a.active), 'the owner stops field work once the case is delivered');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {
