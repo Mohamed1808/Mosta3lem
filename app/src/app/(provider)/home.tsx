@@ -5,9 +5,11 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
-import { services } from '@/backend/engine';
+import { icm, services } from '@/backend/engine';
 import { CaseList } from '@/components/case';
 import { DocsAlert } from '@/components/settings';
+import { SyncCard } from '@/components/syncCard';
+import { applyOps, useOffline } from '@/sync/offline';
 import { money, num, pct } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { space } from '@/theme';
@@ -41,7 +43,9 @@ function ManagerHome() {
   const company = session?.provider?.kind === 'company';
   const inv = service === 'investigation';
   const enf = session?.provider?.enforcement?.level;
-  const myTasks = (mine.data || []).filter((c) => WORKING.indexOf(c.status) >= 0);
+  const off = useOffline();
+  // Without signal, the saved copies (with queued work) stand in for the task list.
+  const myTasks = (off.online ? mine.data || [] : Object.values(off.cases).map((x: any) => applyOps(x, off.outbox).case)).filter((c: any) => WORKING.indexOf(c.status) >= 0);
   return (
     <>
       {services_.length > 1 ? (
@@ -52,6 +56,7 @@ function ManagerHome() {
       ) : null}
       {enf && enf !== 'none' ? <Notice tone={enf === 'warned' ? 'warning' : 'danger'} icon="shield" text={t('enforcement.notice.' + enf)} /> : null}
       <DocsAlert />
+      {fieldWorker ? <SyncCard /> : null}
       {!d ? <Loading /> : (
         <>
           <Row wrap gap={10}>
@@ -84,7 +89,7 @@ function ManagerHome() {
           {fieldWorker ? (
             <Stack gap={8}>
               <Txt v="h3">{t('tabs.tasks')}</Txt>
-              <CaseList rows={myTasks} empty={t('home.noTasks')} showAgent={false} onOpen={(c) => router.push({ pathname: '/case/[id]', params: { id: c.id } })} />
+              <CaseList rows={myTasks} empty={t('home.noTasks')} showAgent={false} onOpen={(c) => router.push({ pathname: off.online ? '/case/[id]' : '/field/[id]', params: { id: c.id } })} />
             </Stack>
           ) : null}
         </>
@@ -95,15 +100,20 @@ function ManagerHome() {
 
 function AgentHome() {
   const t = useT();
-  const q = useQuery<any>(async () => ({ tasks: await services().cases.agentTasks(), clock: await services().demo.clock() }));
-  if (!q.data) return <Loading />;
-  const now = q.data.clock.now, end = icmEndOfDay(now);
-  const working = q.data.tasks.filter((c: any) => WORKING.indexOf(c.status) >= 0);
-  const waiting = q.data.tasks.filter((c: any) => ['submitted_for_review', 'awaiting_entity_approval'].indexOf(c.status) >= 0);
+  const off = useOffline();
+  const q = useQuery<any>(async () => (off.online ? { tasks: await services().cases.agentTasks(), clock: await services().demo.clock() } : null), [off.online]);
+  // Without signal: the cases saved on the phone, with the work queued on them.
+  const saved = Object.values(off.cases).map((d: any) => applyOps(d, off.outbox).case);
+  const data = off.online ? q.data : { tasks: saved, clock: { now: icm().clock.now() } };
+  if (!data) return <Loading />;
+  const now = data.clock.now, end = icmEndOfDay(now);
+  const working = data.tasks.filter((c: any) => WORKING.indexOf(c.status) >= 0);
+  const waiting = data.tasks.filter((c: any) => ['submitted_for_review', 'awaiting_entity_approval'].indexOf(c.status) >= 0);
   const overdue = working.filter((c: any) => c.dueAt && c.dueAt < now);
   const today = working.filter((c: any) => c.dueAt && c.dueAt >= now && c.dueAt <= end);
   const upcoming = working.filter((c: any) => !c.dueAt || c.dueAt > end);
-  const open = (c: any) => router.push({ pathname: '/case/[id]', params: { id: c.id } });
+  // Without signal the field work screen opens straight away: it works from the saved copy.
+  const open = (c: any) => router.push({ pathname: off.online ? '/case/[id]' : '/field/[id]', params: { id: c.id } });
   const section = (title: string, rows: any[]) => (
     <Stack gap={8}>
       <Txt v="sm" b c="muted">{title} · {rows.length}</Txt>
@@ -112,6 +122,7 @@ function AgentHome() {
   );
   return (
     <>
+      <SyncCard />
       <Row wrap gap={10}>
         <Kpi label={t('home.overdue')} value={num(overdue.length)} tone={overdue.length ? 'bad' : undefined} />
         <Kpi label={t('home.today')} value={num(today.length)} tone={today.length ? 'warn' : undefined} />

@@ -880,6 +880,45 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(c.checkIn.source === 'simulated' && c.checkIn.distanceM != null, 'without a location (demo) a simulated one is recorded and labelled');
   });
 
+  // ---------------------------------------------------------------- 20
+  await scenario('20. Field work done without signal and sent later', async () => {
+    const db = ICM.store.db;
+    await as('Tamer Lotfy');
+    const c0 = await S.cases.createDraft('investigation', invValues('giza'));
+    await S.cases.sendOffer(c0.id, 'prv_fl_omar');
+    await as('Omar Hassan');
+    const o = (await S.offers.inbox('investigation')).find((x) => x.caseIds.includes(c0.id));
+    await S.offers.accept(o.id);
+    const assignedAt = db.cases.find((x) => x.id === c0.id).assignedAt;
+
+    // The agent visited 10 minutes after assignment without signal; the phone sends it all an hour later.
+    await as('Laila Hosny');
+    await S.demo.advance(H);
+    await as('Omar Hassan');
+    const t0 = ICM.clock.now();
+    const visitAt = assignedAt + 10 * 60 * 1000;
+    let c = await S.cases.checkIn(c0.id, { lat: 30.01, lng: 31.21, accuracyM: 15, at: visitAt });
+    ok(c.checkIn.at === visitAt && c.checkIn.sentAt >= t0, 'the check-in keeps the time it happened, and when it arrived');
+    await S.cases.addPhoto(c0.id, PHOTO, 'building', { at: visitAt + 60000 });
+    await S.cases.addPhoto(c0.id, PHOTO, 'entrance', { at: t0 + 10 * 60 * 60 * 1000 });
+    c = (await S.cases.get(c0.id)).case;
+    ok(c.photos[0].at === visitAt + 60000 && c.photos[1].at <= ICM.clock.now(), 'photo times are kept, but a time in the future is not accepted');
+    await S.cases.addPhoto(c0.id, PHOTO, 'door');
+    await S.cases.saveReport(c0.id, 'residence', goodResidence(c0.id));
+    const finished = visitAt + 20 * 60000;
+    c = await S.cases.transition(c0.id, 'submit_report', { finishedAt: finished });
+    ok(c.status === 'submitted_for_review' && c.reportFinishedOfflineAt === finished && c.reportSubmittedAt >= finished, 'the report records when it was finished offline and when it arrived');
+
+    await as('Tamer Lotfy');
+    const c1 = await S.cases.createDraft('investigation', invValues('giza'));
+    await S.cases.sendOffer(c1.id, 'prv_fl_omar');
+    await as('Omar Hassan');
+    await S.offers.accept((await S.offers.inbox('investigation')).find((x) => x.caseIds.includes(c1.id)).id);
+    const a1 = db.cases.find((x) => x.id === c1.id).assignedAt;
+    c = await S.cases.checkIn(c1.id, { at: a1 - 3600000 });
+    ok(c.checkIn.at >= a1 && c.checkIn.source === 'simulated', 'a time before the case was assigned is not accepted');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

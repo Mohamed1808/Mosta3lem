@@ -104,6 +104,8 @@
       },
       effect: function (n, p, a, ctx) {
         n.reportSubmittedAt = ctx.now;
+        // Finished without signal and sent later: keep when the agent finished, for the reviewer.
+        n.reportFinishedOfflineAt = p.finishedAt && p.finishedAt < ctx.now && (!n.checkIn || p.finishedAt >= n.checkIn.at) ? p.finishedAt : null;
         n.reviewerRole = (ctx.provider && ctx.provider.kind === 'freelancer') || a.role === 'provider_admin' ? 'qa' : 'supervisor';
         n.reviewComment = null;
       } },

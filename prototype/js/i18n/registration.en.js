@@ -135,7 +135,8 @@
         off: 'Location is turned off on the phone. Turn it on to check in.',
         unavailable: 'The phone could not find your location. Move outdoors and try again.'
       },
-      demoBody: 'Demo: you can continue with a simulated location. In the live app a real location is required.', useDemo: 'Use simulated location'
+      demoBody: 'Demo: you can continue with a simulated location. In the live app a real location is required.', useDemo: 'Use simulated location',
+      sentLater: 'Done without signal, sent {time}', finishedOffline: 'The agent finished this report without signal at {finished}; it arrived at {sent}.'
     },    select: { hiddenDocuments: '{n} paused: expired documents' },
     earnings: {
       byAgent: 'By field agent', noAgent: 'No agent recorded', casesMonth: 'Cases this month', allTime: 'All time', casesN: '{n} cases',

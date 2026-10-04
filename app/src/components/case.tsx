@@ -142,6 +142,7 @@ export function CheckInLine({ ci }: { ci: any }) {
           <Txt v="xs" c="accent" mono ltr>{ci.lat.toFixed(5) + ', ' + ci.lng.toFixed(5)} · {t('gps.openMap')}</Txt>
         </Pressable>
       ) : null}
+      {ci.sentAt ? <Txt v="xs" c="muted">{t('gps.sentLater', { time: U.fmtDateTime(ci.sentAt) })}</Txt> : null}
       {far ? <Txt v="xs" c="warn">{t('evidence.farFromAddress', { max })}</Txt> : null}
       {ci.outsideArea ? <Txt v="xs" c="warn">{t('gps.outsideArea')}</Txt> : null}
       {!measured && ci.addressApprox && !ci.outsideArea ? <Txt v="xs" c="faint">{t('gps.addressApprox')}</Txt> : null}
