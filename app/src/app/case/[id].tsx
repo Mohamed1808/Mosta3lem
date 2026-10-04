@@ -75,7 +75,8 @@ function RequestDetails({ d }: { d: any }) {
     rows.push([t('case.allowedActions'), ['calls', 'messages', 'visits'].filter((k) => aa[k]).map((k) => t('forms.collectionRequest.allowed.' + k)).join(t('common.listSep')) || '-']);
     rows.push([t('case.periodEnd'), dateTime(c.periodEnd || c.dueAt)]);
   }
-  rows.push([t('caseScreen.price'), priceText(c, t)]);
+  // Field agents get no price (the engine leaves it out for them).
+  if (c.price != null) rows.push([t('caseScreen.price'), priceText(c, t)]);
   if (c.agentName) rows.push([t('caseScreen.agent'), c.agentName]);
   rows.push([t('case.instructions'), c.instructions === null && c.masked ? hidden : c.instructions || '-']);
   return <Stack>{c.masked ? <Notice tone="info" icon="lock" text={t('caseScreen.masked')} /> : null}<KeyValue rows={rows} /></Stack>;

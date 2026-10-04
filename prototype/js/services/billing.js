@@ -24,7 +24,8 @@
         return E.db().invoices.filter(function (i) {
           if (a.role === 'platform_admin') return true;
           if (wf.isEntityRole(a.role)) return i.entityId === a.entityId;
-          if (a.providerId) return i.providerId === a.providerId;
+          // Invoices show the whole company's billing: the owner or the individual provider only.
+          if (a.providerId) return i.providerId === a.providerId && D.moneyScope(E.db(), a).all === true;
           return false;
         }).map(withTotals).sort(function (x, y) { return y.month.localeCompare(x.month) || x.providerName.localeCompare(y.providerName); });
       });
@@ -54,29 +55,82 @@
         return withTotals(inv);
       });
     },
+    /**
+     * Earnings per closed case, after the platform fee, following the team structure: the
+     * owner and an individual provider see everything, a supervisor sees the cases of their
+     * own agents (scope: 'team'), field agents see no money (use myWork). byAgent breaks the
+     * totals down per field agent for owners and supervisors.
+     */
     earnings: function (service) {
       return E.run(function () {
-        var a = E.actor();
-        if (!a.providerId) throw new Err('errors.forbidden');
+        var a = E.actor(), db = E.db();
+        var scope = D.moneyScope(db, a);
+        if (scope.none) throw new Err('errors.forbidden');
         var month = U.monthKey(E.now());
         var rows = [];
-        E.db().invoices.filter(function (i) { return i.providerId === a.providerId; }).forEach(function (inv) {
+        db.invoices.filter(function (i) { return i.providerId === a.providerId; }).forEach(function (inv) {
           inv.lines.forEach(function (l) {
             if (service && l.service !== service) return;
+            var c = E.caseById(l.caseId);
+            if (!D.caseInMoneyScope(scope, c)) return;
+            var ag = c && c.agentId ? E.agentById(c.agentId) : null;
             var gross = lineAmount(l), fee = U.round(gross * inv.platformFeePct / 100, 0);
-            rows.push({ caseId: l.caseId, caseRef: l.caseRef, service: l.service, closedAt: l.closedAt, entityName: E.entityById(inv.entityId).name, invoiceRef: inv.ref, month: inv.month, gross: gross, fee: fee, net: gross - fee, payout: PAYOUT[inv.status], adjusted: l.adjustment != null && l.adjustment !== 1 });
+            rows.push({ caseId: l.caseId, caseRef: l.caseRef, service: l.service, closedAt: l.closedAt, entityName: E.entityById(inv.entityId).name, invoiceRef: inv.ref, month: inv.month, gross: gross, fee: fee, net: gross - fee, payout: PAYOUT[inv.status], adjusted: l.adjustment != null && l.adjustment !== 1, agentId: ag ? ag.id : null, agentName: ag ? ag.name : null });
           });
         });
         rows.sort(function (x, y) { return y.closedAt - x.closedAt; });
         function tot(f) { return U.sum(rows.filter(f), function (r) { return r.net; }); }
+        var p = E.providerById(a.providerId);
+        var byAgent = [];
+        if (p.kind === 'company') {
+          var groups = U.groupBy(rows, function (r) { return r.agentId || ''; });
+          byAgent = Object.keys(groups).map(function (id) {
+            var rs = groups[id], ag = id ? E.agentById(id) : null, sup = ag && ag.supervisorId ? E.userById(ag.supervisorId) : null;
+            return {
+              agentId: id || null, name: ag ? ag.name : null, owner: !!(ag && ag.owner), supervisorName: sup ? sup.name : null,
+              cases: rs.length, casesThisMonth: rs.filter(function (r) { return r.month === month; }).length,
+              net: U.sum(rs, function (r) { return r.net; }), netThisMonth: U.sum(rs.filter(function (r) { return r.month === month; }), function (r) { return r.net; })
+            };
+          }).sort(function (x, y) { return y.netThisMonth - x.netThisMonth || y.net - x.net; });
+        }
         return {
+          scope: scope.all ? 'all' : 'team',
           rows: rows,
+          byAgent: byAgent,
           thisMonthGross: U.sum(rows.filter(function (r) { return r.month === month; }), function (r) { return r.gross; }),
           thisMonthNet: tot(function (r) { return r.month === month; }),
           accruing: tot(function (r) { return r.payout === 'accruing'; }),
           pending: tot(function (r) { return r.payout === 'pending'; }),
           paidOut: tot(function (r) { return r.payout === 'paid_out'; }),
-          feePct: E.db().config.pricing.platformFeePct
+          feePct: db.config.pricing.platformFeePct
+        };
+      });
+    },
+    /**
+     * A field agent's completed work, without any amounts: how many cases they finished this
+     * month and in total, and each case with its status. Also for owners who do field work.
+     */
+    myWork: function (service) {
+      return E.run(function () {
+        var a = E.actor(), now = E.now();
+        if (!a.agentId) throw new Err('errors.forbidden');
+        var month = U.monthKey(now);
+        var DONE = ['delivered', 'awaiting_entity_approval', 'accepted_by_entity', 'closed'];
+        var rows = E.db().cases.filter(function (c) {
+          if (c.agentId !== a.agentId || (service && c.service !== service)) return false;
+          return DONE.indexOf(c.status) >= 0;
+        }).map(function (c) {
+          var at = c.closedAt || c.firstDeliveredAt || c.deliveredAt || c.updatedAt || c.createdAt;
+          return { caseId: c.id, caseRef: c.ref, service: c.service, status: c.status, doneAt: at, month: U.monthKey(at), entityName: E.entityById(c.entityId).name, onTime: c.onTime == null ? null : !!c.onTime, inquiryTypes: c.inquiryTypes || null };
+        }).sort(function (x, y) { return y.doneAt - x.doneAt; });
+        var open = E.db().cases.filter(function (c) { return c.agentId === a.agentId && !wf.isTerminal(c.status) && DONE.indexOf(c.status) < 0; }).length;
+        var timed = rows.filter(function (r) { return r.onTime != null; });
+        return {
+          rows: rows, open: open,
+          thisMonth: rows.filter(function (r) { return r.month === month; }).length,
+          total: rows.length,
+          closed: rows.filter(function (r) { return r.status === 'closed'; }).length,
+          onTimeRate: timed.length ? timed.filter(function (r) { return r.onTime; }).length / timed.length : null
         };
       });
     }
@@ -182,8 +236,10 @@
         var submitted = cases.filter(function (c) { return c.reportSubmittedAt; });
         var sc = db.scores[p.id] && db.scores[p.id].byService[service];
         var month = U.monthKey(now);
-        var earnings = U.sum(db.invoices.filter(function (i) { return i.providerId === p.id && i.month === month; }), function (i) {
-          return U.sum(i.lines.filter(function (l) { return l.service === service; }), function (l) { return lineAmount(l) * (1 - i.platformFeePct / 100); });
+        // Earnings follow the team structure: company for the owner, own team for a supervisor, none for agents.
+        var scope = D.moneyScope(db, a);
+        var earnings = scope.none ? null : U.sum(db.invoices.filter(function (i) { return i.providerId === p.id && i.month === month; }), function (i) {
+          return U.sum(i.lines.filter(function (l) { return l.service === service && D.caseInMoneyScope(scope, E.caseById(l.caseId)); }), function (l) { return lineAmount(l) * (1 - i.platformFeePct / 100); });
         });
         var out = {
           provider: { id: p.id, name: p.name, kind: p.kind, enforcement: p.enforcement },
@@ -191,7 +247,7 @@
           open: running.length + cases.filter(function (c) { return c.status === 'delivered'; }).length,
           dueToday: running.filter(function (c) { return c.dueAt && c.dueAt <= endToday; }).length,
           atRisk: k.atRisk, breached: k.breached,
-          score: sc || null, earningsThisMonth: U.round(earnings, 0),
+          score: sc || null, earningsThisMonth: earnings == null ? null : U.round(earnings, 0), earningsScope: scope.all ? 'all' : scope.none ? 'none' : 'team',
           reviewQueue: service === 'investigation' ? cases.filter(function (c) { return c.status === 'submitted_for_review' && p.kind === 'company' && !wf.reviewedByQa(c, { provider: p }); }).length : 0,
           unassigned: cases.filter(function (c) { return c.status === 'accepted' || c.status === 'rework_requested'; }).length,
           statusCounts: {}

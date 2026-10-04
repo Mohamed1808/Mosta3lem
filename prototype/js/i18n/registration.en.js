@@ -124,6 +124,11 @@
       savedWithPriceRequest: 'Saved. Your new prices were sent to operations for approval.'
     },
     select: { hiddenDocuments: '{n} paused: expired documents' },
+    earnings: {
+      byAgent: 'By field agent', noAgent: 'No agent recorded', casesMonth: 'Cases this month', allTime: 'All time', casesN: '{n} cases',
+      teamOnly: 'You see the earnings of the field agents you supervise. The owner sees the whole company.', teamTitle: 'Your team\'s earnings'
+    },
+    kpi: { teamEarningsMonth: 'Team earnings this month' },
     admin: { registration: 'Registration' },
     profile: { registration: 'Registration details', registrationHint: 'Legal and contact details from registration. Contact the platform to change them.' },
     errors: {
