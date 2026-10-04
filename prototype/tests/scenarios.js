@@ -619,6 +619,44 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(fail === 'errors.agentsOutsideCoverage', 'a governorate cannot be dropped while active agents still cover it');
   });
 
+  // ---------------------------------------------------------------- 14
+  await scenario('14. Offers matched by city', async () => {
+    await as('Tamer Lotfy');
+    const at = (gov, city) => Object.assign(invValues(gov), { home: { governorate: gov, city: city, street: '5 Nile St', landmark: '' } });
+    const ids = async (gov, city) => {
+      const c = await S.cases.createDraft('investigation', at(gov, city));
+      const m = await S.marketplace.eligible({ service: 'investigation', demand: { [gov]: 1 }, inquiryTypes: ['residence'], caseId: c.id });
+      return { c, ids: m.providers.map((p) => p.id) };
+    };
+    let r = await ids('giza', 'Dokki');
+    ok(r.ids.includes('prv_fl_omar') && r.ids.includes('prv_sphinx'), 'a Dokki case reaches Omar (covers Dokki) and Sphinx (all of Giza)');
+    r = await ids('giza', 'Agouza');
+    ok(!r.ids.includes('prv_fl_omar') && r.ids.includes('prv_sphinx'), 'an Agouza case does not reach Omar, who does not cover Agouza');
+    let fail = null;
+    try { await S.cases.sendOffer(r.c.id, 'prv_fl_omar'); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.providerNotEligible', 'the bank cannot send that case to Omar directly either');
+    const agouza = r.c.id;
+    r = await ids('giza', 'العجوزة');
+    ok(!r.ids.includes('prv_fl_omar'), 'the city is recognised when written in Arabic too');
+    r = await ids('giza', 'Kafr Ghatati');
+    ok(r.ids.includes('prv_fl_omar'), 'a city not on the list falls back to the governorate, so the case is never stuck');
+    r = await ids('cairo', 'Zamalek');
+    ok(r.ids.includes('prv_fl_omar'), 'a Zamalek case reaches Omar in Cairo');
+    r = await ids('cairo', 'Maadi');
+    ok(!r.ids.includes('prv_fl_omar'), 'a Maadi case does not');
+
+    await as('Omar Hassan');
+    const st = await S.providers.settings();
+    const cov = JSON.parse(JSON.stringify(st.provider.coverageCities));
+    cov.giza.push('agouza');
+    await S.providers.updateCoverage(cov, st.provider.capacity);
+    await as('Tamer Lotfy');
+    const m = await S.marketplace.eligible({ service: 'investigation', demand: { giza: 1 }, inquiryTypes: ['residence'], caseId: agouza });
+    ok(m.providers.some((p) => p.id === 'prv_fl_omar'), 'after Omar adds Agouza to his coverage, the Agouza case reaches him');
+    const row = (await S.cases.list({})).find((c) => c.id === agouza);
+    ok(row.place.gov === 'giza' && row.place.city === 'agouza', 'case rows carry the area (governorate and city) for agent matching');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

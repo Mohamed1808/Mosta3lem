@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { icm, services } from '@/backend/engine';
 import { priceText } from '@/components/case';
-import { bucket, dateTime, duration, gov, money, types } from '@/lib/format';
+import { bucket, dateTime, duration, money, placeText, types } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { space } from '@/theme';
 import { Badge, Button, Card, Chips, Divider, Empty, Grow, Loading, Notice, Row, Stack, StatusBadge, Txt } from '@/ui/core';
@@ -65,7 +65,7 @@ function OfferCard({ o }: { o: any }) {
               <Row between center={false} style={{ paddingVertical: 10 }} gap={10}>
                 <Grow>
                   <Txt v="sm" mono b>{c.ref}</Txt>
-                  <Txt v="xs" c="muted">{gov(c.governorate)} · {inv ? types(c.inquiryTypes) : bucket(c.bucket)}{!inv && c.amountRange ? ' · ' + t('amountRange.' + c.amountRange) : ''}</Txt>
+                  <Txt v="xs" c="muted">{placeText(c.place, c.governorate)} · {inv ? types(c.inquiryTypes) : bucket(c.bucket)}{!inv && c.amountRange ? ' · ' + t('amountRange.' + c.amountRange) : ''}</Txt>
                   <Txt v="xs" c="faint">{t('case.deadline')}: {dateTime(c.deadline || c.periodEnd || c.dueAt)}</Txt>
                 </Grow>
                 <Txt v="sm" b>{priceText(c, t)}</Txt>

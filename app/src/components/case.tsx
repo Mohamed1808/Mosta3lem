@@ -3,7 +3,7 @@ import { Image, Pressable, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { icm } from '@/backend/engine';
-import { bucket, dateTime, gov, money, slaInfo, types } from '@/lib/format';
+import { bucket, dateTime, money, placeText, slaInfo, types } from '@/lib/format';
 import { useT } from '@/state/app';
 import { colors, radius, space } from '@/theme';
 import { Badge, Divider, Grow, Icon, ListItem, Row, Stack, StatusBadge, Txt } from '@/ui/core';
@@ -24,7 +24,7 @@ export function CaseRow({ c, onPress, showAgent = true }: { c: any; onPress?: ()
       title={<Row between><Txt mono b v="sm">{c.ref}</Txt><SlaBadge c={c} /></Row>}
       sub={<Stack gap={4} style={{ marginTop: 4 }}>
         <Txt numberOfLines={1}>{name || t('mask.hidden')}</Txt>
-        <Txt v="xs" c="muted" numberOfLines={1}>{gov(c.governorate)} · {what}{c.entityName ? ' · ' + c.entityName : ''}</Txt>
+        <Txt v="xs" c="muted" numberOfLines={1}>{placeText(c.place, c.governorate)} · {what}{c.entityName ? ' · ' + c.entityName : ''}</Txt>
         <Row wrap gap={6}><StatusBadge status={c.status} />{showAgent && c.agentName ? <Txt v="xs" c="faint">{c.agentName}</Txt> : null}{c.disputed ? <Badge label={t('dispute.flag')} tone="danger" /> : null}</Row>
       </Stack>} />
   );

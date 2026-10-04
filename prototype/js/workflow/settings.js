@@ -63,6 +63,26 @@
     return null;
   };
 
+  // ---------------------------------------------------------------- coverage
+  /**
+   * Whether a coverage map ({ gov: [cityIds] }, an empty list meaning the whole governorate)
+   * covers a place. A place with an unknown city (null) is matched at governorate level, so a
+   * case with a city that is not on the list still reaches providers in its governorate.
+   */
+  wf.coversPlace = function (coverage, gov, city) {
+    if (!coverage || !Object.prototype.hasOwnProperty.call(coverage, gov)) return false;
+    var cities = coverage[gov] || [];
+    return !cities.length || !city || cities.indexOf(city) >= 0;
+  };
+
+  /** Coverage map of a provider or agent; older records only list governorates. */
+  wf.coverageOf = function (x) {
+    if (x && x.coverageCities) return x.coverageCities;
+    var out = {};
+    ((x && x.governorates) || []).forEach(function (g) { out[g] = []; });
+    return out;
+  };
+
   // ---------------------------------------------------------------- response times
   /**
    * The slowest response time the platform accepts: each inquiry type's platform SLA, and

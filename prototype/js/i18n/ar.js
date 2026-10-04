@@ -236,7 +236,7 @@
       sortBy: 'ترتيب حسب', sort: { rank: 'الأنسب', score: 'الدرجة', price: 'السعر', availability: 'التوافر', sla: 'مستوى الخدمة' },
       eligibleCount: '{n} مقدم خدمة مؤهل', hiddenFull: '{n} مخفي لامتلاء السعة', hiddenSuspended: '{n} موقوف',
       type: 'النوع', minRating: 'أقل تقييم', priceMin: 'السعر من', priceMax: 'السعر إلى', feeMin: 'النسبة من', feeMax: 'النسبة إلى',
-      noneEligible: 'لا يوجد مقدم خدمة يغطي هذه المحافظة ولديه سعة متاحة الآن.', bestMatch: 'الأنسب',
+      noneEligible: 'لا يوجد مقدم خدمة يغطي هذه المنطقة (المحافظة والمدينة) ولديه سعة متاحة الآن.', bestMatch: 'الأنسب',
       feeText: '{pct}% + {fixed}', perCase: 'للحالة', feeTerms: 'من المحصّل بالإضافة لرسم ثابت', sla: 'مستوى الخدمة', spare: 'السعة المتاحة',
       profile: 'الملف', select: 'اختيار', selectThis: 'اختيار مقدم الخدمة هذا', confirmTitle: 'إرسال العرض',
       confirmBody: 'إرسال هذه الحالة إلى {name} مقابل {price}؟ لديه {hours} ساعات للقبول أو الرفض.', sendOffer: 'إرسال العرض',

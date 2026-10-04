@@ -113,6 +113,17 @@
 
   var ASSIGNABLE = ['draft', 'submitted', 'declined', 'expired'];
 
+  /** The distinct places ({ gov, city }) of some cases, for city-level matching. */
+  function placesOf(cases) {
+    var seen = {};
+    return cases.map(D.casePlace).filter(function (pl) {
+      var k = pl.gov + '|' + (pl.city || '');
+      if (seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
+  }
+
   S.batches = {
     parseFile: function (file, service) {
       return new Promise(function (resolve, reject) {
@@ -217,13 +228,13 @@
         var groups = Object.keys(byGov).sort().map(function (g) {
           var demand = {}; demand[g] = byGov[g].length;
           var declined = U.uniq([].concat.apply([], byGov[g].map(function (c) { return c.declinedProviderIds || []; })));
-          var el = S.marketplace._eligible({ service: b.service, demand: demand, inquiryTypes: types.length ? types : null, buckets: buckets });
+          var el = S.marketplace._eligible({ service: b.service, demand: demand, places: placesOf(byGov[g]), inquiryTypes: types.length ? types : null, buckets: buckets });
           el.providers = el.providers.filter(function (p) { return declined.indexOf(p.id) < 0; });
           return { governorate: g, count: byGov[g].length, caseIds: byGov[g].map(function (c) { return c.id; }), eligible: el };
         });
         var all = {};
         open.forEach(function (c) { var g = D.caseGov(c); all[g] = (all[g] || 0) + 1; });
-        var whole = open.length ? S.marketplace._eligible({ service: b.service, demand: all, inquiryTypes: types.length ? types : null, buckets: buckets }) : { providers: [], excluded: {} };
+        var whole = open.length ? S.marketplace._eligible({ service: b.service, demand: all, places: placesOf(open), inquiryTypes: types.length ? types : null, buckets: buckets }) : { providers: [], excluded: {} };
         var declinedAll = U.uniq([].concat.apply([], open.map(function (c) { return c.declinedProviderIds || []; })));
         whole.providers = whole.providers.filter(function (p) { return declinedAll.indexOf(p.id) < 0; });
         return { batch: batchRow(b), open: open.length, groups: groups, whole: whole, inquiryTypes: types, buckets: buckets };
@@ -251,7 +262,7 @@
         groups.forEach(function (g) {
           var demand = {};
           g.cases.forEach(function (c) { var gv = D.caseGov(c); demand[gv] = (demand[gv] || 0) + 1; });
-          var el = S.marketplace._eligible({ service: b.service, demand: demand, inquiryTypes: types.length ? types : null, buckets: buckets });
+          var el = S.marketplace._eligible({ service: b.service, demand: demand, places: placesOf(g.cases), inquiryTypes: types.length ? types : null, buckets: buckets });
           if (!el.providers.some(function (p) { return p.id === g.providerId; })) throw new Err('errors.providerNotEligible');
           if (g.cases.some(function (c) { return (c.declinedProviderIds || []).indexOf(g.providerId) >= 0; })) throw new Err('wf.err.providerDeclined');
         });

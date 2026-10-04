@@ -38,6 +38,7 @@
     var ent = E.entityById(c.entityId);
     var batch = c.batchId ? E.batchById(c.batchId) : null;
     m.sla = wf.sla.state(c, now);
+    m.place = D.casePlace(c);   // { gov, city }: the area only, never the street, so it is safe before acceptance
     m.slaRemaining = c.dueAt ? c.dueAt - now : null;
     m.slaRatio = wf.sla.elapsedRatio(c, now);
     m.providerName = prov ? prov.name : null;
@@ -167,12 +168,16 @@
     var c = q.caseId ? E.caseById(q.caseId) : null;
     var declined = c ? c.declinedProviderIds || [] : [];
     var buckets = U.uniq([].concat(q.buckets || (q.bucket ? [q.bucket] : [])));
+    // Where the cases are, down to the city: { gov, city }. A provider must cover every place.
+    var places = q.places || (c ? [D.casePlace(c)] : []);
     var excluded = { full: 0, suspended: 0, documents: 0 };
     var out = [];
     db.providers.forEach(function (p) {
       if (!p.verification || p.verification.status !== 'verified') return;
       if (p.services.indexOf(service) < 0) return;
       if (!govs.every(function (g) { return p.governorates.indexOf(g) >= 0 && (p.capacity[g] || 0) > 0; })) return;
+      var cov = wf.coverageOf(p);
+      if (!places.every(function (pl) { return wf.coversPlace(cov, pl.gov, pl.city); })) return;
       if (declined.indexOf(p.id) >= 0) return;
       if (p.enforcement && p.enforcement.level === 'suspended') { excluded.suspended++; return; }
       // An expired commercial register or tax card pauses new offers until the renewal is checked.
