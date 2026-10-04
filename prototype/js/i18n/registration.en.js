@@ -124,7 +124,19 @@
       priceRequestPending: 'Your price change from {date} is waiting for operations. Current prices apply until it is approved.',
       savedWithPriceRequest: 'Saved. Your new prices were sent to operations for approval.'
     },
-    select: { hiddenDocuments: '{n} paused: expired documents' },
+    gps: {
+      checkedIn: 'Checked in at {time}', fromPhone: 'Phone GPS', simulated: 'Simulated location (demo)', accuracy: 'accurate to {n} m', openMap: 'Open map',
+      outsideArea: 'Far from the case\'s governorate. Check where the visit really happened.',
+      addressApprox: 'The address location is approximate, so the distance is not measured. Open the map to check.',
+      locating: 'Finding your location...', weak: 'Weak GPS signal (accurate to {n} m). Move outdoors if you can.',
+      noFixTitle: 'No location',
+      err: {
+        denied: 'Location permission was refused. Allow it for Mosta3lem in the phone settings to check in.',
+        off: 'Location is turned off on the phone. Turn it on to check in.',
+        unavailable: 'The phone could not find your location. Move outdoors and try again.'
+      },
+      demoBody: 'Demo: you can continue with a simulated location. In the live app a real location is required.', useDemo: 'Use simulated location'
+    },    select: { hiddenDocuments: '{n} paused: expired documents' },
     earnings: {
       byAgent: 'By field agent', noAgent: 'No agent recorded', casesMonth: 'Cases this month', allTime: 'All time', casesN: '{n} cases',
       teamOnly: 'You see the earnings of the field agents you supervise. The owner sees the whole company.', teamTitle: 'Your team\'s earnings'
@@ -148,7 +160,7 @@
       agentsOutsideCoverage: '{n} active field agent(s) still cover the areas you removed: {names}. Change their coverage first.',
       wholeHours: 'Enter whole hours', slaTooSlow: 'Slower than the platform allows', outOfBand: 'Outside the allowed range',
       noPriceChange: 'These are already your prices', expiryInPast: 'The expiry date must be in the future',
-      documentPhotoRequired: 'Add a photo of the document', dateFormat: 'Enter the date as YYYY-MM-DD'
+      documentPhotoRequired: 'Add a photo of the document', dateFormat: 'Enter the date as YYYY-MM-DD', locationInvalid: 'The location is not valid'
     },
     notif: {
       application_new: 'New provider application: {name}', application_updated: '{name} updated their application',

@@ -480,20 +480,27 @@
         return out;
       });
     },
-    checkIn: function (id) {
-      return E.mutate(function () {
+    /**
+     * Check in at the address. fix: the phone's real location { lat, lng, accuracyM }.
+     * Without a fix (demo, or the prototype website) the location is simulated.
+     */
+    checkIn: function (id, fix) {
+      return E.mutate(function (db) {
         var c = E.mustCase(id), a = E.actor();
         forAgent(c, a);
-        return E.transition(c, 'check_in', { checkIn: D.simulateCheckIn(c, E.now()) }, a);
+        if (fix != null && !D.validFix(fix)) throw new Err('errors.locationInvalid');
+        var ci = fix != null ? D.checkInFrom(db, c, fix, E.now()) : D.simulateCheckIn(c, E.now());
+        return E.transition(c, 'check_in', { checkIn: ci }, a);
       });
     },
-    addPhoto: function (id, dataUrl, label) {
+    /** Add a visit photo, stamped with the phone's location when given (fix), else a simulated one. */
+    addPhoto: function (id, dataUrl, label, fix) {
       return E.mutate(function () {
         var c = E.mustCase(id), a = E.actor();
         forAgent(c, a);
         if (c.status !== 'in_field') throw new Err('errors.checkInFirst');
-        var near = D.simulateCheckIn(c, E.now());
-        var photo = { id: U.uid('ph'), at: E.now(), lat: near.lat, lng: near.lng, dataUrl: dataUrl, label: label || null };
+        var near = fix != null && D.validFix(fix) ? { lat: U.round(+fix.lat, 6), lng: U.round(+fix.lng, 6), accuracyM: fix.accuracyM == null ? null : Math.round(+fix.accuracyM), source: 'device' } : D.simulateCheckIn(c, E.now());
+        var photo = { id: U.uid('ph'), at: E.now(), lat: near.lat, lng: near.lng, accuracyM: near.accuracyM, source: near.source, dataUrl: dataUrl, label: label || null };
         var next = Object.assign({}, c, { photos: (c.photos || []).concat([photo]), updatedAt: E.now() });
         E.replaceCase(next);
         E.audit('case.photo_added', 'case', c.id, c.ref, null, { photos: next.photos.length }, null, a);
@@ -547,12 +554,14 @@
         return next;
       });
     },
-    simulateFieldVisit: function (id) {
+    /** Location of a collection field visit: from the phone (fix) when given, else simulated. */
+    simulateFieldVisit: function (id, fix) {
       return E.run(function () {
         var c = E.mustCase(id), a = E.actor();
         var err = wf.collection.checkOperate(c, a);
         if (err) throw new Err(err);
-        return D.simulateCheckIn(c, E.now());
+        if (fix != null && !D.validFix(fix)) throw new Err('errors.locationInvalid');
+        return fix != null ? D.checkInFrom(E.db(), c, fix, E.now()) : D.simulateCheckIn(c, E.now());
       });
     },
     logAction: function (id, values) { return collectionOp(id, 'logAction', values, 'case.action_logged'); },

@@ -50,9 +50,14 @@
     });
   }
 
+  /**
+   * Check-in, enough photos, and the check-in near the address: within the limit when the
+   * address location is confirmed, or at least inside the case's area when it is approximate.
+   */
   function evidenceComplete(c, ctx) {
-    return !!c.checkIn && (c.photos || []).length >= minPhotos(c, ctx) &&
-      c.checkIn.distanceM <= ICM.config.CHECKIN_MAX_DISTANCE_M;
+    if (!c.checkIn || (c.photos || []).length < minPhotos(c, ctx)) return false;
+    if (c.checkIn.distanceM == null) return !c.checkIn.outsideArea;
+    return c.checkIn.distanceM <= ICM.config.CHECKIN_MAX_DISTANCE_M;
   }
 
   /**

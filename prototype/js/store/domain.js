@@ -83,11 +83,43 @@
     return prefix + '-' + new Date().getFullYear() + '-' + String(db.counters[kind]).padStart(5, '0');
   };
 
-  /** Simulated address coordinates: the governorate centre plus a random offset (< ~3 km). */
+  /**
+   * Simulated address coordinates: the governorate centre plus a random offset (< ~3 km).
+   * source 'approx' means nobody confirmed where the address really is (a geocoding service
+   * would set 'geocoded'), so a real check-in is not measured against it.
+   */
   domain.randomGeo = function (db, govId, rnd) {
     var g = domain.gov(db, govId) || { lat: 30.04, lng: 31.23 };
     var r = rnd || Math.random;
-    return { lat: U.round(g.lat + (r() - 0.5) * 0.05, 6), lng: U.round(g.lng + (r() - 0.5) * 0.05, 6) };
+    return { lat: U.round(g.lat + (r() - 0.5) * 0.05, 6), lng: U.round(g.lng + (r() - 0.5) * 0.05, 6), source: 'approx' };
+  };
+
+  /** Further than this from the governorate's centre, a check-in is flagged as outside the case area. */
+  domain.OUTSIDE_AREA_M = 60000;
+
+  /**
+   * A check-in from the phone's real location. The distance to the address is measured only
+   * when the address location is confirmed (geocoded); otherwise the position and accuracy
+   * are kept for the reviewer and a check-in far from the case's governorate is flagged.
+   * fix: { lat, lng, accuracyM, at }
+   */
+  domain.checkInFrom = function (db, c, fix, now) {
+    var lat = +fix.lat, lng = +fix.lng;
+    var g = domain.gov(db, domain.caseGov(c));
+    var geo = c.geo || null;
+    var confirmed = !!(geo && geo.source === 'geocoded');
+    return {
+      at: now, lat: U.round(lat, 6), lng: U.round(lng, 6), source: 'device',
+      accuracyM: fix.accuracyM == null ? null : Math.round(+fix.accuracyM),
+      distanceM: confirmed ? U.distanceM(geo.lat, geo.lng, lat, lng) : null,
+      addressApprox: !confirmed,
+      outsideArea: !confirmed && !!g && g.lat != null && U.distanceM(g.lat, g.lng, lat, lng) > domain.OUTSIDE_AREA_M
+    };
+  };
+
+  /** Whether a location fix is usable: real numbers within the world's bounds. */
+  domain.validFix = function (fix) {
+    return !!fix && isFinite(+fix.lat) && isFinite(+fix.lng) && +fix.lat >= -90 && +fix.lat <= 90 && +fix.lng >= -180 && +fix.lng <= 180;
   };
 
   /** Simulated GPS fix near the case address. Usually within 250 m, sometimes further. */
@@ -101,7 +133,7 @@
     var dLng = (meters * Math.sin(angle)) / (111320 * Math.cos(geo.lat * Math.PI / 180));
     var lat = U.round(geo.lat + dLat, 6), lng = U.round(geo.lng + dLng, 6);
     // GPS accuracy radius in metres; simulated from the same draw so the sequence is unchanged.
-    return { at: now, lat: lat, lng: lng, distanceM: U.distanceM(geo.lat, geo.lng, lat, lng), accuracyM: Math.round(4 + (meters * 7) % 16) };
+    return { at: now, lat: lat, lng: lng, distanceM: U.distanceM(geo.lat, geo.lng, lat, lng), accuracyM: Math.round(4 + (meters * 7) % 16), source: 'simulated' };
   };
 
   domain.providerUsers = function (db, providerId, roles) {

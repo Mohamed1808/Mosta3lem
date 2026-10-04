@@ -838,6 +838,48 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(fail === 'errors.forbidden', 'field agents cannot edit the team');
   });
 
+  // ---------------------------------------------------------------- 19
+  await scenario('19. Check-in with the phone\'s real location', async () => {
+    const db = ICM.store.db, D = ICM.domain;
+    const giza = db.config.lists.governorates.find((g) => g.id === 'giza');
+    const prep = async () => {
+      await as('Tamer Lotfy');
+      const c = await S.cases.createDraft('investigation', invValues('giza'));
+      await S.cases.sendOffer(c.id, 'prv_fl_omar');
+      await as('Omar Hassan');
+      const o = (await S.offers.inbox('investigation')).find((x) => x.caseIds.includes(c.id));
+      await S.offers.accept(o.id);
+      return c.id;
+    };
+    let id = await prep();
+    let fail = null;
+    try { await S.cases.checkIn(id, { lat: 'north', lng: 31.2 }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.locationInvalid', 'a broken location is refused');
+    const near = { lat: giza.lat + 0.01, lng: giza.lng + 0.01, accuracyM: 12 };
+    let c = await S.cases.checkIn(id, near);
+    ok(c.checkIn.source === 'device' && c.checkIn.accuracyM === 12 && c.checkIn.distanceM === null && c.checkIn.addressApprox && !c.checkIn.outsideArea,
+      'the phone location is kept with its accuracy; the address is approximate, so no distance is claimed');
+    await S.cases.addPhoto(id, PHOTO, 'building', { lat: near.lat, lng: near.lng, accuracyM: 8 });
+    c = (await S.cases.get(id)).case;
+    ok(c.photos[0].source === 'device' && c.photos[0].accuracyM === 8, 'a camera photo carries where it was taken');
+
+    id = await prep();
+    c = await S.cases.checkIn(id, { lat: 31.2, lng: 29.92, accuracyM: 20 });
+    ok(c.checkIn.outsideArea === true, 'a check-in in Alexandria for a Giza case is flagged as outside the case area');
+    ok(ICM.wf.investigation.evidenceComplete(Object.assign({}, c, { photos: [1, 2, 3].map(() => ({})) }), {}) === false, 'and does not count as complete evidence');
+
+    // Once an address is geocoded, the real distance is measured against the 300 m limit.
+    id = await prep();
+    const raw = db.cases.find((x) => x.id === id);
+    raw.geo = { lat: 30.05, lng: 31.2, source: 'geocoded' };
+    c = await S.cases.checkIn(id, { lat: 30.0509, lng: 31.2, accuracyM: 6 });
+    ok(c.checkIn.distanceM > 80 && c.checkIn.distanceM < 120 && !c.checkIn.addressApprox, 'with a geocoded address the distance is measured: ' + c.checkIn.distanceM + ' m');
+
+    id = await prep();
+    c = await S.cases.checkIn(id);
+    ok(c.checkIn.source === 'simulated' && c.checkIn.distanceM != null, 'without a location (demo) a simulated one is recorded and labelled');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

@@ -8,6 +8,7 @@ import { ReactNode, useState } from 'react';
 
 import { icm, services } from '@/backend/engine';
 import { CheckInLine, PhotoGrid, priceText, ReportView, SlaBadge, Timeline } from '@/components/case';
+import { useLocate } from '@/components/locate';
 import { AgentPicker, FormSheet } from '@/components/sheets';
 import { addressLine, bucket, dateTime, duration, money, types } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
@@ -105,6 +106,7 @@ function Actions({ d }: { d: any }) {
   const { ask } = useDialog();
   const run = useAction();
   const [sheet, setSheet] = useState<string | null>(null);
+  const locate = useLocate();
   const c = d.case, a: string[] = d.actions || [];
   const role = session?.user?.role;
   const manager = icm().wf.PROVIDER_MANAGER_ROLES.indexOf(role) >= 0;
@@ -161,7 +163,12 @@ function Actions({ d }: { d: any }) {
         validate={(v) => (ALLOWED_BY[v.type] && !allowed[ALLOWED_BY[v.type]] ? { type: 'wf.err.actionNotAllowed' } : {})}
         submit={async (v) => {
           const payload: any = { type: v.type, note: v.note };
-          if (v.type === 'field_visit') payload.checkIn = await services().cases.simulateFieldVisit(c.id);
+          if (v.type === 'field_visit') {
+            // A field visit records where the agent was: the phone's location, or a simulated one in the demo.
+            const fix = await locate();
+            if (!fix) throw new Error(t('gps.noFixTitle'));
+            payload.checkIn = await services().cases.simulateFieldVisit(c.id, fix === 'demo' ? undefined : fix);
+          }
           return services().cases.logAction(c.id, payload);
         }} success={t('collection.actionLogged')} onClose={() => setSheet(null)} /> : null}
       {sheet === 'promise' ? <FormSheet visible title={t('collection.recordPromise')} def={C.COLLECTION_FORMS.promise} initial={{ amount: outstanding ? String(Math.round(outstanding * 0.3)) : '' }}
