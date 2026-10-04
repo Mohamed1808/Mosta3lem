@@ -91,7 +91,7 @@
   function docFile(x) {
     if (!x) return null;
     if (typeof x === 'string') return { name: x, url: null };
-    return x.name || x.url ? { name: x.name || null, url: x.url || null } : null;
+    return x.name || x.url ? { name: x.name || null, url: x.url || null, expiresAt: x.expiresAt || null } : null;
   }
 
   /**
@@ -162,7 +162,7 @@
         status: 'pending', submittedAt: now, notes: [],
         documents: docTypes.map(function (tp) {
           var f = docFile(v.docs[tp]);
-          return { type: tp, status: f ? 'uploaded' : 'missing', fileName: f ? f.name : null, url: f ? f.url : null, uploadedAt: f ? now : null };
+          return { type: tp, status: f ? 'uploaded' : 'missing', fileName: f ? f.name : null, url: f ? f.url : null, expiresAt: f && wf.isExpiringDoc(tp) ? f.expiresAt : null, uploadedAt: f ? now : null };
         }),
         idVerified: company ? null : false, certified: company ? null : false
       },
@@ -237,7 +237,7 @@
       });
     },
     /** Attach or replace a document. url: the image itself when the app sends it (a data URL). */
-    uploadDocument: function (type, fileName, url) {
+    uploadDocument: function (type, fileName, url, expiresAt) {
       return E.mutate(function () {
         var x = myApplicationProvider();
         if (['provider_admin', 'freelancer'].indexOf(x.a.role) < 0) throw new Err('errors.forbidden');
@@ -245,6 +245,7 @@
         var d = x.p.verification.documents.filter(function (k) { return k.type === type; })[0];
         if (!d) throw new Err('errors.notFound');
         if (d.status === 'verified') throw new Err('errors.documentLocked');
+        if (expiresAt && wf.isExpiringDoc(type)) { var ee = wf.validateExpiry(expiresAt, E.now()); if (ee) throw new Err(ee, { field: 'expiresAt' }); d.expiresAt = expiresAt; }
         d.status = 'uploaded'; d.fileName = fileName || d.fileName || null; d.url = url || null; d.uploadedAt = E.now();
         E.audit('provider.document_uploaded', 'provider', x.p.id, x.p.name, null, { type: type }, null, x.a);
         return x.p;

@@ -47,6 +47,10 @@ export default function Register() {
       const errs = validate(values, [step]);
       if (Object.keys(errs).length) { setErrors(errs); return; }
     }
+    if (step === 'docs') {
+      const errs = expiryErrors(values);
+      if (Object.keys(errs).length) { setErrors(errs); return; }
+    }
     go(STEPS[i + 1]);
   };
 
@@ -70,7 +74,7 @@ export default function Register() {
       const all = validate(values, ['type', 'details', 'area', 'submit'], { terms: true });
       const first = Object.keys(all)[0];
       if (first) { setErrors(all); setSent(''); setStep(stepOfField(first)); return; }
-      const res = await services().registration.submit(values);
+      const res = await services().registration.submit(withExpiry(values));
       await signIn(res.userId);
       toast(t('signup.received', { ref: res.ref }));
       router.replace('/application');
@@ -113,7 +117,18 @@ export default function Register() {
         <Stack>
           <Txt c="muted">{t('signup.docsIntro')}</Txt>
           {docTypes(values.kind).map((tp) => (
-            <DocSlot key={tp} type={tp} draft file={values.docs?.[tp]} onFile={(file) => setValues((v) => ({ ...v, docs: { ...(v.docs || {}), [tp]: file } }))} />
+            <Stack key={tp} gap={6}>
+              <DocSlot type={tp} draft file={values.docs?.[tp]} onFile={(file) => setValues((v) => ({ ...v, docs: { ...(v.docs || {}), [tp]: file } }))} />
+              {icm().wf.isExpiringDoc(tp) && values.docs?.[tp] ? (
+                <Stack gap={4}>
+                  <Txt v="xs" b c="muted">{t('settingsApp.newExpiry')}</Txt>
+                  <TextInput value={values.docExpiry?.[tp] || ''} onChangeText={(v) => { setValues((x) => ({ ...x, docExpiry: { ...(x.docExpiry || {}), [tp]: v } })); setErrors({}); }}
+                    placeholder={t('form.datePlaceholder')} keyboardType="numbers-and-punctuation" maxLength={10} accessibilityLabel={t('doc.' + tp) + ' ' + t('settingsApp.newExpiry')}
+                    style={[inputStyle, { textAlign: 'left', writingDirection: 'ltr', borderColor: errors['exp_' + tp] ? colors.bad : colors.borderStrong }]} />
+                  {errors['exp_' + tp] ? <Txt v="xs" c="bad">{t(errors['exp_' + tp])}</Txt> : <Txt v="xs" c="faint">{t('settingsApp.expiryHint')}</Txt>}
+                </Stack>
+              ) : null}
+            </Stack>
           ))}
           <Txt v="xs" c="faint">{t('signup.docsLater')}</Txt>
         </Stack>
@@ -157,6 +172,29 @@ export default function Register() {
       ) : null}
     </Screen>
   );
+}
+
+/** Expiry dates typed on the documents step: optional, but a real future date when given. */
+function expiryErrors(values: Values): Record<string, string> {
+  const ICM = icm(), errs: Record<string, string> = {};
+  Object.keys(values.docExpiry || {}).forEach((tp) => {
+    const text = String(values.docExpiry[tp] || '').trim();
+    if (!text || !values.docs?.[tp]) return;
+    const at = ICM.wf.parseDay(text);
+    const e = at ? ICM.wf.validateExpiry(at, ICM.clock.now()) : 'errors.dateFormat';
+    if (e) errs['exp_' + tp] = e;
+  });
+  return errs;
+}
+
+/** The documents with their expiry dates, as the registration service expects them. */
+function withExpiry(values: Values): Values {
+  const docs: Values = {};
+  Object.keys(values.docs || {}).forEach((tp) => {
+    const at = icm().wf.parseDay(values.docExpiry?.[tp]);
+    docs[tp] = at ? { ...values.docs[tp], expiresAt: at } : values.docs[tp];
+  });
+  return { ...values, docs };
 }
 
 /** Step progress bar. */

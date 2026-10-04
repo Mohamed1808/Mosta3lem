@@ -7,6 +7,7 @@ import { View } from 'react-native';
 
 import { services } from '@/backend/engine';
 import { CaseList } from '@/components/case';
+import { DocsAlert } from '@/components/settings';
 import { money, num, pct } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { space } from '@/theme';
@@ -47,6 +48,7 @@ function ManagerHome() {
         </Stack>
       ) : null}
       {enf && enf !== 'none' ? <Notice tone={enf === 'warned' ? 'warning' : 'danger'} icon="shield" text={t('enforcement.notice.' + enf)} /> : null}
+      <DocsAlert />
       {!d ? <Loading /> : (
         <>
           <Row wrap gap={10}>

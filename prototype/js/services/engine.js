@@ -235,10 +235,33 @@
       if (wf.sla.pendingEvents(c, now).length) work = true;
       if ((c.promises || []).some(function (p) { return p.status === 'pending' && now > p.dueDate; })) work = true;
     });
+    var liveDocs = function (p) { return p.verification && p.verification.status === 'verified' ? p.verification.documents : []; };
+    db.providers.forEach(function (p) { if (liveDocs(p).some(function (d) { return wf.dueReminder(d, now); })) work = true; });
     if (!work) return { changed: false };
 
-    var summary = { expired: 0, warned: 0, atRisk: 0, breached: 0, brokenPromises: 0, changed: true };
+    var summary = { expired: 0, warned: 0, atRisk: 0, breached: 0, brokenPromises: 0, docReminders: 0, changed: true };
     ICM.store.tx(function () {
+      // Document expiry: reminders 30 and 7 days before, then a notice when it lapses.
+      db.providers.forEach(function (p) {
+        liveDocs(p).forEach(function (d) {
+          var due = wf.dueReminder(d, now);
+          if (!due) return;
+          var sent = Object.assign({}, d.reminders);
+          wf.EXPIRY_REMINDER_DAYS.forEach(function (k) { if (due === 'expired' || k >= due) sent[k] = true; });
+          if (due === 'expired') sent.expired = true;
+          d.reminders = sent;
+          var owners = D.providerUsers(db, p.id, ['provider_admin', 'freelancer']);
+          if (due === 'expired') {
+            E.notify(owners, 'notif.document_expired', { doc: d.type }, 'provider:profile');
+            E.notify(E.admins(), 'notif.document_expired_admin', { name: p.name, doc: d.type }, 'provider-admin:' + p.id);
+            E.audit('provider.document_expired', 'provider', p.id, p.name, null, { type: d.type }, null, wf.SYSTEM);
+          } else {
+            E.notify(owners, 'notif.document_expiring', { doc: d.type, days: Math.max(1, Math.ceil((d.expiresAt - now) / U.DAY)) }, 'provider:profile');
+          }
+          summary.docReminders++;
+        });
+      });
+
       db.offers.forEach(function (o) {
         if (o.status !== 'pending') return;
         if (now >= o.expiresAt) {

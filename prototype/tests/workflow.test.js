@@ -643,4 +643,55 @@
       expect(wf.validateFields(f, { telephone: '123' }).telephone).toBe('errors.phoneFormat');
     });
   });
+
+  describe('provider settings', function () {
+    var DAY = 86400000, NOW = new Date('2026-10-04T12:00:00').getTime();
+    var doc = function (days, reminders) { return { type: 'commercial_register', expiresAt: NOW + days * DAY, reminders: reminders || {} }; };
+    it('tells how close a document is to expiry', function () {
+      expect(wf.docExpiry({ type: 'tax_card' }, NOW).state).toBe('none');
+      expect(wf.docExpiry(doc(90), NOW).state).toBe('valid');
+      expect(wf.docExpiry(doc(20), NOW).state).toBe('expiring');
+      expect(wf.docExpiry(doc(20), NOW).daysLeft).toBe(20);
+      expect(wf.docExpiry(doc(-1), NOW).state).toBe('expired');
+    });
+    it('sends each reminder once: 30 days, 7 days, then expired', function () {
+      expect(wf.dueReminder(doc(40), NOW)).toBe(null);
+      expect(wf.dueReminder(doc(25), NOW)).toBe(30);
+      expect(wf.dueReminder(doc(25, { 30: true }), NOW)).toBe(null);
+      expect(wf.dueReminder(doc(5, { 30: true }), NOW)).toBe(7);
+      expect(wf.dueReminder(doc(5), NOW)).toBe(7);
+      expect(wf.dueReminder(doc(-2, { 30: true, 7: true }), NOW)).toBe('expired');
+      expect(wf.dueReminder(doc(-2, { 30: true, 7: true, expired: true }), NOW)).toBe(null);
+      expect(wf.dueReminder({ type: 'insurance', expiresAt: NOW - DAY }, NOW)).toBe(null);
+    });
+    it('pauses offers only for expired commercial register or tax card', function () {
+      var p = { verification: { documents: [doc(-1), { type: 'tax_card', expiresAt: NOW + DAY }, { type: 'insurance', expiresAt: NOW - DAY }] } };
+      expect(wf.expiredDocs(p, NOW).map(function (d) { return d.type; }).join()).toBe('commercial_register');
+    });
+    it('reads an expiry date and refuses past ones', function () {
+      expect(wf.parseDay('2027-02-30')).toBe(null);
+      expect(wf.parseDay('soon')).toBe(null);
+      expect(new Date(wf.parseDay('2027-02-28')).getDate()).toBe(28);
+      expect(wf.validateExpiry(null, NOW)).toBe('errors.required');
+      expect(wf.validateExpiry(NOW - DAY, NOW)).toBe('errors.expiryInPast');
+      expect(wf.validateExpiry(NOW + DAY, NOW)).toBe(null);
+    });
+    it('keeps response times within the platform maximum', function () {
+      var limits = { investigation: { residence: 48, business: 72 }, collectionFirstContactHours: 48 };
+      var ok = { investigation: { residence: 24, business: 72 }, collectionFirstContactHours: 12 };
+      expect(Object.keys(wf.validateSla(ok, ['investigation', 'collection'], limits)).length).toBe(0);
+      var bad = wf.validateSla({ investigation: { residence: 49, business: 1.5 }, collectionFirstContactHours: 0 }, ['investigation', 'collection'], limits);
+      expect(bad.sla_residence).toBe('errors.slaTooSlow');
+      expect(bad.sla_business).toBe('errors.wholeHours');
+      expect(bad.firstContact).toBe('errors.wholeHours');
+    });
+    it('checks prices against the band for each zone', function () {
+      var cfg = { investigationBands: { residence: { min: 250, max: 600 } }, zoneMultiplier: { greater_cairo: 1, upper: 1.35 }, collectionFeeBands: { b1_30: { min: 5, max: 12 } }, collectionFixedFeeMax: 400 };
+      expect(wf.priceBand(cfg, 'residence', 'upper').max).toBe(810);
+      var errs = wf.validatePricing({ investigation: { residence: { greater_cairo: 300, upper: 900 } }, collection: { feePct: { b1_30: 4 }, fixedFee: 500 } }, ['investigation', 'collection'], cfg, ['greater_cairo', 'upper']);
+      expect(Object.keys(errs).sort().join()).toBe('fee_b1_30,fixedFee,price_residence_upper');
+      expect(wf.pricingChanged({ a: 1 }, { a: 1 })).toBe(false);
+      expect(wf.pricingChanged({ a: 1 }, { a: 2 })).toBe(true);
+    });
+  });
 })();

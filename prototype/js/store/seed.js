@@ -196,10 +196,15 @@
       };
     }
 
+    // Days until each company's commercial register and tax card expire. Sphinx's register is
+    // inside the 30-day reminder window so the reminder and renewal can be tried straight away.
+    var DOC_EXPIRY_DAYS = { prv_sphinx: { commercial_register: 20, tax_card: 210 }, prv_recovery: { commercial_register: 300, tax_card: 160 } };
     PROVIDERS.forEach(function (p) {
+      var exp = DOC_EXPIRY_DAYS[p.id] || { commercial_register: 365, tax_card: 365 };
       var docs = p.kind === 'freelancer'
         ? [{ type: 'national_id', status: 'verified' }, { type: 'training_certificate', status: 'verified' }]
-        : [{ type: 'commercial_register', status: 'verified' }, { type: 'tax_card', status: 'verified' }, { type: 'insurance', status: 'verified' }];
+        : [{ type: 'commercial_register', status: 'verified', expiresAt: U.endOfDay(T + exp.commercial_register * DAY) },
+          { type: 'tax_card', status: 'verified', expiresAt: U.endOfDay(T + exp.tax_card * DAY) }, { type: 'insurance', status: 'verified' }];
       var rec = providerRecord(p, { status: 'verified', documents: docs, idVerified: p.kind === 'freelancer' ? true : null, certified: p.kind === 'freelancer' ? true : null, verifiedAt: T - (p.joined - 2) * DAY, notes: [] });
       db.providers.push(rec);
       if (p.kind === 'freelancer') {

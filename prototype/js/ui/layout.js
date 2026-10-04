@@ -195,6 +195,7 @@
         if (params.outcome) params.outcome = t('outcome.' + params.outcome);
         if (params.decision) params.decision = t('status.' + params.decision);
         if (params.level) params.level = t('enforcement.' + params.level);
+        if (params.doc) params.doc = t('doc.' + params.doc);
         if (params.amount != null) params.amount = U.money(params.amount);
         return h`<div class="notif-item ${n.read ? 'read' : 'unread'}" data-action="openNotif" data-id="${n.id}" data-href="${n.href || ''}" role="button" tabindex="0">
           <span class="ndot"></span><div class="grow"><div class="small">${t(n.key, params)}</div><div class="xs faint">${U.fmtDateTime(n.at)}</div></div></div>`;

@@ -40,6 +40,51 @@
     }
   }
 
+  /** Raise the first error of a { field: key } map, with the field, so a form can point at it. */
+  function check(errors) {
+    var keys = Object.keys(errors);
+    if (keys.length) throw new Err(errors[keys[0]], { field: keys[0], errors: errors });
+  }
+
+  /** The signed-in owner (company owner or individual) of a live provider. */
+  function liveOwner() {
+    var a = E.actor();
+    if (['provider_admin', 'freelancer'].indexOf(a.role) < 0) throw new Err('errors.forbidden');
+    var p = E.providerById(a.providerId);
+    if (!p || p.verification.status !== 'verified') throw new Err('errors.forbidden');
+    return { a: a, p: p };
+  }
+
+  /** A price list with numbers only, for the provider's services. */
+  function cleanPricing(pricing, services) {
+    var cfg = E.db().config.pricing, out = {};
+    if (services.indexOf('investigation') >= 0) {
+      out.investigation = {};
+      Object.keys(cfg.investigationBands).forEach(function (t) {
+        out.investigation[t] = {};
+        C.ZONES.forEach(function (z) { out.investigation[t][z.id] = +(((pricing.investigation || {})[t] || {})[z.id]); });
+      });
+    }
+    if (services.indexOf('collection') >= 0) {
+      var col = pricing.collection || {};
+      out.collection = { feePct: {}, fixedFee: +col.fixedFee || 0 };
+      Object.keys(cfg.collectionFeeBands).forEach(function (b) { out.collection.feePct[b] = +((col.feePct || {})[b]); });
+    }
+    return out;
+  }
+
+  /** File a price change for Operations. The current prices stay until it is approved. */
+  function filePriceRequest(p, pricing, note, a) {
+    var cfg = E.db().config.pricing;
+    var next = cleanPricing(pricing, p.services);
+    check(wf.validatePricing(next, p.services, cfg, C.ZONES.map(function (z) { return z.id; })));
+    if (!wf.pricingChanged(next, cleanPricing(p.pricing || {}, p.services))) throw new Err('errors.noPriceChange');
+    p.priceRequest = { pricing: next, note: note ? String(note).trim() : '', at: E.now(), by: a.name, byUserId: a.userId };
+    E.audit('provider.price_change_requested', 'provider', p.id, p.name, null, null, note || null, a);
+    E.notify(E.admins(), 'notif.price_change_requested', { name: p.name }, 'provider-admin:' + p.id);
+    return p.priceRequest;
+  }
+
   function agentStats(agent) {
     var cases = E.db().cases.filter(function (c) { return c.agentId === agent.id; });
     var delivered = cases.filter(function (c) { return c.firstDeliveredAt; });
@@ -79,13 +124,191 @@
         } else if (patch.capacity) {
           Object.keys(patch.capacity).forEach(function (g) { if (next.governorates.indexOf(g) >= 0) next.capacity[g] = Math.max(1, +patch.capacity[g]); });
         }
-        if (patch.pricing) next.pricing = U.clone(patch.pricing);
-        if (patch.sla) next.sla = U.clone(patch.sla);
+        if (patch.sla) {
+          check(wf.validateSla(patch.sla, p.services, wf.slaLimits(E.db().config)));
+          next.sla = U.clone(patch.sla);
+        }
         if (!next.governorates.length) throw new Err('errors.coverageRequired');
-        validatePricing(next);
+        // Price changes are not applied here: they go to Operations as a request.
+        var priceRequested = false;
+        if (patch.pricing && wf.pricingChanged(cleanPricing(patch.pricing, p.services), cleanPricing(p.pricing || {}, p.services))) {
+          validatePricing(Object.assign({}, next, { pricing: patch.pricing }));
+          priceRequested = true;
+        }
         Object.assign(p, next);
+        if (priceRequested) filePriceRequest(p, patch.pricing, null, a);
         E.audit('provider.profile_updated', 'provider', p.id, p.name, null, { governorates: p.governorates.length }, null, a);
+        return Object.assign(withScore(p), { priceRequested: priceRequested });
+      });
+    },
+
+    // ---- settings (owner of a live provider)
+    /** What the settings screens show: limits, bands, document expiry and any pending request. */
+    settings: function () {
+      return E.run(function () {
+        var a = E.actor(), p = myProvider(), db = E.db(), now = E.now();
+        return {
+          provider: withScore(p),
+          canEdit: ['provider_admin', 'freelancer'].indexOf(a.role) >= 0 && p.verification.status === 'verified',
+          limits: wf.slaLimits(db.config),
+          pricingConfig: db.config.pricing,
+          zones: C.ZONES,
+          documents: p.verification.documents.map(function (d) {
+            return Object.assign({}, d, { expiring: wf.isExpiringDoc(d.type), expiry: wf.docExpiry(d, now) });
+          }),
+          expired: wf.expiredDocs(p, now).map(function (d) { return d.type; }),
+          priceRequest: p.priceRequest || null,
+          lastPriceDecision: p.lastPriceDecision || null
+        };
+      });
+    },
+    /**
+     * Change where the provider works. Cities narrow a governorate; none means all of it.
+     * A company cannot drop a governorate while active field agents still cover it.
+     */
+    updateCoverage: function (coverage, capacity) {
+      return E.mutate(function (db) {
+        var x = liveOwner(), p = x.p;
+        var cov = {};
+        Object.keys(coverage || {}).forEach(function (g) { cov[g] = U.uniq((coverage[g] || []).slice()); });
+        var err = wf.validateCoverage(cov, { governorates: db.config.lists.governorates.map(function (g) { return g.id; }) });
+        if (err) throw new Err(err, { field: 'coverage' });
+        var govs = Object.keys(cov);
+        var agents = db.agents.filter(function (ag) { return ag.providerId === p.id; });
+        if (p.kind === 'company') {
+          var outside = agents.filter(function (ag) { return ag.active && ag.governorates.some(function (g) { return govs.indexOf(g) < 0; }); });
+          if (outside.length) throw new Err('errors.agentsOutsideCoverage', { field: 'coverage', n: outside.length, names: outside.map(function (ag) { return ag.name; }).join(', ') });
+          // Agents never cover more than the company: narrow their cities where the company lists cities.
+          agents.forEach(function (ag) {
+            var ac = Object.assign({}, ag.coverageCities || {});
+            Object.keys(ac).forEach(function (g) {
+              if (govs.indexOf(g) < 0) { delete ac[g]; return; }
+              var allowed = cov[g];
+              if (!allowed.length) return;
+              var mine = (ac[g] || []).filter(function (c) { return allowed.indexOf(c) >= 0; });
+              ac[g] = mine.length ? mine : allowed.slice();
+            });
+            ag.coverageCities = ac;
+            ag.governorates = Object.keys(ac);
+          });
+        } else {
+          agents.forEach(function (ag) { ag.governorates = govs.slice(); ag.coverageCities = U.clone(cov); });
+        }
+        var cap = {};
+        govs.forEach(function (g) { cap[g] = Math.max(1, Math.round(+((capacity || {})[g]) || p.capacity[g] || (p.kind === 'company' ? 10 : 5))); });
+        var before = { governorates: p.governorates.slice() };
+        p.governorates = govs; p.coverageCities = cov; p.capacity = cap;
+        E.audit('provider.coverage_updated', 'provider', p.id, p.name, before, { governorates: govs }, null, x.a);
         return withScore(p);
+      });
+    },
+    /** Promised response times, applied at once. Never slower than the platform maximum. */
+    updateResponseTimes: function (sla) {
+      return E.mutate(function (db) {
+        var x = liveOwner(), p = x.p;
+        check(wf.validateSla(sla, p.services, wf.slaLimits(db.config)));
+        var next = { investigation: null, collectionFirstContactHours: null };
+        if (p.services.indexOf('investigation') >= 0) {
+          next.investigation = {};
+          db.config.lists.inquiryTypes.forEach(function (t) { next.investigation[t.id] = +sla.investigation[t.id]; });
+        }
+        if (p.services.indexOf('collection') >= 0) next.collectionFirstContactHours = +sla.collectionFirstContactHours;
+        p.sla = next;
+        E.audit('provider.response_times_updated', 'provider', p.id, p.name, null, next, null, x.a);
+        return withScore(p);
+      });
+    },
+    /** Ask Operations to change prices. One request at a time; a new one replaces it. */
+    requestPriceChange: function (pricing, note) {
+      return E.mutate(function () {
+        var x = liveOwner();
+        return filePriceRequest(x.p, pricing || {}, note, x.a);
+      });
+    },
+    withdrawPriceChange: function () {
+      return E.mutate(function () {
+        var x = liveOwner(), p = x.p;
+        if (!p.priceRequest) throw new Err('errors.notFound');
+        p.priceRequest = null;
+        E.audit('provider.price_change_withdrawn', 'provider', p.id, p.name, null, null, null, x.a);
+        return withScore(p);
+      });
+    },
+    /**
+     * Send a document with its expiry date. A verified document stays in force until
+     * Operations checks the new one; a document not yet verified is replaced straight away.
+     * file: { fileName, url, expiresAt (ms) }
+     */
+    submitDocument: function (type, file) {
+      return E.mutate(function () {
+        var x = liveOwner(), p = x.p, now = E.now();
+        var d = p.verification.documents.filter(function (k) { return k.type === type; })[0];
+        if (!d) throw new Err('errors.notFound');
+        file = file || {};
+        if (!file.url && !file.fileName) throw new Err('errors.documentPhotoRequired', { field: 'file' });
+        if (wf.isExpiringDoc(type)) {
+          var e = wf.validateExpiry(file.expiresAt, now);
+          if (e) throw new Err(e, { field: 'expiresAt' });
+        }
+        var sent = { fileName: file.fileName || null, url: file.url || null, expiresAt: file.expiresAt || null, at: now, by: x.a.name };
+        if (d.status === 'verified') d.renewal = sent;
+        else Object.assign(d, { status: 'uploaded', fileName: sent.fileName, url: sent.url, expiresAt: sent.expiresAt, uploadedAt: now });
+        E.audit('provider.document_submitted', 'provider', p.id, p.name, null, { type: type }, null, x.a);
+        E.notify(E.admins(), 'notif.document_submitted', { name: p.name, doc: type }, 'provider-admin:' + p.id);
+        return withScore(p);
+      });
+    },
+
+    // ---- admin: Operations decisions on live providers
+    decidePriceChange: function (id, approve, note) {
+      return E.mutate(function (db) {
+        var a = E.requireRole(['platform_admin']);
+        var p = E.providerById(id);
+        if (!p || !p.priceRequest) throw new Err('errors.notFound');
+        if (!approve && !(note && String(note).trim())) throw new Err('wf.err.reasonRequired');
+        var req = p.priceRequest;
+        if (approve) {
+          check(wf.validatePricing(req.pricing, p.services, db.config.pricing, C.ZONES.map(function (z) { return z.id; })));
+          p.pricing = U.clone(req.pricing);
+        }
+        p.priceRequest = null;
+        p.lastPriceDecision = { approved: !!approve, note: note ? String(note).trim() : '', at: E.now(), by: a.name };
+        E.audit(approve ? 'provider.price_change_approved' : 'provider.price_change_rejected', 'provider', p.id, p.name, null, null, note || null, a);
+        E.notify(D.providerUsers(db, p.id, ['provider_admin', 'freelancer']), approve ? 'notif.price_change_approved' : 'notif.price_change_rejected', { note: note || '' }, 'provider:profile');
+        return p;
+      });
+    },
+    /** Accept a document (or its pending renewal): the new expiry date applies and reminders restart. */
+    verifyDocument: function (id, type) {
+      return E.mutate(function (db) {
+        var a = E.requireRole(['platform_admin']);
+        var p = E.providerById(id);
+        var d = p && p.verification.documents.filter(function (k) { return k.type === type; })[0];
+        if (!d) throw new Err('errors.notFound');
+        if (d.renewal) {
+          Object.assign(d, { fileName: d.renewal.fileName, url: d.renewal.url, expiresAt: d.renewal.expiresAt, uploadedAt: d.renewal.at });
+          d.renewal = null;
+        } else if (d.status !== 'uploaded') throw new Err('errors.notFound');
+        d.status = 'verified';
+        d.verifiedAt = E.now();
+        d.reminders = {};
+        E.audit('provider.document_verified', 'provider', p.id, p.name, null, { type: type, expiresAt: d.expiresAt || null }, null, a);
+        E.notify(D.providerUsers(db, p.id, ['provider_admin', 'freelancer']), 'notif.document_verified', { doc: type }, 'provider:profile');
+        return p;
+      });
+    },
+    /** Turn down a pending renewal; the current document stays as it is. */
+    rejectDocument: function (id, type, note) {
+      return E.mutate(function (db) {
+        var a = E.requireRole(['platform_admin']);
+        if (!(note && String(note).trim())) throw new Err('wf.err.reasonRequired');
+        var p = E.providerById(id);
+        var d = p && p.verification.documents.filter(function (k) { return k.type === type; })[0];
+        if (!d || !d.renewal) throw new Err('errors.notFound');
+        d.renewal = null;
+        E.audit('provider.document_rejected', 'provider', p.id, p.name, null, { type: type }, note, a);
+        E.notify(D.providerUsers(db, p.id, ['provider_admin', 'freelancer']), 'notif.document_rejected', { doc: type, note: String(note).trim() }, 'provider:profile');
+        return p;
       });
     },
     uploadDocument: function (type, fileName) {

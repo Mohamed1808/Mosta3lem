@@ -41,6 +41,7 @@
       b90p: { min: 18, max: 35 }
     },
     collectionFixedFeeMax: 400,
+    collectionFirstContactMaxHours: 48,   // slowest first contact a collection provider may promise
     defaultCollectionDays: 30
   };
 })();

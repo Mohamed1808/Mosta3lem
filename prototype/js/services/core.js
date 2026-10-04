@@ -165,6 +165,36 @@
       try { out = fn(pid, note); } finally { E.setSession(me.id); }
       return out;
     },
+    /**
+     * Demo only: Operations decisions on the signed-in provider, from the app.
+     * action: 'approvePrices' | 'rejectPrices' (note) | 'verifyDocument' (type) |
+     * 'rejectDocument' (type, note) | 'expireDocument' (type: moves its expiry date to now).
+     */
+    reviewMyProvider: function (action, type, note) {
+      var me = E.currentUser();
+      var admin = E.admins()[0];
+      if (!me || !me.providerId || !admin) return Promise.reject(new Err('errors.forbidden'));
+      var pid = me.providerId;
+      if (action === 'expireDocument') {
+        return E.mutate(function () {
+          var d = E.providerById(pid).verification.documents.filter(function (k) { return k.type === type; })[0];
+          if (!d) throw new Err('errors.notFound');
+          d.expiresAt = E.now() - 1000;
+          return d;
+        }).then(function () { return E.run(function () { return E.tick(); }); });
+      }
+      var calls = {
+        approvePrices: function () { return S.providers.decidePriceChange(pid, true, note); },
+        rejectPrices: function () { return S.providers.decidePriceChange(pid, false, note); },
+        verifyDocument: function () { return S.providers.verifyDocument(pid, type); },
+        rejectDocument: function () { return S.providers.rejectDocument(pid, type, note); }
+      };
+      if (!calls[action]) return Promise.reject(new Err('errors.forbidden'));
+      E.setSession(admin.id);
+      var out;
+      try { out = calls[action](); } finally { E.setSession(me.id); }
+      return out;
+    },
     tick: function () { return E.run(function () { return E.tick(); }); }
   };
 

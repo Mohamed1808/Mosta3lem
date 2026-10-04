@@ -112,6 +112,15 @@
       id_front: 'بطاقة الرقم القومي (الوجه)', id_back: 'بطاقة الرقم القومي (الظهر)', criminal_record: 'صحيفة الحالة الجنائية (فيش جنائي)'
     },
     status: { awaiting_signoff: 'بانتظار الاعتماد' },
+    settings: {
+      expires: 'ينتهي في {date}', renewalSent: 'أُرسل التجديد، تاريخ الانتهاء الجديد {date}', renewalWaiting: 'أُرسل التجديد، بانتظار فريق العمليات',
+      state: { valid: 'ساري', expiring: 'ينتهي قريبًا', expired: 'منتهي', none: 'بدون تاريخ انتهاء' },
+      verifyDoc: 'اعتماد', docVerified: 'تم اعتماد المستند', priceRequest: 'طلب تغيير الأسعار', requestedBy: 'طلبه {name}، {date}',
+      approvePrices: 'اعتماد الأسعار الجديدة', pricesApproved: 'الأسعار الجديدة مُفعّلة', noPriceRequest: 'لا يوجد طلب تغيير أسعار',
+      priceRequestPending: 'طلب تغيير أسعارك بتاريخ {date} بانتظار فريق العمليات. تُطبق الأسعار الحالية حتى اعتماده.',
+      savedWithPriceRequest: 'تم الحفظ. أُرسلت أسعارك الجديدة لفريق العمليات للاعتماد.'
+    },
+    select: { hiddenDocuments: '{n} متوقف: مستندات منتهية' },
     admin: { registration: 'بيانات التسجيل' },
     profile: { registration: 'بيانات التسجيل', registrationHint: 'البيانات القانونية وبيانات التواصل من التسجيل. تواصل مع المنصة لتعديلها.' },
     errors: {
@@ -125,18 +134,34 @@
       outsideCompanyCoverage: 'لا يغطي المندوب إلا مناطق تغطية شركتك', agentHasOpenCases: 'لدى هذا المندوب {n} حالة مفتوحة. أعد تكليفها أولًا.',
       supervisorHasAgents: 'انقل المندوبين النشطين لهذا المشرف أو أوقفهم أولًا', notYourAgent: 'هذا المندوب يتبع مشرفًا آخر',
       notInReview: 'هذا الطلب ليس قيد المراجعة', notAwaitingSignoff: 'يجب أن يوافق فريق العمليات على الطلب أولًا',
-      applicationLocked: 'يمكنك تعديل طلبك عندما تطلب المنصة معلومات إضافية أو بعد عدم اعتماده'
+      applicationLocked: 'يمكنك تعديل طلبك عندما تطلب المنصة معلومات إضافية أو بعد عدم اعتماده',
+      agentsOutsideCoverage: 'ما زال {n} مندوب ميداني نشط يغطي المناطق التي حذفتها: {names}. عدّل تغطيتهم أولًا.',
+      wholeHours: 'أدخل عددًا صحيحًا من الساعات', slaTooSlow: 'أبطأ مما تسمح به المنصة', outOfBand: 'خارج النطاق المسموح',
+      noPriceChange: 'هذه أسعارك الحالية بالفعل', expiryInPast: 'يجب أن يكون تاريخ الانتهاء في المستقبل',
+      documentPhotoRequired: 'أضف صورة المستند', dateFormat: 'أدخل التاريخ بالصيغة سنة-شهر-يوم'
     },
     notif: {
       application_new: 'طلب انضمام جديد: {name}', application_updated: 'حدّث {name} طلبه',
       application_rejected: 'لم يتم اعتماد طلبك', application_info_requested: 'تحتاج المنصة إلى معلومات إضافية عن طلبك',
       application_signoff: '{name} جاهز لاعتماد الإدارة', application_ops_approved: 'وافق فريق العمليات على طلبك، وهو الآن لدى الإدارة للاعتماد النهائي.',
+      price_change_requested: 'طلب {name} تغيير الأسعار', price_change_approved: 'تم اعتماد أسعارك الجديدة وتفعيلها',
+      price_change_rejected: 'لم يُعتمد تغيير أسعارك: {note}',
+      document_submitted: 'أرسل {name} نسخة جديدة من {doc}', document_verified: 'تم اعتماد {doc}',
+      document_rejected: 'لم تُقبل النسخة الجديدة من {doc}: {note}',
+      document_expiring: 'ينتهي {doc} خلال {days} يومًا. أرسل النسخة المجددة لتستمر في تلقي العروض.',
+      document_expired: 'انتهى {doc}. توقفت العروض الجديدة حتى يراجع فريق العمليات النسخة المجددة.',
+      document_expired_admin: '{name}: انتهى {doc}. توقفت العروض الجديدة.',
       agent_joined_team: 'انضم {name} إلى فريقك'
     },
     audit: {
       action: {
         provider_registered: 'تسجيل مقدم خدمة', provider_registered_by_admin: 'تسجيل مقدم خدمة بواسطة المنصة', provider_resubmitted: 'إعادة إرسال الطلب',
         provider_ops_approved: 'موافقة فريق العمليات', provider_application_updated: 'تعديل بيانات الطلب',
+        provider_price_change_requested: 'طلب تغيير الأسعار', provider_price_change_withdrawn: 'سحب طلب تغيير الأسعار',
+        provider_price_change_approved: 'اعتماد تغيير الأسعار', provider_price_change_rejected: 'رفض تغيير الأسعار',
+        provider_coverage_updated: 'تغيير نطاق التغطية', provider_response_times_updated: 'تغيير أوقات الاستجابة',
+        provider_document_submitted: 'إرسال مستند', provider_document_verified: 'اعتماد مستند',
+        provider_document_rejected: 'رفض مستند', provider_document_expired: 'انتهاء مستند',
         team_supervisor_added: 'إضافة مشرف', team_agent_added: 'إضافة مندوب ميداني', team_member_updated: 'تعديل بيانات عضو في الفريق',
         team_agent_moved: 'نقل مندوب إلى مشرف آخر', team_supervisor_activated: 'تفعيل مشرف', team_supervisor_deactivated: 'إيقاف مشرف'
       }
