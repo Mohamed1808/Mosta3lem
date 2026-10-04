@@ -60,9 +60,15 @@
 
   ui.checkInView = function (ci) {
     if (!ci) return h`<span class="faint">${t('evidence.notCheckedIn')}</span>`;
-    var far = ci.distanceM > C.CHECKIN_MAX_DISTANCE_M;
-    return h`<div class="row wrap">${ui.badge(t('evidence.checkedInAt', { time: U.fmtTime(ci.at), distance: U.num(ci.distanceM) }), far ? 'warning' : 'success', true)}
-      <span class="mono faint" dir="ltr">${ci.lat != null ? ci.lat.toFixed(5) + ', ' + ci.lng.toFixed(5) : ''}</span>${far ? h`<span class="small" style="color:var(--warn)">${t('evidence.farFromAddress', { max: C.CHECKIN_MAX_DISTANCE_M })}</span>` : ''}</div>`;
+    var measured = ci.distanceM != null;
+    var far = measured && ci.distanceM > C.CHECKIN_MAX_DISTANCE_M;
+    var label = measured ? t('evidence.checkedInAt', { time: U.fmtTime(ci.at), distance: U.num(ci.distanceM) }) : t('gps.checkedIn', { time: U.fmtTime(ci.at) });
+    var src = (ci.source === 'device' ? t('gps.fromPhone') : t('gps.simulated')) + (ci.accuracyM != null ? ' · ' + t('gps.accuracy', { n: U.num(ci.accuracyM) }) : '');
+    return h`<div class="row wrap">${ui.badge(label, far || ci.outsideArea ? 'warning' : 'success', true)}<span class="xs muted">${src}</span>
+      ${ci.lat != null ? h`<a class="mono small" dir="ltr" href="https://www.google.com/maps/search/?api=1&query=${ci.lat},${ci.lng}" target="_blank" rel="noopener">${ci.lat.toFixed(5) + ', ' + ci.lng.toFixed(5)}</a>` : ''}
+      ${far ? h`<span class="small" style="color:var(--warn)">${t('evidence.farFromAddress', { max: C.CHECKIN_MAX_DISTANCE_M })}</span>` : ''}
+      ${ci.outsideArea ? h`<span class="small" style="color:var(--warn)">${t('gps.outsideArea')}</span>` : ''}
+      ${!measured && ci.addressApprox && !ci.outsideArea ? h`<span class="xs faint">${t('gps.addressApprox')}</span>` : ''}</div>`;
   };
 
   function customerCard(c) {
@@ -115,7 +121,7 @@
 
   ui.collectionLog = function (c) {
     var entries = [];
-    (c.actions || []).forEach(function (a) { entries.push({ at: a.at, kind: 'action', html: h`<span class="strong">${ui.L('actionTypes', a.type)}</span>${a.checkIn ? h` · ${ui.badge(t('evidence.checkedInAt', { time: U.fmtTime(a.checkIn.at), distance: U.num(a.checkIn.distanceM) }), a.checkIn.distanceM > C.CHECKIN_MAX_DISTANCE_M ? 'warning' : 'success')}` : ''}${a.note ? h`<div class="small muted">${a.note}</div>` : ''}`, by: a.byName }); });
+    (c.actions || []).forEach(function (a) { entries.push({ at: a.at, kind: 'action', html: h`<span class="strong">${ui.L('actionTypes', a.type)}</span>${a.checkIn ? h` · ${ui.badge(a.checkIn.distanceM != null ? t('evidence.checkedInAt', { time: U.fmtTime(a.checkIn.at), distance: U.num(a.checkIn.distanceM) }) : t('gps.checkedIn', { time: U.fmtTime(a.checkIn.at) }), a.checkIn.distanceM > C.CHECKIN_MAX_DISTANCE_M || a.checkIn.outsideArea ? 'warning' : 'success')}` : ''}${a.note ? h`<div class="small muted">${a.note}</div>` : ''}`, by: a.byName }); });
     (c.promises || []).forEach(function (p) { entries.push({ at: p.createdAt, kind: 'ptp', html: h`<span class="strong">${t('collection.promise')}</span> ${U.money(p.amount)} · ${t('collection.dueOn', { date: U.fmtDate(p.dueDate) })} ${ui.status(p.status)}${p.note ? h`<div class="small muted">${p.note}</div>` : ''}`, by: p.byName }); });
     (c.payments || []).forEach(function (p) { entries.push({ at: p.at, kind: 'pay', html: h`<span class="strong">${t('collection.payment')}</span> ${U.money(p.amount)} · ${t('paymentMethod.' + p.method)}${p.receipt ? h` · <a href="${p.receipt}" target="_blank" rel="noopener">${t('collection.receipt')}</a>` : ''}${p.note ? h`<div class="small muted">${p.note}</div>` : ''}`, by: p.byName }); });
     if (!entries.length) return ui.empty(t('collection.noActions'), null, 'phone');

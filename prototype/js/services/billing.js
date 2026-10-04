@@ -379,7 +379,7 @@
           onTimeRate: delivered.length ? delivered.filter(function (c) { return c.onTime; }).length / delivered.length : null,
           returnRate: submitted.length ? submitted.filter(function (c) { return c.returnCount > 0; }).length / submitted.length : null,
           evidenceRate: delivered.length ? delivered.filter(function (c) { return c.evidenceComplete; }).length / delivered.length : null,
-          avgDistanceM: delivered.length ? Math.round(U.avg(delivered.filter(function (c) { return c.checkIn; }), function (c) { return c.checkIn.distanceM; }) || 0) : null,
+          avgDistanceM: delivered.some(function (c) { return c.checkIn && c.checkIn.distanceM != null; }) ? Math.round(U.avg(delivered.filter(function (c) { return c.checkIn && c.checkIn.distanceM != null; }), function (c) { return c.checkIn.distanceM; }) || 0) : null,
           collected: U.sum(col, function (c) { return wf.collection.recovered(c); }),
           collectedThisMonth: U.sum(col, function (c) { return U.sum((c.payments || []).filter(function (p) { return inMonth(p.at, month); }), function (p) { return p.amount; }); }),
           promisesKept: promises.filter(function (p) { return p.status === 'kept'; }).length,

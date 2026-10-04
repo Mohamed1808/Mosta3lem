@@ -312,7 +312,7 @@
       { label: t('case.client'), render: function (c) { return c.entityName; } },
       { label: t('case.inquiryTypes'), render: function (c) { return ui.types(c.inquiryTypes); } },
       { label: t('case.agent'), render: function (c) { return h`${c.agentName}${c.providerKind === 'freelancer' ? h` ${ui.badge(t('kind.freelancer'), 'neutral')}` : ''}`; } },
-      { label: t('evidence.title'), render: function (c) { return h`<span class="small">${t('review.evidenceShort', { photos: (c.photos || []).length, min: c.minPhotos, distance: c.checkIn ? U.num(c.checkIn.distanceM) : '-' })}</span>`; } },
+      { label: t('evidence.title'), render: function (c) { return h`<span class="small">${t('review.evidenceShort', { photos: (c.photos || []).length, min: c.minPhotos, distance: c.checkIn && c.checkIn.distanceM != null ? U.num(c.checkIn.distanceM) : '-' })}</span>`; } },
       { label: t('review.submitted'), render: function (c) { return h`<span class="small">${U.fmtDateTime(c.reportSubmittedAt)}</span>`; } },
       { label: t('sla.title'), render: function (c) { return ui.slaBadge(c); } },
       { label: '', cls: 'right', render: function (c) { return h`<button type="button" class="btn btn-sm btn-primary" data-action="review" data-id="${c.id}">${t('review.open')}</button>`; } }

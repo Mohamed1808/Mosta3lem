@@ -9,7 +9,9 @@ import { Pressable, View } from 'react-native';
 import { icm, services } from '@/backend/engine';
 import { CheckInLine, PhotoGrid, ReportView } from '@/components/case';
 import { FormView, Values } from '@/components/form';
+import { useLocate } from '@/components/locate';
 import { takePhoto } from '@/lib/camera';
+import { getQuickFix } from '@/lib/location';
 import { useQuery, useT } from '@/state/app';
 import { colors, radius, space } from '@/theme';
 import { Badge, Button, Card, Grow, Icon, Loading, Notice, Row, Stack, Txt, useDir } from '@/ui/core';
@@ -37,12 +39,16 @@ function FieldBody({ d }: { d: any }) {
   const formsOk = (c.inquiryTypes || []).every((tp: string) => Object.keys(wf.reports.validate(C.REPORT_FORMS[tp], (c.report || {})[tp] || {}, { now })).length === 0);
   const ready = !!c.checkIn && photos.length >= minP && formsOk;
   const [busyPhoto, setBusyPhoto] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
+  const locate = useLocate();
 
   const addPhoto = async (label: string | null, src: 'camera' | 'library' = 'camera') => {
     setBusyPhoto(label || 'extra');
     try {
       const url = await takePhoto(src);
-      if (url) await run(() => services().cases.addPhoto(c.id, url, label), t('agent.photoAdded'));
+      // Camera photos carry where they were taken; photos picked from the library do not.
+      const fix = url && src === 'camera' ? await getQuickFix() : null;
+      if (url) await run(() => services().cases.addPhoto(c.id, url, label, fix || undefined), t('agent.photoAdded'));
     } finally { setBusyPhoto(null); }
   };
   const removePhoto = async (pid: string) => {
@@ -78,9 +84,16 @@ function FieldBody({ d }: { d: any }) {
           <Stack style={{ alignItems: 'center' }}>
             <Icon name="pin" size={28} color={colors.accent} />
             <Txt v="sm" c="muted" center>{t('agent.checkInHint')}</Txt>
-            <Button label={t('action.check_in')} kind="primary" icon="pin" block onPress={async () => {
-              try { const n = await services().cases.checkIn(c.id); toast(t('evidence.checkedInAt', { time: icm().util.fmtTime(n.checkIn.at), distance: icm().util.num(n.checkIn.distanceM) })); }
-              catch (e: any) { toast(t(e.key || 'errors.generic'), 'danger'); }
+            <Button label={locating ? t('gps.locating') : t('action.check_in')} kind="primary" icon="pin" block busy={locating} onPress={async () => {
+              setLocating(true);
+              try {
+                const fix = await locate();
+                if (!fix) return;
+                const n = await services().cases.checkIn(c.id, fix === 'demo' ? undefined : fix);
+                const ci = n.checkIn;
+                toast(ci.distanceM != null ? t('evidence.checkedInAt', { time: icm().util.fmtTime(ci.at), distance: icm().util.num(ci.distanceM) }) : t('gps.checkedIn', { time: icm().util.fmtTime(ci.at) }));
+              } catch (e: any) { toast(t(e.key || 'errors.generic'), 'danger'); }
+              finally { setLocating(false); }
             }} />
           </Stack>
         ) : <CheckInLine ci={c.checkIn} />}

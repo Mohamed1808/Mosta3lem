@@ -1,5 +1,5 @@
 /** Case building blocks shared by the provider screens. */
-import { Image, Pressable, View } from 'react-native';
+import { Image, Linking, Pressable, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { icm } from '@/backend/engine';
@@ -119,16 +119,32 @@ export function ReportView({ c }: { c: any }) {
   );
 }
 
-/** Check-in summary. */
+/**
+ * Check-in summary: time, distance to the address when the address location is confirmed,
+ * GPS accuracy, where the location came from, warnings, and a link to see it on a map.
+ */
 export function CheckInLine({ ci }: { ci: any }) {
   const t = useT();
   if (!ci) return <Txt v="sm" c="faint">{t('evidence.notCheckedIn')}</Txt>;
-  const far = ci.distanceM > icm().config.CHECKIN_MAX_DISTANCE_M;
+  const U = icm().util, max = icm().config.CHECKIN_MAX_DISTANCE_M;
+  const measured = ci.distanceM != null;
+  const far = measured && ci.distanceM > max;
+  const warn = far || ci.outsideArea;
+  const label = measured ? t('evidence.checkedInAt', { time: U.fmtTime(ci.at), distance: U.num(ci.distanceM) }) : t('gps.checkedIn', { time: U.fmtTime(ci.at) });
   return (
     <Stack gap={4}>
-      <Badge label={t('evidence.checkedInAt', { time: icm().util.fmtTime(ci.at), distance: icm().util.num(ci.distanceM) })} tone={far ? 'warning' : 'success'} dot />
-      <Txt v="xs" c="faint" mono ltr>{ci.lat != null ? ci.lat.toFixed(5) + ', ' + ci.lng.toFixed(5) : ''}</Txt>
-      {far ? <Txt v="xs" c="warn">{t('evidence.farFromAddress', { max: icm().config.CHECKIN_MAX_DISTANCE_M })}</Txt> : null}
+      <Badge label={label} tone={warn ? 'warning' : 'success'} dot />
+      <Txt v="xs" c="muted">
+        {(ci.source === 'device' ? t('gps.fromPhone') : t('gps.simulated')) + (ci.accuracyM != null ? ' · ' + t('gps.accuracy', { n: U.num(ci.accuracyM) }) : '')}
+      </Txt>
+      {ci.lat != null ? (
+        <Pressable onPress={() => Linking.openURL('https://www.google.com/maps/search/?api=1&query=' + ci.lat + ',' + ci.lng)} accessibilityRole="link" hitSlop={6}>
+          <Txt v="xs" c="accent" mono ltr>{ci.lat.toFixed(5) + ', ' + ci.lng.toFixed(5)} · {t('gps.openMap')}</Txt>
+        </Pressable>
+      ) : null}
+      {far ? <Txt v="xs" c="warn">{t('evidence.farFromAddress', { max })}</Txt> : null}
+      {ci.outsideArea ? <Txt v="xs" c="warn">{t('gps.outsideArea')}</Txt> : null}
+      {!measured && ci.addressApprox && !ci.outsideArea ? <Txt v="xs" c="faint">{t('gps.addressApprox')}</Txt> : null}
     </Stack>
   );
 }
