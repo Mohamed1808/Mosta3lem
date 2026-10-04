@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Mosta3lem",
+    "slug": "mosta3lem",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "mosta3lem",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.mosta3lem.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Mosta3lem uses the camera to photograph field visits and documents.",
+        "NSPhotoLibraryUsageDescription": "Mosta3lem lets you attach photos of field visits and documents."
+      }
+    },
+    "android": {
+      "package": "com.mosta3lem.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E7EFF9",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1D5BA6",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Mosta3lem uses the camera to photograph field visits and documents.",
+          "photosPermission": "Mosta3lem lets you attach photos of field visits and documents."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
