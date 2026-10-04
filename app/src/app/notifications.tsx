@@ -19,6 +19,7 @@ export default function Notifications() {
     if (m) router.push({ pathname: '/case/[id]', params: { id: m[1] } });
     else if (n.link === 'provider:profile') router.push('/settings');
     else if (n.link === 'provider:ratings') router.push('/ratings');
+    else if (n.link === 'provider:earnings') router.push('/earnings');
     else if (/^dispute:/.test(n.link || '')) router.push({ pathname: '/dispute/[id]', params: { id: n.link.slice(8) } });
   };
   const text = (n: any) => {

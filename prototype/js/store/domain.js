@@ -141,6 +141,27 @@
     return domain.agentInScope(actor, db.agents.filter(function (x) { return x.id === c.agentId; })[0]);
   };
 
+  /**
+   * Whose money a provider user may see, following the team structure:
+   *   owner (provider_admin) and individual provider: the whole provider ({ all: true })
+   *   supervisor: the cases of the agents they supervise ({ agentIds })
+   *   field agent: no money at all ({ none: true }); they see their completed work only
+   */
+  domain.moneyScope = function (db, actor) {
+    if (!actor || !actor.providerId) return { none: true };
+    if (actor.role === 'provider_admin' || actor.role === 'freelancer') return { all: true };
+    if (actor.role === 'provider_supervisor') {
+      return { agentIds: db.agents.filter(function (a) { return a.providerId === actor.providerId && a.supervisorId === actor.userId; }).map(function (a) { return a.id; }) };
+    }
+    return { none: true };
+  };
+  /** Whether a case's money falls inside a scope from moneyScope. */
+  domain.caseInMoneyScope = function (scope, c) {
+    if (!scope || scope.none) return false;
+    if (scope.all) return true;
+    return !!c && !!c.agentId && scope.agentIds.indexOf(c.agentId) >= 0;
+  };
+
   /** Recipients for a submitted company report: the agent's supervisor, else every supervisor, plus the owners. */
   domain.companyReviewers = function (db, c) {
     var sup = c.agentId ? domain.agentSupervisor(db, c.agentId) : null;

@@ -46,6 +46,14 @@ export default function More() {
             <ListItem left={<Icon name="scale" />} title={t('dispute.title')} right={counts?.nav?.openDisputes ? <Badge label={num(counts.nav.openDisputes)} tone="warning" /> : undefined} onPress={() => router.push('/disputes')} />
             <Divider />
             <ListItem left={<Icon name="award" />} title={t('nav.rateClients')} right={counts?.clients ? <Badge label={num(counts.clients)} tone="pending" /> : undefined} onPress={() => router.push('/rate-clients')} />
+            <Divider />
+            <ListItem left={<Icon name="wallet" />} title={u.role === 'provider_supervisor' ? t('earnings.teamTitle') : t('nav.earnings')} onPress={() => router.push('/earnings')} />
+          </>
+        ) : null}
+        {u.role === 'agent' || (u.role === 'provider_admin' && u.agentId) ? (
+          <>
+            <Divider />
+            <ListItem left={<Icon name="checkSquare" />} title={t('earningsApp.myWork')} onPress={() => router.push('/my-work')} />
           </>
         ) : null}
         {u.role === 'provider_admin' || u.role === 'freelancer' ? <><Divider /><ListItem left={<Icon name="settings" />} title={t('settingsApp.title')} sub={t('settingsApp.moreSub')} onPress={() => router.push('/settings')} /></> : null}

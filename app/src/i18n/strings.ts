@@ -57,6 +57,12 @@ const en = {
     company: 'Company', role: 'Role', phone: 'Mobile', noNotifications: 'No notifications yet', markAllRead: 'Mark all as read', simulated: 'Simulated backend: data lives on this device.'
   },
   teamScreen: { moveTo: 'Move to supervisor', moved: 'Agent moved' },
+  earningsApp: {
+    privacy: 'Who sees what: the owner sees the whole company, a supervisor sees only the agents they supervise, field agents see their completed work without amounts.',
+    myWork: 'My completed work', myWorkSub: 'Cases you finished and where they are now.',
+    doneThisMonth: 'Completed this month', doneTotal: 'Completed in total', openNow: 'Open now',
+    completedCases: 'Completed cases', late: 'late', noneDone: 'No completed cases yet'
+  },
   disputeApp: {
     subtitle: 'Raised by banks about your cases, or by you about a rating. The platform decides.', openShort: 'Open disputes',
     youRaised: 'You raised it', raisedAgainst: 'Raised by the client', opened: 'Opened', statements: 'Statements',
@@ -149,6 +155,12 @@ const ar: typeof en = {
     company: 'الشركة', role: 'الدور', phone: 'الموبايل', noNotifications: 'لا توجد إشعارات بعد', markAllRead: 'تحديد الكل كمقروء', simulated: 'خادم تجريبي: البيانات محفوظة على هذا الجهاز.'
   },
   teamScreen: { moveTo: 'نقل إلى مشرف', moved: 'تم نقل المندوب' },
+  earningsApp: {
+    privacy: 'من يرى ماذا: المالك يرى الشركة كلها، والمشرف يرى المندوبين الذين يشرف عليهم فقط، والمندوب الميداني يرى أعماله المنجزة دون مبالغ.',
+    myWork: 'أعمالي المنجزة', myWorkSub: 'الحالات التي أنجزتها وأين وصلت الآن.',
+    doneThisMonth: 'المنجز هذا الشهر', doneTotal: 'إجمالي المنجز', openNow: 'المفتوح الآن',
+    completedCases: 'الحالات المنجزة', late: 'متأخرة', noneDone: 'لا توجد حالات منجزة بعد'
+  },
   disputeApp: {
     subtitle: 'نزاعات فتحتها البنوك بخصوص حالاتك، أو فتحتها أنت بخصوص تقييم. المنصة هي التي تقرر.', openShort: 'نزاعات مفتوحة',
     youRaised: 'فتحته أنت', raisedAgainst: 'فتحه العميل', opened: 'تاريخ الفتح', statements: 'الإفادات',

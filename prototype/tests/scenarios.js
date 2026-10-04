@@ -753,6 +753,53 @@ async function runInvestigation(caseId, providerId, opts) {
     ok((await S.analytics.navCounts(null)).openDisputes >= 0, 'open disputes are counted for the provider');
   });
 
+  // ---------------------------------------------------------------- 17
+  await scenario('17. Earnings follow the team structure', async () => {
+    await as('Adel Morsy');
+    const all = await S.billing.earnings(null);
+    ok(all.scope === 'all' && all.rows.length > 0 && all.byAgent.length > 0, 'the owner sees the whole company: ' + all.rows.length + ' paid cases across ' + all.byAgent.length + ' agent(s)');
+    ok((await S.billing.invoices()).length > 0, 'the owner sees the invoices');
+
+    await as('Rehab Anwar');
+    let rehab = await S.billing.earnings(null);
+    ok(rehab.scope === 'team' && rehab.rows.length > 0 && rehab.rows.every((r) => r.agentId), 'a supervisor sees only cases done by their own agents');
+    ok((await S.billing.invoices()).length === 0, 'a supervisor does not see the company invoices');
+    await as('Khaled Samy');
+    let khaled = await S.billing.earnings(null);
+    const supOf = (agentId) => ICM.store.db.agents.find((x) => x.id === agentId).supervisorId;
+    const kId = ICM.store.db.users.find((u) => u.name === 'Khaled Samy').id, rId = ICM.store.db.users.find((u) => u.name === 'Rehab Anwar').id;
+    ok(khaled.rows.every((r) => supOf(r.agentId) === kId) && rehab.rows.every((r) => supOf(r.agentId) === rId) && !khaled.rows.some((r) => rehab.rows.some((x) => x.caseId === r.caseId)),
+      'two supervisors see separate teams: Rehab ' + rehab.rows.length + ' case(s), Khaled ' + khaled.rows.length);
+
+    await as('Adel Morsy');
+    const top = rehab.byAgent[0];
+    const khaledBefore = khaled.rows.length;
+    const supK = ICM.store.db.users.find((u) => u.name === 'Khaled Samy');
+    await S.team.moveAgent(top.agentId, supK.id);
+    await as('Khaled Samy');
+    khaled = await S.billing.earnings(null);
+    await as('Rehab Anwar');
+    rehab = await S.billing.earnings(null);
+    ok(khaled.rows.length === khaledBefore + top.cases && khaled.rows.some((r) => r.agentId === top.agentId) && !rehab.rows.some((r) => r.agentId === top.agentId), 'when ' + top.name + ' moves to Khaled, their earnings move with them');
+
+    const agentUser = ICM.store.db.users.find((u) => u.agentId === top.agentId);
+    await as_id(agentUser.id);
+    let fail = null;
+    try { await S.billing.earnings(null); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.forbidden', 'a field agent cannot open the earnings');
+    ok((await S.billing.invoices()).length === 0, 'nor the invoices');
+    const work = await S.billing.myWork(null);
+    ok(work.total > 0 && work.rows.every((r) => r.gross === undefined && r.net === undefined && r.price === undefined), 'the agent sees ' + work.total + ' completed cases with their status and no amounts');
+    const mine = await S.cases.agentTasks();
+    ok(mine.length > 0 && mine.every((c) => c.price == null), 'case prices are hidden from the agent');
+    const dash = await S.analytics.providerDashboard('collection').catch(() => null);
+    ok(!dash || dash.earningsThisMonth == null, 'no earnings figure reaches the agent');
+
+    await as('Omar Hassan');
+    const omar = await S.billing.earnings(null);
+    ok(omar.scope === 'all' && omar.byAgent.length === 0, 'an individual provider sees their own money');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

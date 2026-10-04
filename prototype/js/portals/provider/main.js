@@ -37,7 +37,7 @@
           ${ui.kpi(t('metric.onTime'), ui.pct(d.onTimeRate))}
           ${inv ? ui.kpi(t('kpi.rejectionRate'), ui.pct(d.rejectionRate), t('kpi.rejectionSub')) : ui.kpi(t('kpi.recoveredMonth'), U.money(d.recoveredThisMonth), null, 'ok')}
           ${ui.kpi(t('score.label'), sc && sc.score != null ? U.num(sc.score, 1) : '-', sc ? (sc.isNew ? t('rating.newShort', { n: sc.ratingCount }) : t('rating.avgShort', { avg: U.num(sc.avgRating, 1), n: sc.ratingCount })) : null)}
-          ${ui.kpi(t('kpi.earningsMonth'), U.money(d.earningsThisMonth), t('kpi.earningsSub'), null, base(ctx) + '/earnings')}
+          ${d.earningsThisMonth == null ? '' : ui.kpi(d.earningsScope === 'team' ? t('kpi.teamEarningsMonth') : t('kpi.earningsMonth'), U.money(d.earningsThisMonth), t('kpi.earningsSub'), null, base(ctx) + '/earnings')}
         </div>
         ${isCompany(ctx) && (d.unassigned || d.reviewQueue) ? h`<div class="row wrap mb-16">${d.unassigned ? h`<a class="btn" href="${base(ctx)}/assignment">${icon('route')}${t('provider.dashboard.unassigned', { n: d.unassigned })}</a>` : ''}${d.reviewQueue ? h`<a class="btn" href="${base(ctx)}/review">${icon('checkSquare')}${t('provider.dashboard.toReview', { n: d.reviewQueue })}</a>` : ''}</div>` : ''}
         <div class="grid cols-2">

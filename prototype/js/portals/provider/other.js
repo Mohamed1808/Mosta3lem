@@ -388,7 +388,16 @@
   P.provider.earnings = {
     title: function () { return t('nav.earnings'); },
     load: function (ctx) { return S.billing.earnings(ctx.service); },
-    render: function (d) { return P.provider.earningsView(d, t('nav.earnings')); }
+    render: function (d) {
+      // Supervisors see their own agents only; owners see each agent across the company.
+      var byAgent = d.byAgent && d.byAgent.length ? ui.card(t('earnings.byAgent'), ui.table([
+        { label: t('team.fieldAgents'), render: function (r) { return h`<strong>${r.name || t('earnings.noAgent')}</strong>${r.owner ? h` <span class="xs faint">${t('team.ownerTag')}</span>` : ''}${d.scope === 'all' && r.supervisorName ? h`<div class="sub">${r.supervisorName}</div>` : ''}`; } },
+        { label: t('earnings.casesMonth'), num: true, render: function (r) { return U.num(r.casesThisMonth); } },
+        { label: t('earnings.monthNet'), num: true, render: function (r) { return U.money(r.netThisMonth); } },
+        { label: t('earnings.allTime'), num: true, render: function (r) { return h`${U.money(r.net)}<div class="sub">${t('earnings.casesN', { n: r.cases })}</div>`; } }
+      ], d.byAgent), { flush: true, cls: 'mt-16' }) : '';
+      return h`${d.scope === 'team' ? h`<div class="mb-16">${ui.notice(t('earnings.teamOnly'), 'info')}</div>` : ''}${P.provider.earningsView(d, t('nav.earnings'))}${byAgent}`;
+    }
   };
 
   // ================================================================ portfolio (collection)

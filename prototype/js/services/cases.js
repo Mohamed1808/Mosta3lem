@@ -37,6 +37,8 @@
     var agent = c.agentId ? E.agentById(c.agentId) : null;
     var ent = E.entityById(c.entityId);
     var batch = c.batchId ? E.batchById(c.batchId) : null;
+    // Field agents see no money: not what the bank pays for the case, nor billing adjustments.
+    if (viewer && viewer.role === 'agent') { m.price = null; m.billingAdjustment = null; }
     m.sla = wf.sla.state(c, now);
     m.place = D.casePlace(c);   // { gov, city }: the area only, never the street, so it is safe before acceptance
     m.slaRemaining = c.dueAt ? c.dueAt - now : null;

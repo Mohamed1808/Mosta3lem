@@ -156,7 +156,8 @@
       invoices: '() -> Invoice[]',
       markPaid: '(invoiceId) -> Invoice',
       issue: '(invoiceId) -> Invoice   (admin)',
-      earnings: '(service?) -> EarningsSummary   (provider)'
+      earnings: '(service?) -> EarningsSummary { scope: all|team, rows, byAgent, totals }   (owner and individual: all; supervisor: own agents; agents: forbidden)',
+      myWork: '(service?) -> { rows, thisMonth, total, closed, open, onTimeRate }   (field agent or owner doing field work; no amounts)'
     },
     notifications: {
       list: '() -> Notification[] with href',

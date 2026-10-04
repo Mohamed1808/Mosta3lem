@@ -54,6 +54,8 @@ function Navigator() {
         <Stack.Screen name="disputes" />
         <Stack.Screen name="dispute/[id]" />
         <Stack.Screen name="rate-clients" />
+        <Stack.Screen name="earnings" />
+        <Stack.Screen name="my-work" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="settings/coverage" />
         <Stack.Screen name="settings/response" />

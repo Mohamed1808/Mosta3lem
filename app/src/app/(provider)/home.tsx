@@ -64,7 +64,7 @@ function ManagerHome() {
             {inv ? <Kpi label={t('kpi.rejectionRate')} value={pct(d.rejectionRate)} /> : <Kpi label={t('kpi.recoveredMonth')} value={money(d.recoveredThisMonth)} tone="ok" />}
             <Kpi label={t('score.label')} value={d.score && d.score.score != null ? num(d.score.score, 1) : '-'}
               sub={d.score ? (d.score.isNew ? t('rating.newShort', { n: d.score.ratingCount }) : t('rating.avgShort', { avg: num(d.score.avgRating, 1), n: d.score.ratingCount })) : undefined} />
-            <Kpi label={t('kpi.earningsMonth')} value={money(d.earningsThisMonth)} />
+            {d.earningsThisMonth != null ? <Kpi label={d.earningsScope === 'team' ? t('kpi.teamEarningsMonth') : t('kpi.earningsMonth')} value={money(d.earningsThisMonth)} onPress={() => router.push('/earnings')} /> : null}
           </Row>
           <Card title={t('home.shortcuts')} pad={false}>
             {(() => {

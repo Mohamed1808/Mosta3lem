@@ -124,6 +124,11 @@
       savedWithPriceRequest: 'تم الحفظ. أُرسلت أسعارك الجديدة لفريق العمليات للاعتماد.'
     },
     select: { hiddenDocuments: '{n} متوقف: مستندات منتهية' },
+    earnings: {
+      byAgent: 'حسب المندوب الميداني', noAgent: 'لا يوجد مندوب مسجل', casesMonth: 'حالات هذا الشهر', allTime: 'الإجمالي', casesN: '{n} حالة',
+      teamOnly: 'تظهر لك أرباح المندوبين الميدانيين الذين تشرف عليهم فقط. المالك يرى الشركة كلها.', teamTitle: 'أرباح فريقك'
+    },
+    kpi: { teamEarningsMonth: 'أرباح الفريق هذا الشهر' },
     admin: { registration: 'بيانات التسجيل' },
     profile: { registration: 'بيانات التسجيل', registrationHint: 'البيانات القانونية وبيانات التواصل من التسجيل. تواصل مع المنصة لتعديلها.' },
     errors: {
