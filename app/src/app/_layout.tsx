@@ -50,6 +50,10 @@ function Navigator() {
         <Stack.Screen name="assign" />
         <Stack.Screen name="review-queue" />
         <Stack.Screen name="notifications" />
+        <Stack.Screen name="ratings" />
+        <Stack.Screen name="disputes" />
+        <Stack.Screen name="dispute/[id]" />
+        <Stack.Screen name="rate-clients" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="settings/coverage" />
         <Stack.Screen name="settings/response" />

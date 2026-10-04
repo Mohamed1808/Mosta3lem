@@ -294,6 +294,7 @@
           c.clientPending = db.cases.filter(function (x) {
             return x.providerId === p.id && x.status === 'closed' && !x.batchId && E.now() - x.closedAt < 60 * U.DAY && !db.clientRatings.some(function (r) { return r.caseId === x.id; });
           }).length;
+          c.openDisputes = db.disputes.filter(function (d) { return d.providerId === p.id && d.status === 'open'; }).length;
         }
         if (a.agentId) c.returned = db.cases.filter(function (x) { return x.agentId === a.agentId && x.status === 'returned_to_agent'; }).length;
         if (a.role === 'platform_admin' || a.role === 'platform_qa') {

@@ -18,10 +18,13 @@ export default function Notifications() {
     const m = /\/cases\/([^/?]+)/.exec(n.href || '') || /^case:(.+)$/.exec(n.link || '');
     if (m) router.push({ pathname: '/case/[id]', params: { id: m[1] } });
     else if (n.link === 'provider:profile') router.push('/settings');
+    else if (n.link === 'provider:ratings') router.push('/ratings');
+    else if (/^dispute:/.test(n.link || '')) router.push({ pathname: '/dispute/[id]', params: { id: n.link.slice(8) } });
   };
   const text = (n: any) => {
     const p = Object.assign({}, n.params);
-    if (p.outcome) p.outcome = t('outcome.' + p.outcome);
+    // Dispute outcomes (upheld, partial, rejected) and collection outcomes share the param name.
+    if (p.outcome) p.outcome = /^(upheld|partial|rejected)$/.test(p.outcome) ? t('dispute.outcome.' + p.outcome) : t('outcome.' + p.outcome);
     if (p.decision) p.decision = t('status.' + p.decision);
     if (p.level) p.level = t('enforcement.' + p.level);
     if (p.doc) p.doc = t('doc.' + p.doc);

@@ -713,6 +713,46 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(!team.owners.find((u) => u.name === 'Hany Wagdy').fieldWork && !(await S.providers.team('investigation')).some((a) => a.id === ag.id && a.active), 'the owner stops field work once the case is delivered');
   });
 
+  // ---------------------------------------------------------------- 16
+  await scenario('16. Provider ratings, disputes and rating the bank', async () => {
+    await as('Hany Wagdy');
+    const ratings = await S.ratings.received('investigation');
+    const low = ratings.filter((r) => r.status === 'active' && !(r.dispute && r.dispute.status === 'open')).sort((a, b) => a.overall - b.overall)[0];
+    ok(ratings.length > 0 && low, 'the provider sees ' + ratings.length + ' ratings; lowest ' + low.overall + ' stars');
+    await S.ratings.reply(low.id, 'Thank you, we have retrained the field team.');
+    ok((await S.ratings.received('investigation')).find((r) => r.id === low.id).reply.text.includes('retrained'), 'the provider replies publicly');
+    let fail = null;
+    try { await S.disputes.open({ kind: 'rating', ratingId: low.id, reason: 'rating_unfair', details: '' }); } catch (e) { fail = e.key; }
+    ok(fail === 'wf.err.reasonRequired', 'a dispute needs details');
+    const d = await S.disputes.open({ kind: 'rating', ratingId: low.id, reason: 'wrong_case', details: 'This rating belongs to another provider\'s case.' });
+    fail = null;
+    try { await S.disputes.open({ kind: 'rating', ratingId: low.id, reason: 'other', details: 'Again' }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.disputeExists', 'one open dispute per rating');
+    await S.disputes.respond(d.id, 'Check-in times show we were not at that address.');
+    let got = await S.disputes.get(d.id);
+    ok(got.responses.length === 1 && got.responses[0].party === 'provider' && got.rating.id === low.id, 'the provider adds a statement to the dispute');
+    const scoreBefore = (await S.providers.mine()).score.overall;
+    await S.demo.resolveMyDispute(d.id, 'upheld', 'Rating was for a different case.');
+    got = await S.disputes.get(d.id);
+    const removed = (await S.ratings.received('investigation')).find((r) => r.id === low.id);
+    ok(got.status === 'resolved' && got.outcome === 'upheld' && removed.status === 'removed', 'the platform upholds it and the rating leaves the score');
+    ok(notifs(uid('Hany Wagdy'), 'notif.dispute_resolved').some((n) => n.params.ref === got.ref), 'the owner is told the outcome');
+    ok((await S.providers.mine()).score.overall >= scoreBefore, 'the score does not drop after a ' + low.overall + '-star rating is removed');
+    fail = null;
+    try { await S.demo.resolveMyDispute('dsp_missing', 'upheld', 'x'); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.forbidden', 'the demo decision only reaches the provider\'s own disputes');
+
+    const pending = await S.ratings.clientPending();
+    ok(pending.length > 0, pending.length + ' closed jobs wait for a client rating');
+    const item = pending[0];
+    fail = null;
+    try { await S.ratings.rateClient({ caseId: item.kind === 'case' ? item.id : null, batchId: item.kind === 'batch' ? item.id : null, dataQuality: 0, paymentTimeliness: 4 }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.ratingRequired', 'both scores are required');
+    await S.ratings.rateClient({ caseId: item.kind === 'case' ? item.id : null, batchId: item.kind === 'batch' ? item.id : null, dataQuality: 2, paymentTimeliness: 4, comment: 'Two phone numbers were wrong.' });
+    ok(!(await S.ratings.clientPending()).some((x) => x.id === item.id) && (await S.ratings.clientRatings()).some((r) => r.dataQuality === 2 && r.entityName === item.entityName), 'the provider rates the bank and the job leaves the list');
+    ok((await S.analytics.navCounts(null)).openDisputes >= 0, 'open disputes are counted for the provider');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

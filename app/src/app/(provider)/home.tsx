@@ -32,6 +32,7 @@ function ManagerHome() {
   const { session, service, setService } = useApp();
   const role = session?.user?.role;
   const q = useQuery<any>(() => services().analytics.providerDashboard(service), [service]);
+  const nav = useQuery<any>(async () => ({ ...(await services().analytics.navCounts(null)), clients: (await services().ratings.clientPending()).length })).data || {};
   // Individuals and owners who also do field work see their own tasks under the workspace.
   const fieldWorker = role === 'freelancer' || !!session?.user?.agentId;
   const mine = useQuery<any[]>(() => (fieldWorker ? services().cases.agentTasks() : Promise.resolve([])), [fieldWorker]);
@@ -71,6 +72,8 @@ function ManagerHome() {
                 d.newOffers ? { key: 'offers', icon: 'inbox', title: t('kpi.newOffers'), n: d.newOffers, go: () => router.navigate('/offers') } : null,
                 company && d.unassigned ? { key: 'assign', icon: 'route', title: t('home.toAssign'), n: d.unassigned, go: () => router.push('/assign') } : null,
                 company && d.reviewQueue ? { key: 'review', icon: 'checkSquare', title: t('home.toReview'), n: d.reviewQueue, go: () => router.push('/review-queue') } : null,
+                nav.openDisputes ? { key: 'disputes', icon: 'scale', title: t('disputeApp.openShort'), n: nav.openDisputes, go: () => router.push('/disputes') } : null,
+                nav.clients ? { key: 'clients', icon: 'award', title: t('nav.rateClients'), n: nav.clients, go: () => router.push('/rate-clients') } : null,
               ].filter(Boolean) as { key: string; icon: string; title: string; n: number; go: () => void }[];
               if (!items.length) return <View style={{ padding: space.lg }}><Txt v="sm" c="faint">{t('home.allClear')}</Txt></View>;
               return items.map((it, i) => (
