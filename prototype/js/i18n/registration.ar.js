@@ -101,6 +101,7 @@
       deactivateSupervisorBody: 'لن يتمكن المشرف من تسجيل الدخول. انقل مندوبيه أو أوقفهم أولًا.',
       ownerFieldWork: 'أقوم بالعمل الميداني أيضًا', ownerFieldWorkOn: 'يقوم بالعمل الميداني', ownerFieldWorkBody: 'يمكن تكليفك بالحالات مثل أي مندوب ميداني. يراجع فريق الجودة في المنصة تقاريرك، لأنه لا يوجد في الشركة من هو أعلى منك.',
       ownerFieldWorkStart: 'بدء العمل الميداني', ownerFieldWorkStop: 'إيقاف العمل الميداني', ownerFieldWorkStarted: 'يمكن الآن تكليفك بالحالات', ownerFieldWorkStopped: 'لن تُكلَّف بحالات بعد الآن',
+      phoneLoginHint: 'يسجل الدخول بهذا الرقم، وتغييره يغير طريقة دخوله.',
       ownerCoverage: 'المناطق التي تغطيها بنفسك', ownerServices: 'الخدمات التي تقوم بها بنفسك', ownerTag: '(المالك)'
     },
     onboarding: {

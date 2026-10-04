@@ -101,6 +101,7 @@
       deactivateSupervisorBody: 'The supervisor can no longer sign in. Move or deactivate their field agents first.',
       ownerFieldWork: 'I also do field work', ownerFieldWorkOn: 'Does field work', ownerFieldWorkBody: 'Cases can be assigned to you like any field agent. Your reports are reviewed by the platform QA team, since nobody in the company sits above you.',
       ownerFieldWorkStart: 'Start doing field work', ownerFieldWorkStop: 'Stop doing field work', ownerFieldWorkStarted: 'You can now be assigned cases', ownerFieldWorkStopped: 'You no longer receive cases',
+      phoneLoginHint: 'They sign in with this number. Changing it changes how they sign in.',
       ownerCoverage: 'Areas you cover yourself', ownerServices: 'Services you do yourself', ownerTag: '(owner)'
     },
     onboarding: {

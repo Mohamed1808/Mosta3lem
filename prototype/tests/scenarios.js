@@ -800,6 +800,44 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(omar.scope === 'all' && omar.byAgent.length === 0, 'an individual provider sees their own money');
   });
 
+  // ---------------------------------------------------------------- 18
+  await scenario('18. Editing team members', async () => {
+    const db = ICM.store.db;
+    const rehab = db.users.find((u) => u.name === 'Rehab Anwar'), khaled = db.users.find((u) => u.name === 'Khaled Samy');
+    const recAgents = db.agents.filter((a) => a.providerId === 'prv_recovery' && a.active && !a.owner);
+    const rAgent = recAgents.find((a) => a.supervisorId === rehab.id), kAgent = recAgents.find((a) => a.supervisorId === khaled.id);
+    const valuesOf = (a, over) => Object.assign({ name: a.name, phone: a.phone, nationalId: a.nationalId, email: '', services: a.services.slice(), coverage: JSON.parse(JSON.stringify(a.coverageCities || {})) }, over || {});
+
+    await as('Adel Morsy');
+    let fail = null;
+    try { await S.team.updateMember(rAgent.id, valuesOf(rAgent, { phone: kAgent.phone })); } catch (e) { fail = e; }
+    ok(fail && fail.key === 'errors.phoneTaken' && fail.params.field === 'phone', 'a mobile already used by someone else is refused');
+    fail = null;
+    try { await S.team.updateMember(rAgent.id, valuesOf(rAgent, { coverage: { aswan: [] } })); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.outsideCompanyCoverage', 'coverage cannot go outside the company');
+    const newPhone = '01244556677';
+    await S.team.updateMember(rAgent.id, valuesOf(rAgent, { name: rAgent.name + ' Ali', phone: newPhone, coverage: { cairo: ['nasr_city', 'heliopolis'] } }));
+    let ag = db.agents.find((a) => a.id === rAgent.id), au = db.users.find((u) => u.id === rAgent.userId);
+    ok(ag.name.endsWith(' Ali') && au.phone === newPhone && ag.coverageCities.cairo.join() === 'nasr_city,heliopolis' && ag.governorates.join() === 'cairo', 'the owner changes an agent\'s name, mobile and areas; the login follows the new mobile');
+
+    await as('Rehab Anwar');
+    await S.team.updateMember(rAgent.id, valuesOf(ag, { coverage: { cairo: [], giza: [] } }));
+    ok(db.agents.find((a) => a.id === rAgent.id).governorates.length === 2, 'a supervisor edits their own agent');
+    fail = null;
+    try { await S.team.updateMember(kAgent.id, valuesOf(kAgent)); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.notYourAgent', 'but not an agent of another supervisor');
+    await S.team.updateMember(rehab.id, { name: 'Rehab Anwar', phone: rehab.phone, email: 'rehab@recovery.example', services: ['collection'] });
+    ok(db.users.find((u) => u.id === rehab.id).email === 'rehab@recovery.example', 'a supervisor updates their own details');
+    fail = null;
+    try { await S.team.updateMember(khaled.id, { name: 'Khaled', phone: khaled.phone, services: ['collection'] }); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.forbidden', 'and cannot edit another supervisor');
+
+    await as_id(rAgent.userId);
+    fail = null;
+    try { await S.team.updateMember(rAgent.id, valuesOf(ag)); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.forbidden', 'field agents cannot edit the team');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

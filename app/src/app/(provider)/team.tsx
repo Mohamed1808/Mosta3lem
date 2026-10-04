@@ -18,7 +18,7 @@ export default function Team() {
   const t = useT();
   const { session } = useApp();
   const q = useQuery<any>(() => (session?.provider?.kind === 'company' ? services().team.structure() : Promise.resolve(null)), [session?.user?.id]);
-  const [sheet, setSheet] = useState<{ kind: 'supervisor' | 'agent' | 'move' | 'ownerField'; sup?: string; agent?: any } | null>(null);
+  const [sheet, setSheet] = useState<{ kind: 'supervisor' | 'agent' | 'move' | 'ownerField' | 'editAgent' | 'editSupervisor'; sup?: string; agent?: any; member?: any } | null>(null);
   const d = q.data;
   if (!d) return <Screen title={t('nav.team')}>{q.error ? <Notice tone="danger" text={t(q.error.key || 'errors.generic')} /> : <Loading />}</Screen>;
   const owner = d.canManage;
@@ -37,15 +37,18 @@ export default function Team() {
       </Row>
       {owner ? <OwnerFieldCard d={d} onStart={() => setSheet({ kind: 'ownerField' })} /> : null}
       {owner && !d.supervisors.length ? <Notice tone="info" text={t('team.startHint')} /> : null}
-      {d.supervisors.map((s: any) => <SupervisorCard key={s.id} s={s} d={d} onAdd={() => setSheet({ kind: 'agent', sup: s.id })} onMove={(a) => setSheet({ kind: 'move', agent: a })} />)}
+      {d.supervisors.map((s: any) => <SupervisorCard key={s.id} s={s} d={d} onAdd={() => setSheet({ kind: 'agent', sup: s.id })} onMove={(a) => setSheet({ kind: 'move', agent: a })}
+        onEdit={() => setSheet({ kind: 'editSupervisor', member: s })} onEditAgent={(a) => setSheet({ kind: 'editAgent', member: a })} />)}
       {d.unassigned.length ? (
         <Card title={t('team.unassigned')} pad={false}>
           <View style={{ padding: space.md }}><Txt v="xs" c="faint">{t('team.unassignedHint')}</Txt></View>
-          {d.unassigned.map((a: any) => <AgentRow key={a.id} a={a} owner={owner} onMove={() => setSheet({ kind: 'move', agent: a })} />)}
+          {d.unassigned.map((a: any) => <AgentRow key={a.id} a={a} owner={owner} onMove={() => setSheet({ kind: 'move', agent: a })} onEdit={() => setSheet({ kind: 'editAgent', member: a })} />)}
         </Card>
       ) : null}
       {sheet && sheet.kind === 'supervisor' ? <MemberSheet role="provider_supervisor" d={d} onClose={() => setSheet(null)} /> : null}
       {sheet && sheet.kind === 'agent' ? <MemberSheet role="agent" d={d} presetSup={sheet.sup} onClose={() => setSheet(null)} /> : null}
+      {sheet && sheet.kind === 'editAgent' ? <MemberSheet role="agent" d={d} member={sheet.member} onClose={() => setSheet(null)} /> : null}
+      {sheet && sheet.kind === 'editSupervisor' ? <MemberSheet role="provider_supervisor" d={d} member={sheet.member} onClose={() => setSheet(null)} /> : null}
       {sheet && sheet.kind === 'move' ? <MoveSheet agent={sheet.agent} sups={activeSups} onClose={() => setSheet(null)} /> : null}
       {sheet && sheet.kind === 'ownerField' ? <OwnerFieldSheet d={d} onClose={() => setSheet(null)} /> : null}
     </Screen>
@@ -61,7 +64,7 @@ function OrgNode({ icon, label, value }: { icon: string; label: string; value: s
   );
 }
 
-function SupervisorCard({ s, d, onAdd, onMove }: { s: any; d: any; onAdd: () => void; onMove: (a: any) => void }) {
+function SupervisorCard({ s, d, onAdd, onMove, onEdit, onEditAgent }: { s: any; d: any; onAdd: () => void; onMove: (a: any) => void; onEdit: () => void; onEditAgent: (a: any) => void }) {
   const t = useT();
   const { ask } = useDialog();
   const run = useAction();
@@ -80,6 +83,7 @@ function SupervisorCard({ s, d, onAdd, onMove }: { s: any; d: any; onAdd: () => 
       </Row>
       <Row wrap gap={8} style={{ paddingHorizontal: space.md, paddingBottom: space.md }}>
         {!off ? <Button small icon="plus" label={t('team.addAgent')} onPress={onAdd} /> : null}
+        {owner || s.id === d.me.userId ? <Button small kind="ghost" icon="edit" label={t('common.edit')} onPress={onEdit} /> : null}
         {owner ? (off
           ? <Button small label={t('team.activate')} onPress={() => run(() => services().team.setActive(s.id, true))} />
           : <Button small kind="ghost" label={t('team.deactivate')} onPress={async () => {
@@ -87,12 +91,12 @@ function SupervisorCard({ s, d, onAdd, onMove }: { s: any; d: any; onAdd: () => 
           }} />) : null}
       </Row>
       <Divider />
-      {s.agents.length ? s.agents.map((a: any, i: number) => <View key={a.id}>{i ? <Divider /> : null}<AgentRow a={a} owner={owner} onMove={() => onMove(a)} /></View>) : <Empty text={t('team.noAgents')} icon="users" />}
+      {s.agents.length ? s.agents.map((a: any, i: number) => <View key={a.id}>{i ? <Divider /> : null}<AgentRow a={a} owner={owner} onMove={() => onMove(a)} onEdit={() => onEditAgent(a)} /></View>) : <Empty text={t('team.noAgents')} icon="users" />}
     </Card>
   );
 }
 
-function AgentRow({ a, owner, onMove }: { a: any; owner: boolean; onMove: () => void }) {
+function AgentRow({ a, owner, onMove, onEdit }: { a: any; owner: boolean; onMove: () => void; onEdit: () => void }) {
   const t = useT();
   const { ask } = useDialog();
   const run = useAction();
@@ -111,6 +115,7 @@ function AgentRow({ a, owner, onMove }: { a: any; owner: boolean; onMove: () => 
           <Txt v="xs" c="faint">{t('assign.load')}: {num(a.stats.open)}{a.stats.onTimeRate != null ? ' · ' + t('metric.onTime') + ': ' + icm().util.pct(a.stats.onTimeRate) : ''}</Txt>
         </Stack>} />
       <Row wrap gap={8} style={{ paddingHorizontal: space.lg, paddingBottom: space.md }}>
+        <Button small kind="ghost" icon="edit" label={t('common.edit')} onPress={onEdit} />
         {owner ? <Button small kind="ghost" icon="users" label={t('teamScreen.moveTo')} onPress={onMove} /> : null}
         <Button small kind={a.active ? 'ghost' : 'secondary'} label={a.active ? t('team.deactivate') : t('team.activate')} onPress={toggle} />
       </Row>
@@ -118,33 +123,46 @@ function AgentRow({ a, owner, onMove }: { a: any; owner: boolean; onMove: () => 
   );
 }
 
-function MemberSheet({ role, d, presetSup, onClose }: { role: 'agent' | 'provider_supervisor'; d: any; presetSup?: string; onClose: () => void }) {
+/**
+ * Add a supervisor or field agent, or edit one (member given). When editing, the supervisor
+ * an agent reports to is changed with Move, and the mobile is the number they sign in with.
+ */
+function MemberSheet({ role, d, presetSup, member, onClose }: { role: 'agent' | 'provider_supervisor'; d: any; presetSup?: string; member?: any; onClose: () => void }) {
   const t = useT();
   const isAgent = role === 'agent';
+  const editing = !!member;
   const prov = d.provider;
   const sups = d.supervisors.filter((s: any) => s.active !== false);
   const svcChoices = prov.services.map((s: string) => ({ value: s, label: t('service.' + s) }));
   const fields: any[] = [
     { name: 'name', type: 'text', required: true, label: 'common.name' },
-    { name: 'phone', type: 'phone', required: true, label: 'team.mobile' },
+    { name: 'phone', type: 'phone', required: true, label: 'team.mobile', hint: editing ? 'team.phoneLoginHint' : undefined },
     { name: 'nationalId', type: 'nationalId', required: isAgent, label: 'reg.f.nationalId' },
-    { name: 'email', type: 'text', label: 'common.email' },
+    { name: 'email', type: 'email', label: 'common.email' },
     { name: 'services', type: 'checkboxes', required: true, choices: svcChoices, label: isAgent ? 'team.agentServices' : 'team.supervisorServices' },
   ];
-  if (isAgent && d.canManage) fields.push({ name: 'supervisorId', type: 'select', required: true, choices: sups.map((s: any) => ({ value: s.id, label: s.name })), label: 'team.reportsTo' });
+  if (isAgent && d.canManage && !editing) fields.push({ name: 'supervisorId', type: 'select', required: true, choices: sups.map((s: any) => ({ value: s.id, label: s.name })), label: 'team.reportsTo' });
   if (isAgent) fields.push({ name: 'coverage', type: 'coverage', required: true, label: 'team.agentCoverage', hint: 'team.agentCoverageHint', govs: prov.governorates, cityLimit: prov.coverageCities });
   const def = { id: 'teamMember', fields };
-  const initial: any = { services: prov.services.length === 1 ? prov.services.slice() : [], coverage: {} };
-  if (isAgent) initial.supervisorId = presetSup || (sups.length === 1 ? sups[0].id : '');
+  const initial: any = editing
+    ? {
+      name: member.name, phone: member.phone || '', nationalId: member.nationalId || '', email: member.email || '',
+      services: (member.services || []).slice(), coverage: JSON.parse(JSON.stringify(member.coverageCities || Object.fromEntries((member.governorates || []).map((g: string) => [g, []])))),
+    }
+    : { services: prov.services.length === 1 ? prov.services.slice() : [], coverage: {} };
+  if (isAgent && !editing) initial.supervisorId = presetSup || (sups.length === 1 ? sups[0].id : '');
+  const title = editing ? t('team.editTitle', { name: member.name }) : isAgent ? t('team.addAgent') : t('team.addSupervisor');
   return (
-    <FormSheet visible title={isAgent ? t('team.addAgent') : t('team.addSupervisor')} def={def} initial={initial}
-      submitLabel={isAgent ? t('team.addAgent') : t('team.addSupervisor')}
+    <FormSheet visible title={title} def={def} initial={initial}
+      submitLabel={editing ? t('signup.saveChanges') : isAgent ? t('team.addAgent') : t('team.addSupervisor')}
       validate={(v) => {
-        const vals = { ...v, supervisorId: v.supervisorId || (d.canManage ? '' : d.me.userId) };
-        return icm().wf.validateTeamMember(role, vals, { services: prov.services, now: icm().clock.now() });
+        const vals = { ...v, supervisorId: editing ? (member.supervisorId || 'kept') : v.supervisorId || (d.canManage ? '' : d.me.userId) };
+        const e = icm().wf.validateTeamMember(role, vals, { services: prov.services, now: icm().clock.now() });
+        if (editing) delete e.supervisorId;
+        return e;
       }}
-      submit={(v) => (isAgent ? services().team.addAgent(v) : services().team.addSupervisor(v))}
-      success={(v) => (isAgent ? t('team.agentAdded', { name: v.name }) : t('team.supervisorAdded', { name: v.name }))}
+      submit={(v) => (editing ? services().team.updateMember(member.id, v) : isAgent ? services().team.addAgent(v) : services().team.addSupervisor(v))}
+      success={(v) => (editing ? t('team.saved') : isAgent ? t('team.agentAdded', { name: v.name }) : t('team.supervisorAdded', { name: v.name }))}
       onClose={() => onClose()} />
   );
 }
