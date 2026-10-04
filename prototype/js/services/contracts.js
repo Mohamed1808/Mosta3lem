@@ -106,6 +106,7 @@
       updateMember: '(agentId | supervisorUserId, values) -> Agent | User',
       moveAgent: '(agentId, supervisorUserId) -> Agent   (owner)',
       setActive: '(agentId | supervisorUserId, active) -> Agent | User',
+      setOwnerFieldWork: '(on, { coverage, services }) -> Agent   (owner: the owner also does field work; their reports go to platform QA)',
       ofProvider: '(providerId) -> hierarchy   (admin, read only)'
     },
     entities: {

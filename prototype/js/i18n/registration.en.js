@@ -98,7 +98,10 @@
       agentCoverageHint: 'Only your company coverage is shown. Assignment suggests agents who cover the case area.',
       noAgents: 'No field agents yet', startHint: 'Start by adding a supervisor, then add field agents under them. Each field agent reports to one supervisor.',
       unassigned: 'Field agents without a supervisor', unassignedHint: 'Pick a supervisor for each of them.',
-      deactivateSupervisorBody: 'The supervisor can no longer sign in. Move or deactivate their field agents first.'
+      deactivateSupervisorBody: 'The supervisor can no longer sign in. Move or deactivate their field agents first.',
+      ownerFieldWork: 'I also do field work', ownerFieldWorkOn: 'Does field work', ownerFieldWorkBody: 'Cases can be assigned to you like any field agent. Your reports are reviewed by the platform QA team, since nobody in the company sits above you.',
+      ownerFieldWorkStart: 'Start doing field work', ownerFieldWorkStop: 'Stop doing field work', ownerFieldWorkStarted: 'You can now be assigned cases', ownerFieldWorkStopped: 'You no longer receive cases',
+      ownerCoverage: 'Areas you cover yourself', ownerServices: 'Services you do yourself', ownerTag: '(owner)'
     },
     onboarding: {
       source: { self: 'Self-registered', admin: 'Registered by platform' },
@@ -133,6 +136,7 @@
       documentLocked: 'This document is already verified', notAwaitingInfo: 'The platform has not asked for more information',
       outsideCompanyCoverage: 'Agents can only cover areas your company covers', agentHasOpenCases: 'This agent still has {n} open case(s). Reassign them first.',
       supervisorHasAgents: 'Move or deactivate this supervisor\'s active field agents first', notYourAgent: 'This field agent reports to another supervisor',
+      ownerFieldProfile: 'Only the owner can change their own field work, from the team screen',
       notInReview: 'This application is not under review', notAwaitingSignoff: 'Operations has to approve this application first',
       applicationLocked: 'You can change your application when the platform asks for more information or after it was not approved',
       agentsOutsideCoverage: '{n} active field agent(s) still cover the areas you removed: {names}. Change their coverage first.',
@@ -163,7 +167,7 @@
         provider_document_submitted: 'Document sent', provider_document_verified: 'Document verified',
         provider_document_rejected: 'Document not accepted', provider_document_expired: 'Document expired',
         team_supervisor_added: 'Supervisor added', team_agent_added: 'Field agent added', team_member_updated: 'Team member updated',
-        team_agent_moved: 'Agent moved to another supervisor', team_supervisor_activated: 'Supervisor activated', team_supervisor_deactivated: 'Supervisor deactivated'
+        team_agent_moved: 'Agent moved to another supervisor', team_owner_field_work_on: 'Owner started field work', team_owner_field_work_off: 'Owner stopped field work', team_supervisor_activated: 'Supervisor activated', team_supervisor_deactivated: 'Supervisor deactivated'
       }
     }
   });

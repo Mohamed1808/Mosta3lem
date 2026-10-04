@@ -338,6 +338,7 @@
         var ag = E.agentById(agentId);
         if (!ag || ag.providerId !== a.providerId) throw new Err('errors.forbidden');
         if (!D.agentInScope(a, ag)) throw new Err('errors.notYourAgent');
+        if (ag.owner) throw new Err('errors.ownerFieldProfile');
         ag.active = !!active;
         var u = E.userById(ag.userId);
         if (u) u.active = !!active;

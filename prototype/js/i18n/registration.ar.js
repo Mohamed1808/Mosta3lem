@@ -98,7 +98,10 @@
       agentCoverageHint: 'تظهر مناطق تغطية شركتك فقط. عند التكليف تُقترح المندوبون الذين يغطون منطقة الحالة.',
       noAgents: 'لا يوجد مندوبون ميدانيون بعد', startHint: 'ابدأ بإضافة مشرف، ثم أضف المندوبين الميدانيين تحته. يتبع كل مندوب مشرفًا واحدًا.',
       unassigned: 'مندوبون ميدانيون بدون مشرف', unassignedHint: 'اختر مشرفًا لكل منهم.',
-      deactivateSupervisorBody: 'لن يتمكن المشرف من تسجيل الدخول. انقل مندوبيه أو أوقفهم أولًا.'
+      deactivateSupervisorBody: 'لن يتمكن المشرف من تسجيل الدخول. انقل مندوبيه أو أوقفهم أولًا.',
+      ownerFieldWork: 'أقوم بالعمل الميداني أيضًا', ownerFieldWorkOn: 'يقوم بالعمل الميداني', ownerFieldWorkBody: 'يمكن تكليفك بالحالات مثل أي مندوب ميداني. يراجع فريق الجودة في المنصة تقاريرك، لأنه لا يوجد في الشركة من هو أعلى منك.',
+      ownerFieldWorkStart: 'بدء العمل الميداني', ownerFieldWorkStop: 'إيقاف العمل الميداني', ownerFieldWorkStarted: 'يمكن الآن تكليفك بالحالات', ownerFieldWorkStopped: 'لن تُكلَّف بحالات بعد الآن',
+      ownerCoverage: 'المناطق التي تغطيها بنفسك', ownerServices: 'الخدمات التي تقوم بها بنفسك', ownerTag: '(المالك)'
     },
     onboarding: {
       source: { self: 'سجّل بنفسه', admin: 'سجلته المنصة' },
@@ -133,6 +136,7 @@
       documentLocked: 'هذا المستند معتمد بالفعل', notAwaitingInfo: 'لم تطلب المنصة معلومات إضافية',
       outsideCompanyCoverage: 'لا يغطي المندوب إلا مناطق تغطية شركتك', agentHasOpenCases: 'لدى هذا المندوب {n} حالة مفتوحة. أعد تكليفها أولًا.',
       supervisorHasAgents: 'انقل المندوبين النشطين لهذا المشرف أو أوقفهم أولًا', notYourAgent: 'هذا المندوب يتبع مشرفًا آخر',
+      ownerFieldProfile: 'المالك وحده يمكنه تغيير عمله الميداني، من شاشة الفريق',
       notInReview: 'هذا الطلب ليس قيد المراجعة', notAwaitingSignoff: 'يجب أن يوافق فريق العمليات على الطلب أولًا',
       applicationLocked: 'يمكنك تعديل طلبك عندما تطلب المنصة معلومات إضافية أو بعد عدم اعتماده',
       agentsOutsideCoverage: 'ما زال {n} مندوب ميداني نشط يغطي المناطق التي حذفتها: {names}. عدّل تغطيتهم أولًا.',
@@ -163,7 +167,7 @@
         provider_document_submitted: 'إرسال مستند', provider_document_verified: 'اعتماد مستند',
         provider_document_rejected: 'رفض مستند', provider_document_expired: 'انتهاء مستند',
         team_supervisor_added: 'إضافة مشرف', team_agent_added: 'إضافة مندوب ميداني', team_member_updated: 'تعديل بيانات عضو في الفريق',
-        team_agent_moved: 'نقل مندوب إلى مشرف آخر', team_supervisor_activated: 'تفعيل مشرف', team_supervisor_deactivated: 'إيقاف مشرف'
+        team_agent_moved: 'نقل مندوب إلى مشرف آخر', team_owner_field_work_on: 'بدأ المالك العمل الميداني', team_owner_field_work_off: 'أوقف المالك العمل الميداني', team_supervisor_activated: 'تفعيل مشرف', team_supervisor_deactivated: 'إيقاف مشرف'
       }
     }
   });

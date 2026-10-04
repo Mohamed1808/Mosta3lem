@@ -331,9 +331,13 @@
         var supIds = supervisorsOf(p.id).map(function (u) { return u.id; });
         return {
           provider: { id: p.id, name: p.name, services: p.services, governorates: p.governorates, coverageCities: p.coverageCities || {} },
-          owners: db.users.filter(function (u) { return u.providerId === p.id && u.role === 'provider_admin'; }),
+          // Each owner with their field profile (fieldWork) when they also do field work.
+          owners: db.users.filter(function (u) { return u.providerId === p.id && u.role === 'provider_admin'; }).map(function (u) {
+            var fw = agents.filter(function (ag) { return ag.owner && ag.userId === u.id; })[0];
+            return Object.assign({}, u, { fieldWork: fw && fw.active ? fw : null });
+          }),
           supervisors: sups,
-          unassigned: agents.filter(function (ag) { return !ag.supervisorId || supIds.indexOf(ag.supervisorId) < 0; }),
+          unassigned: agents.filter(function (ag) { return !ag.owner && (!ag.supervisorId || supIds.indexOf(ag.supervisorId) < 0); }),
           canManage: a.role === 'provider_admin',
           me: a
         };
@@ -381,6 +385,7 @@
         var m = memberFields(v);
         if (ag) {
           if (ag.providerId !== x.p.id || !D.agentInScope(a, ag)) throw new Err('errors.notYourAgent');
+          if (ag.owner) throw new Err('errors.ownerFieldProfile');
           m.coverage = withinCompany(cleanCoverage(v.coverage), x.p);
           m.supervisorId = ag.supervisorId || (a.role === 'provider_supervisor' ? a.userId : null);
           var sups = supervisorsOf(x.p.id).map(function (u) { return u.id; });
@@ -413,6 +418,7 @@
         var x = companyManager(false);
         var ag = E.agentById(agentId);
         if (!ag || ag.providerId !== x.p.id) throw new Err('errors.notFound');
+        if (ag.owner) throw new Err('errors.ownerFieldProfile');
         var sup = E.userById(supervisorId);
         if (!sup || sup.providerId !== x.p.id || sup.role !== 'provider_supervisor' || sup.active === false) throw new Err('errors.supervisorRequired');
         var before = ag.supervisorId || null;
@@ -430,6 +436,7 @@
         var ag = E.agentById(id);
         if (ag) {
           if (ag.providerId !== x.p.id || !D.agentInScope(a, ag)) throw new Err('errors.notYourAgent');
+          if (ag.owner) throw new Err('errors.ownerFieldProfile');
           if (!active && D.agentLoad(db, ag.id) > 0) throw new Err('errors.agentHasOpenCases', { n: D.agentLoad(db, ag.id) });
           ag.active = !!active;
           var au = E.userById(ag.userId);
@@ -444,6 +451,44 @@
         u.active = !!active;
         E.audit('team.supervisor_' + (active ? 'activated' : 'deactivated'), 'user', u.id, u.name, null, null, null, a);
         return u;
+      });
+    },
+    /**
+     * The owner also does field work (or stops). On: a field profile for the owner, with
+     * coverage inside the company's and the services they do. Cases can then be assigned to
+     * them; their reports are reviewed by platform QA. Off: allowed once they have no open cases.
+     * values: { coverage: { gov: [cities] }, services: [] }
+     */
+    setOwnerFieldWork: function (on, values) {
+      return E.mutate(function (db) {
+        var x = companyManager(false), p = x.p;
+        var user = E.userById(x.a.userId);
+        var ag = db.agents.filter(function (k) { return k.userId === user.id && k.owner; })[0];
+        if (!on) {
+          if (!ag || !ag.active) return { active: false };
+          var load = D.agentLoad(db, ag.id);
+          if (load > 0) throw new Err('errors.agentHasOpenCases', { n: load });
+          ag.active = false;
+          user.agentId = null;
+          E.audit('team.owner_field_work_off', 'agent', ag.id, ag.name, null, null, null, x.a);
+          return ag;
+        }
+        values = values || {};
+        var cov = withinCompany(cleanCoverage(values.coverage || p.coverageCities || {}), p);
+        var services = (values.services && values.services.length ? values.services : p.services).filter(function (s) { return p.services.indexOf(s) >= 0; });
+        var err = wf.validateCoverage(cov, { governorates: govIds() });
+        if (err) throw new Err(err, { field: 'coverage' });
+        if (Object.keys(cov).some(function (g) { return p.governorates.indexOf(g) < 0; })) throw new Err('errors.outsideCompanyCoverage', { field: 'coverage' });
+        if (!services.length) throw new Err('errors.serviceRequired', { field: 'services' });
+        var fields = { name: user.name, governorates: Object.keys(cov), coverageCities: cov, services: services, active: true, phone: user.phone, nationalId: user.nationalId || (p.owner && p.owner.nationalId) || null, supervisorId: null, owner: true };
+        if (ag) Object.assign(ag, fields);
+        else {
+          ag = Object.assign({ id: U.uid('ag'), providerId: p.id, userId: user.id }, fields);
+          db.agents.push(ag);
+        }
+        user.agentId = ag.id;
+        E.audit('team.owner_field_work_on', 'agent', ag.id, ag.name, null, { governorates: ag.governorates, services: services }, null, x.a);
+        return ag;
       });
     },
     /** Read-only hierarchy for the platform admin's provider page. */

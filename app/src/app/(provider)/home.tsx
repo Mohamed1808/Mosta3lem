@@ -32,7 +32,9 @@ function ManagerHome() {
   const { session, service, setService } = useApp();
   const role = session?.user?.role;
   const q = useQuery<any>(() => services().analytics.providerDashboard(service), [service]);
-  const mine = useQuery<any[]>(() => (role === 'freelancer' ? services().cases.agentTasks() : Promise.resolve([])), [role]);
+  // Individuals and owners who also do field work see their own tasks under the workspace.
+  const fieldWorker = role === 'freelancer' || !!session?.user?.agentId;
+  const mine = useQuery<any[]>(() => (fieldWorker ? services().cases.agentTasks() : Promise.resolve([])), [fieldWorker]);
   const d = q.data;
   const services_: string[] = session?.provider?.services || [];
   const company = session?.provider?.kind === 'company';
@@ -76,7 +78,7 @@ function ManagerHome() {
               ));
             })()}
           </Card>
-          {role === 'freelancer' ? (
+          {fieldWorker ? (
             <Stack gap={8}>
               <Txt v="h3">{t('tabs.tasks')}</Txt>
               <CaseList rows={myTasks} empty={t('home.noTasks')} showAgent={false} onOpen={(c) => router.push({ pathname: '/case/[id]', params: { id: c.id } })} />

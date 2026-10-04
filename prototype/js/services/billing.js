@@ -192,7 +192,7 @@
           dueToday: running.filter(function (c) { return c.dueAt && c.dueAt <= endToday; }).length,
           atRisk: k.atRisk, breached: k.breached,
           score: sc || null, earningsThisMonth: U.round(earnings, 0),
-          reviewQueue: service === 'investigation' ? cases.filter(function (c) { return c.status === 'submitted_for_review' && p.kind === 'company'; }).length : 0,
+          reviewQueue: service === 'investigation' ? cases.filter(function (c) { return c.status === 'submitted_for_review' && p.kind === 'company' && !wf.reviewedByQa(c, { provider: p }); }).length : 0,
           unassigned: cases.filter(function (c) { return c.status === 'accepted' || c.status === 'rework_requested'; }).length,
           statusCounts: {}
         };
@@ -267,7 +267,7 @@
           suspendedProviders: verified.filter(function (p) { return p.enforcement.level === 'suspended'; }).length,
           pendingApplications: db.providers.filter(function (p) { return wf.applicationOpen(p.verification.status); }).length,
           openDisputes: db.disputes.filter(function (d) { return d.status === 'open'; }).length,
-          qaQueue: db.cases.filter(function (c) { return c.status === 'submitted_for_review' && E.providerById(c.providerId).kind === 'freelancer'; }).length,
+          qaQueue: db.cases.filter(function (c) { return c.status === 'submitted_for_review' && wf.reviewedByQa(c, { provider: E.providerById(c.providerId) }); }).length,
           flaggedRatings: db.ratings.filter(function (r) { return r.flagged; }).length,
           top: ranked.slice(0, 3), bottom: ranked.slice(-3).reverse(),
           gmvSeries: months.map(function (m) { return { month: m, gmv: U.sum(db.invoices.filter(function (i) { return i.month === m; }), function (i) { return U.sum(i.lines, lineAmount); }) }; })
@@ -290,7 +290,7 @@
           c.offers = db.offers.filter(function (o) { return o.providerId === p.id && o.status === 'pending' && (!service || o.service === service); }).length;
           var mine = db.cases.filter(function (x) { return x.providerId === p.id && (!service || x.service === service); });
           c.unassigned = mine.filter(function (x) { return x.status === 'accepted' || x.status === 'rework_requested'; }).length;
-          c.review = p.kind === 'company' ? mine.filter(function (x) { return x.status === 'submitted_for_review' && D.caseInTeamScope(db, a, x); }).length : 0;
+          c.review = p.kind === 'company' ? mine.filter(function (x) { return x.status === 'submitted_for_review' && !wf.reviewedByQa(x, { provider: p }) && D.caseInTeamScope(db, a, x); }).length : 0;
           c.clientPending = db.cases.filter(function (x) {
             return x.providerId === p.id && x.status === 'closed' && !x.batchId && E.now() - x.closedAt < 60 * U.DAY && !db.clientRatings.some(function (r) { return r.caseId === x.id; });
           }).length;
@@ -298,7 +298,7 @@
         if (a.agentId) c.returned = db.cases.filter(function (x) { return x.agentId === a.agentId && x.status === 'returned_to_agent'; }).length;
         if (a.role === 'platform_admin' || a.role === 'platform_qa') {
           c.onboarding = db.providers.filter(function (p) { return wf.applicationOpen(p.verification.status); }).length;
-          c.qa = db.cases.filter(function (x) { return x.status === 'submitted_for_review' && E.providerById(x.providerId).kind === 'freelancer'; }).length;
+          c.qa = db.cases.filter(function (x) { return x.status === 'submitted_for_review' && wf.reviewedByQa(x, { provider: E.providerById(x.providerId) }); }).length;
           c.disputes = db.disputes.filter(function (d) { return d.status === 'open'; }).length;
           c.flagged = db.ratings.filter(function (r) { return r.flagged; }).length;
         }
