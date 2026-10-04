@@ -167,7 +167,7 @@
     var c = q.caseId ? E.caseById(q.caseId) : null;
     var declined = c ? c.declinedProviderIds || [] : [];
     var buckets = U.uniq([].concat(q.buckets || (q.bucket ? [q.bucket] : [])));
-    var excluded = { full: 0, suspended: 0 };
+    var excluded = { full: 0, suspended: 0, documents: 0 };
     var out = [];
     db.providers.forEach(function (p) {
       if (!p.verification || p.verification.status !== 'verified') return;
@@ -175,6 +175,8 @@
       if (!govs.every(function (g) { return p.governorates.indexOf(g) >= 0 && (p.capacity[g] || 0) > 0; })) return;
       if (declined.indexOf(p.id) >= 0) return;
       if (p.enforcement && p.enforcement.level === 'suspended') { excluded.suspended++; return; }
+      // An expired commercial register or tax card pauses new offers until the renewal is checked.
+      if (wf.expiredDocs(p, now).length) { excluded.documents++; return; }
       var load = D.providerLoad(db, p.id);
       // Cases already in this offer's demand count as load if they are pending with this provider (reselect).
       var order = ['none', 'full', 'low', 'medium', 'high'];

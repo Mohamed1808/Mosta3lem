@@ -112,6 +112,15 @@
       id_front: 'National ID (front)', id_back: 'National ID (back)', criminal_record: 'Criminal record certificate'
     },
     status: { awaiting_signoff: 'Awaiting sign-off' },
+    settings: {
+      expires: 'Expires {date}', renewalSent: 'Renewal sent, new expiry {date}', renewalWaiting: 'Renewal sent, waiting for operations',
+      state: { valid: 'Valid', expiring: 'Expiring soon', expired: 'Expired', none: 'No expiry date' },
+      verifyDoc: 'Verify', docVerified: 'Document verified', priceRequest: 'Price change request', requestedBy: 'Requested by {name}, {date}',
+      approvePrices: 'Approve new prices', pricesApproved: 'New prices are live', noPriceRequest: 'No price change waiting',
+      priceRequestPending: 'Your price change from {date} is waiting for operations. Current prices apply until it is approved.',
+      savedWithPriceRequest: 'Saved. Your new prices were sent to operations for approval.'
+    },
+    select: { hiddenDocuments: '{n} paused: expired documents' },
     admin: { registration: 'Registration' },
     profile: { registration: 'Registration details', registrationHint: 'Legal and contact details from registration. Contact the platform to change them.' },
     errors: {
@@ -125,18 +134,34 @@
       outsideCompanyCoverage: 'Agents can only cover areas your company covers', agentHasOpenCases: 'This agent still has {n} open case(s). Reassign them first.',
       supervisorHasAgents: 'Move or deactivate this supervisor\'s active field agents first', notYourAgent: 'This field agent reports to another supervisor',
       notInReview: 'This application is not under review', notAwaitingSignoff: 'Operations has to approve this application first',
-      applicationLocked: 'You can change your application when the platform asks for more information or after it was not approved'
+      applicationLocked: 'You can change your application when the platform asks for more information or after it was not approved',
+      agentsOutsideCoverage: '{n} active field agent(s) still cover the areas you removed: {names}. Change their coverage first.',
+      wholeHours: 'Enter whole hours', slaTooSlow: 'Slower than the platform allows', outOfBand: 'Outside the allowed range',
+      noPriceChange: 'These are already your prices', expiryInPast: 'The expiry date must be in the future',
+      documentPhotoRequired: 'Add a photo of the document', dateFormat: 'Enter the date as YYYY-MM-DD'
     },
     notif: {
       application_new: 'New provider application: {name}', application_updated: '{name} updated their application',
       application_rejected: 'Your application was not approved', application_info_requested: 'The platform needs more information about your application',
       application_signoff: '{name} is ready for management sign-off', application_ops_approved: 'Operations approved your application. It is with management for the final sign-off.',
+      price_change_requested: '{name} asked to change prices', price_change_approved: 'Your new prices are approved and live',
+      price_change_rejected: 'Your price change was not approved: {note}',
+      document_submitted: '{name} sent a new {doc}', document_verified: 'Your {doc} is verified',
+      document_rejected: 'Your new {doc} was not accepted: {note}',
+      document_expiring: 'Your {doc} expires in {days} days. Send the renewed one to keep receiving offers.',
+      document_expired: 'Your {doc} has expired. New offers are paused until operations checks the renewed one.',
+      document_expired_admin: '{name}: {doc} expired. New offers are paused.',
       agent_joined_team: '{name} joined your team'
     },
     audit: {
       action: {
         provider_registered: 'Provider registered', provider_registered_by_admin: 'Provider registered by admin', provider_resubmitted: 'Application resubmitted',
         provider_ops_approved: 'Approved by operations', provider_application_updated: 'Application details changed',
+        provider_price_change_requested: 'Price change requested', provider_price_change_withdrawn: 'Price change withdrawn',
+        provider_price_change_approved: 'Price change approved', provider_price_change_rejected: 'Price change rejected',
+        provider_coverage_updated: 'Coverage changed', provider_response_times_updated: 'Response times changed',
+        provider_document_submitted: 'Document sent', provider_document_verified: 'Document verified',
+        provider_document_rejected: 'Document not accepted', provider_document_expired: 'Document expired',
         team_supervisor_added: 'Supervisor added', team_agent_added: 'Field agent added', team_member_updated: 'Team member updated',
         team_agent_moved: 'Agent moved to another supervisor', team_supervisor_activated: 'Supervisor activated', team_supervisor_deactivated: 'Supervisor deactivated'
       }

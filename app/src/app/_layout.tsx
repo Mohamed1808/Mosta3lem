@@ -50,6 +50,11 @@ function Navigator() {
         <Stack.Screen name="assign" />
         <Stack.Screen name="review-queue" />
         <Stack.Screen name="notifications" />
+        <Stack.Screen name="settings/index" />
+        <Stack.Screen name="settings/coverage" />
+        <Stack.Screen name="settings/response" />
+        <Stack.Screen name="settings/prices" />
+        <Stack.Screen name="settings/documents" />
       </Stack.Protected>
     </Stack>
   );

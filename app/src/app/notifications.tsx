@@ -17,12 +17,14 @@ export default function Notifications() {
     await services().notifications.markRead(n.id);
     const m = /\/cases\/([^/?]+)/.exec(n.href || '') || /^case:(.+)$/.exec(n.link || '');
     if (m) router.push({ pathname: '/case/[id]', params: { id: m[1] } });
+    else if (n.link === 'provider:profile') router.push('/settings');
   };
   const text = (n: any) => {
     const p = Object.assign({}, n.params);
     if (p.outcome) p.outcome = t('outcome.' + p.outcome);
     if (p.decision) p.decision = t('status.' + p.decision);
     if (p.level) p.level = t('enforcement.' + p.level);
+    if (p.doc) p.doc = t('doc.' + p.doc);
     if (p.amount != null) p.amount = money(p.amount);
     return t(n.key, p);
   };

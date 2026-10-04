@@ -35,6 +35,7 @@ export default function More() {
       </Card>
       <Card pad={false}>
         <ListItem left={<Icon name="bell" />} title={t('more.notifications')} right={unread ? <Badge label={String(unread)} tone="danger" /> : undefined} onPress={() => router.push('/notifications')} />
+        {u.role === 'provider_admin' || u.role === 'freelancer' ? <><Divider /><ListItem left={<Icon name="settings" />} title={t('settingsApp.title')} sub={t('settingsApp.moreSub')} onPress={() => router.push('/settings')} /></> : null}
       </Card>
       <Card title={t('more.language')}>
         <Segmented items={[{ id: 'en', label: 'English' }, { id: 'ar', label: 'العربية' }]} value={lang} onChange={(l) => setLang(l as 'en' | 'ar')} />

@@ -26,7 +26,8 @@
       resetClock: '() -> TickSummary   (admin)',
       reset: '() -> void   (restores the seed)',
       simulateBatchWork: '(batchId) -> { advanced }   (admin; drives open batch cases through the workflow)',
-      reviewMyApplication: '(approve|verify|requestInfo|reject, note?) -> Provider   (demo: the platform reviews the signed-in applicant)'
+      reviewMyApplication: '(approve|verify|requestInfo|reject, note?) -> Provider   (demo: the platform reviews the signed-in applicant)',
+      reviewMyProvider: '(approvePrices|rejectPrices|verifyDocument|rejectDocument|expireDocument, type?, note?)   (demo: Operations on the signed-in provider)'
     },
     cases: {
       list: '(filters) -> CaseRow[]   (masked for provider users)',
@@ -70,6 +71,15 @@
       list: '() -> Provider[]   (admin)',
       get: '(providerId) -> Provider   (admin)',
       applications: '() -> Provider[]   (admin)',
+      settings: '() -> { provider, canEdit, limits, pricingConfig, zones, documents (with expiry), expired, priceRequest, lastPriceDecision }',
+      updateCoverage: '(coverage {gov: [cities]}, capacity {gov: n}) -> Provider   (owner)',
+      updateResponseTimes: '({ investigation: {type: hours}, collectionFirstContactHours }) -> Provider   (owner, within platform maximums)',
+      requestPriceChange: '(pricing, note?) -> PriceRequest   (owner; Operations approves)',
+      withdrawPriceChange: '() -> Provider   (owner)',
+      submitDocument: '(type, { fileName, url, expiresAt }) -> Provider   (owner; renewal waits for Operations)',
+      decidePriceChange: '(providerId, approve, note?) -> Provider   (admin, Operations)',
+      verifyDocument: '(providerId, type) -> Provider   (admin, Operations)',
+      rejectDocument: '(providerId, type, note) -> Provider   (admin, Operations)',
       approve: '(providerId) -> Provider   (Operations: pending -> awaiting_signoff)',
       verify: '(providerId) -> Provider   (Management sign-off: awaiting_signoff -> verified)',
       reject: '(providerId, reason) -> Provider',

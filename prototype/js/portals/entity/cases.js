@@ -222,7 +222,7 @@
             <div class="row wrap"><span class="small muted">${t('select.sortBy')}</span>${ui.segmented([
               { id: 'rank', label: t('select.sort.rank') }, { id: 'score', label: t('select.sort.score') }, { id: 'price', label: t('select.sort.price') },
               { id: 'availability', label: t('select.sort.availability') }, { id: 'sla', label: t('select.sort.sla') }], st.sort, 'sort')}</div>
-            <div class="small muted">${t('select.eligibleCount', { n: d.market.providers.length })}${ex.full ? ' · ' + t('select.hiddenFull', { n: ex.full }) : ''}${ex.suspended ? ' · ' + t('select.hiddenSuspended', { n: ex.suspended }) : ''}</div>
+            <div class="small muted">${t('select.eligibleCount', { n: d.market.providers.length })}${ex.full ? ' · ' + t('select.hiddenFull', { n: ex.full }) : ''}${ex.suspended ? ' · ' + t('select.hiddenSuspended', { n: ex.suspended }) : ''}${ex.documents ? ' · ' + t('select.hiddenDocuments', { n: ex.documents }) : ''}</div>
           </div>
           <div class="filters mt-12">
             <div class="field"><label>${t('select.type')}</label>${ui.select('kind', [{ value: '', label: t('common.all') }, { value: 'company', label: t('kind.company') }, { value: 'freelancer', label: t('kind.freelancer') }], st.f.kind, { change: 'filter' })}</div>

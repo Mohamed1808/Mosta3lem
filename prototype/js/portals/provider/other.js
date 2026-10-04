@@ -203,9 +203,11 @@
               <div class="field"><label>${t('profile.services')}</label><div>${p.services.map(function (s) { return ui.serviceBadge(s); })}</div></div>
             </div>`)}
             ${ui.card(t('profile.documents'), h`<div class="stack tight">${p.verification.documents.map(function (dc) {
-              return h`<div class="stat-row"><span>${t('doc.' + dc.type)}</span><span class="row">${ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}${dc.status === 'missing' ? h`<button type="button" class="btn btn-sm" data-action="upload" data-type="${dc.type}">${icon('upload')}${t('profile.upload')}</button>` : ''}</span></div>`;
+              var ex = ICM.wf.docExpiry(dc, ICM.clock.now());
+              return h`<div class="stat-row"><span>${t('doc.' + dc.type)}${dc.expiresAt ? h`<div class="xs ${ex.state === 'expired' ? 'bad' : ex.state === 'expiring' ? 'warn' : 'faint'}">${t('settings.expires', { date: U.fmtDate(dc.expiresAt) })}</div>` : ''}${dc.renewal ? h`<div class="xs">${t('settings.renewalWaiting')}</div>` : ''}</span><span class="row">${ex.state === 'expired' ? ui.badge(t('settings.state.expired'), 'danger') : ex.state === 'expiring' ? ui.badge(t('settings.state.expiring'), 'warning') : ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}${dc.status === 'missing' ? h`<button type="button" class="btn btn-sm" data-action="upload" data-type="${dc.type}">${icon('upload')}${t('profile.upload')}</button>` : ''}</span></div>`;
             })}<p class="xs faint">${t('profile.docsNote')}</p></div>`)}
           </div>
+          ${p.priceRequest ? ui.notice(t('settings.priceRequestPending', { date: U.fmtDateTime(p.priceRequest.at) }), 'info') : ''}
           ${ui.card(t('profile.registration'), h`<p class="small muted mb-8">${t('profile.registrationHint')}</p>${ui.registrationDetails(p)}`)}
           ${ui.card(t('profile.coverage'), h`<p class="small muted mb-8">${t('profile.coverageHint')}</p><div class="form-grid cols-4">${ui.cfg.lists.governorates.map(function (g) {
             var on = p.governorates.indexOf(g.id) >= 0;
@@ -255,8 +257,8 @@
           pricing.collection.fixedFee = +v.fixedFee;
           if (v.firstContact) sla.collectionFirstContactHours = +v.firstContact;
         }
-        await S.providers.updateProfile({ description: v.description, phone: v.phone, email: v.email, city: v.city, governorates: govs, capacity: capacity, pricing: pricing, sla: sla });
-        ui.toast(t('profile.saved'), 'success'); ctx.reload();
+        var r = await S.providers.updateProfile({ description: v.description, phone: v.phone, email: v.email, city: v.city, governorates: govs, capacity: capacity, pricing: pricing, sla: sla });
+        ui.toast(r.priceRequested ? t('settings.savedWithPriceRequest') : t('profile.saved'), 'success'); ctx.reload();
       }
     }
   };

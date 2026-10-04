@@ -4,7 +4,7 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
 const files = ['js/core/util.js', 'js/core/i18n.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js',
-  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/reports.js',
+  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/settings.js', 'js/workflow/reports.js',
   'js/store/store.js', 'js/store/domain.js', 'js/store/seed.js',
   'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/exports.js', 'js/services/index.js'];
 const mem = {};
@@ -547,6 +547,76 @@ async function runInvestigation(caseId, providerId, opts) {
     fail = null;
     try { await S.exports.investigations({}); } catch (e) { fail = e.key; }
     ok(fail === 'errors.forbidden', 'providers cannot export the bank\'s results');
+  });
+
+  // ---------------------------------------------------------------- 13
+  await scenario('13. Provider settings: response times, price approval, document expiry', async () => {
+    const T0 = ICM.clock.now();
+    await as('Hany Wagdy');
+    let st = await S.providers.settings();
+    const cr = st.documents.find((d) => d.type === 'commercial_register');
+    ok(st.canEdit && cr.expiry.state === 'expiring' && cr.expiry.daysLeft <= 30, 'owner sees the commercial register expiring in ' + cr.expiry.daysLeft + ' days');
+    await S.demo.tick(); await S.demo.tick();
+    const reminders = notifs(uid('Hany Wagdy'), 'notif.document_expiring').filter((n) => n.params.doc === 'commercial_register');
+    ok(reminders.length === 1, 'the 30-day reminder is sent once');
+
+    let fail = null;
+    const sla = { investigation: Object.assign({}, st.provider.sla.investigation), collectionFirstContactHours: null };
+    sla.investigation.residence = st.limits.investigation.residence + 1;
+    try { await S.providers.updateResponseTimes(sla); } catch (e) { fail = e; }
+    ok(fail && fail.key === 'errors.slaTooSlow' && fail.params.field === 'sla_residence', 'a response time slower than the platform allows is refused');
+    sla.investigation.residence = 24;
+    st = { ...st, provider: await S.providers.updateResponseTimes(sla) };
+    ok(st.provider.sla.investigation.residence === 24, 'a faster response time applies at once');
+
+    const before = JSON.parse(JSON.stringify(st.provider.pricing));
+    const next = JSON.parse(JSON.stringify(before));
+    next.investigation.residence.greater_cairo = 99999;
+    fail = null;
+    try { await S.providers.requestPriceChange(next); } catch (e) { fail = e; }
+    ok(fail && fail.key === 'errors.outOfBand' && fail.params.field === 'price_residence_greater_cairo', 'a price outside the band is refused with its field');
+    next.investigation.residence.greater_cairo = before.investigation.residence.greater_cairo + 20;
+    await S.providers.requestPriceChange(next, 'Fuel costs');
+    st = await S.providers.settings();
+    ok(st.priceRequest && st.provider.pricing.investigation.residence.greater_cairo === before.investigation.residence.greater_cairo, 'the request waits; current prices still apply');
+    ok(notifs(uid('Laila Hosny'), 'notif.price_change_requested').length >= 1, 'operations is told about the request');
+
+    await as('Laila Hosny');
+    fail = null;
+    try { await S.providers.decidePriceChange('prv_sphinx', false); } catch (e) { fail = e.key; }
+    ok(fail === 'wf.err.reasonRequired', 'turning a request down needs a reason');
+    await S.providers.decidePriceChange('prv_sphinx', true);
+    await as('Hany Wagdy');
+    st = await S.providers.settings();
+    ok(!st.priceRequest && st.provider.pricing.investigation.residence.greater_cairo === next.investigation.residence.greater_cairo && st.lastPriceDecision.approved, 'operations approves and the new price is live');
+
+    fail = null;
+    try { await S.providers.submitDocument('commercial_register', { fileName: 'cr.jpg', expiresAt: T0 - 1000 }); } catch (e) { fail = e; }
+    ok(fail && fail.key === 'errors.expiryInPast' && fail.params.field === 'expiresAt', 'a renewal with a past expiry date is refused');
+    await S.demo.reviewMyProvider('expireDocument', 'commercial_register');
+    st = await S.providers.settings();
+    ok(st.expired.join() === 'commercial_register' && notifs(uid('Hany Wagdy'), 'notif.document_expired').length === 1, 'the register lapses and the owner is told');
+    await as('Laila Hosny');
+    let market = await S.marketplace.eligible({ service: 'investigation', demand: { cairo: 1 }, inquiryTypes: ['residence'] });
+    ok(!market.providers.some((p) => p.id === 'prv_sphinx') && market.excluded.documents >= 1, 'no new offers while it is expired');
+    await as('Hany Wagdy');
+    await S.providers.submitDocument('commercial_register', { fileName: 'cr-2027.jpg', url: 'data:image/jpeg;base64,AAAA', expiresAt: T0 + 400 * 86400000 });
+    st = await S.providers.settings();
+    ok(st.documents.find((d) => d.type === 'commercial_register').renewal && st.expired.length === 1, 'the renewal waits for operations; offers stay paused');
+    await as('Laila Hosny');
+    await S.providers.verifyDocument('prv_sphinx', 'commercial_register');
+    market = await S.marketplace.eligible({ service: 'investigation', demand: { cairo: 1 }, inquiryTypes: ['residence'] });
+    ok(market.providers.some((p) => p.id === 'prv_sphinx'), 'operations verifies the renewal and offers resume');
+
+    await as('Hany Wagdy');
+    st = await S.providers.settings();
+    const team = await S.team.structure();
+    const agent = team.supervisors.flatMap((s) => s.agents).concat(team.unassigned).find((a) => a.active);
+    const cov = Object.assign({}, st.provider.coverageCities);
+    delete cov[agent.governorates[0]];
+    fail = null;
+    try { await S.providers.updateCoverage(cov, st.provider.capacity); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.agentsOutsideCoverage', 'a governorate cannot be dropped while active agents still cover it');
   });
 
   // ---------------------------------------------------------------- report

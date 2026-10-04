@@ -165,6 +165,22 @@
           })}
           ${ui.card(t('admin.registration'), h`${p.registration ? h`<div class="xs faint mb-8"><span class="mono">${p.registration.ref}</span> · ${t('onboarding.source.' + p.registration.source)} · ${U.fmtDate(p.registration.at)}</div>` : ''}${ui.registrationDetails(p)}`)}
         </div>
+        <div class="grid cols-2 mb-16">
+          ${ui.card(t('profile.documents'), h`<div class="stack tight">${p.verification.documents.map(function (dc) {
+            var ex = ICM.wf.docExpiry(dc, ICM.clock.now());
+            return h`<div class="stat-row"><span>${t('doc.' + dc.type)}
+                ${dc.expiresAt ? h`<div class="xs ${ex.state === 'expired' ? 'bad' : ex.state === 'expiring' ? 'warn' : 'faint'}">${t('settings.expires', { date: U.fmtDate(dc.expiresAt) })}</div>` : ''}
+                ${dc.renewal ? h`<div class="xs">${t('settings.renewalSent', { date: dc.renewal.expiresAt ? U.fmtDate(dc.renewal.expiresAt) : '-' })}</div>${dc.renewal.url ? h`<img src="${dc.renewal.url}" alt="" style="display:block;max-width:120px;max-height:80px;margin-top:4px;border-radius:4px">` : ''}` : ''}</span>
+              <span class="row">${ex.state === 'expired' ? ui.badge(t('settings.state.expired'), 'danger') : ex.state === 'expiring' ? ui.badge(t('settings.state.expiring'), 'warning') : ui.status(dc.status === 'uploaded' ? 'pending' : dc.status === 'missing' ? 'rejected' : 'verified', 'docStatus')}
+                ${dc.renewal || dc.status === 'uploaded' ? h`<button type="button" class="btn btn-sm" data-action="rejectDoc" data-type="${dc.type}" ${dc.renewal ? '' : 'disabled'}>${t('onboarding.reject')}</button><button type="button" class="btn btn-sm btn-primary" data-action="verifyDoc" data-type="${dc.type}">${t('settings.verifyDoc')}</button>` : ''}</span></div>`;
+          })}</div>`)}
+          ${ui.card(t('settings.priceRequest'), p.priceRequest ? h`<div class="stack">
+              <div class="small muted">${t('settings.requestedBy', { name: p.priceRequest.by, date: U.fmtDateTime(p.priceRequest.at) })}</div>
+              ${p.priceRequest.note ? h`<div class="small">${p.priceRequest.note}</div>` : ''}
+              <div class="stack tight">${priceChanges(p.pricing, p.priceRequest.pricing).map(function (ch) { return h`<div class="stat-row"><span class="small">${ch.label}</span><span class="small mono">${ch.from} → <strong>${ch.to}</strong></span></div>`; })}</div>
+              <div class="row end"><button type="button" class="btn btn-danger" data-action="rejectPrices">${t('onboarding.reject')}</button><button type="button" class="btn btn-primary" data-action="approvePrices">${t('settings.approvePrices')}</button></div>
+            </div>` : ui.empty(t('settings.noPriceRequest'), null, 'coins'))}
+        </div>
         ${p.team ? ui.card(t('admin.team'), teamTree(p), { cls: 'mb-16' }) : ''}
         <div class="grid cols-2">
           ${ui.card(t('admin.ratingsReceived', { n: p.ratings.length }), h`<div class="stack tight" style="max-height:520px;overflow:auto">${p.ratings.slice(0, 30).map(function (r) {
@@ -182,9 +198,45 @@
         if (!v) return;
         await S.providers.enforce(ctx.params.id, lvl, v.reason); ui.toast(t('admin.enforced'), 'success'); ctx.reload();
       },
-      auto: async function (el, ev, ctx) { await S.providers.setAutomatic(ctx.params.id); ctx.reload(); }
+      auto: async function (el, ev, ctx) { await S.providers.setAutomatic(ctx.params.id); ctx.reload(); },
+      verifyDoc: async function (el, ev, ctx) {
+        await S.providers.verifyDocument(ctx.params.id, el.getAttribute('data-type')); ui.toast(t('settings.docVerified'), 'success'); ctx.reload();
+      },
+      rejectDoc: async function (el, ev, ctx) {
+        var v = await ui.confirm({ title: t('onboarding.reject'), reason: 'required', danger: true, confirmLabel: t('onboarding.reject') });
+        if (!v) return;
+        await S.providers.rejectDocument(ctx.params.id, el.getAttribute('data-type'), v.reason); ctx.reload();
+      },
+      approvePrices: async function (el, ev, ctx) {
+        await S.providers.decidePriceChange(ctx.params.id, true); ui.toast(t('settings.pricesApproved'), 'success'); ctx.reload();
+      },
+      rejectPrices: async function (el, ev, ctx) {
+        var v = await ui.confirm({ title: t('onboarding.reject'), reason: 'required', danger: true, confirmLabel: t('onboarding.reject') });
+        if (!v) return;
+        await S.providers.decidePriceChange(ctx.params.id, false, v.reason); ctx.reload();
+      }
     }
   };
+
+  /** The prices a request changes, as readable "from -> to" lines. */
+  function priceChanges(cur, next) {
+    var out = [], lists = ICM.store.db.config.lists;
+    Object.keys((next && next.investigation) || {}).forEach(function (tp) {
+      Object.keys(next.investigation[tp]).forEach(function (z) {
+        var a = ((cur.investigation || {})[tp] || {})[z], b = next.investigation[tp][z];
+        if (a !== b) out.push({ label: U.label(lists.inquiryTypes.filter(function (x) { return x.id === tp; })[0] || { en: tp, ar: tp }) + ' · ' + U.label(C.ZONES.filter(function (x) { return x.id === z; })[0]), from: a == null ? '-' : U.money(a), to: U.money(b) });
+      });
+    });
+    if (next && next.collection) {
+      Object.keys(next.collection.feePct).forEach(function (k) {
+        var a = ((cur.collection || {}).feePct || {})[k], b = next.collection.feePct[k];
+        if (a !== b) out.push({ label: U.label(C.DPD_BUCKETS.filter(function (x) { return x.id === k; })[0]), from: a == null ? '-' : a + '%', to: b + '%' });
+      });
+      var fa = (cur.collection || {}).fixedFee, fb = next.collection.fixedFee;
+      if (fa !== fb) out.push({ label: t('profile.fixedFee'), from: fa == null ? '-' : U.money(fa), to: U.money(fb) });
+    }
+    return out;
+  }
 
   // ================================================================ entities
   P.admin.entities = {

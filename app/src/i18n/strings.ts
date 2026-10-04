@@ -57,6 +57,34 @@ const en = {
     company: 'Company', role: 'Role', phone: 'Mobile', noNotifications: 'No notifications yet', markAllRead: 'Mark all as read', simulated: 'Simulated backend: data lives on this device.'
   },
   teamScreen: { moveTo: 'Move to supervisor', moved: 'Agent moved' },
+  settingsApp: {
+    title: 'Settings', moreSub: 'Coverage, response times, prices and documents', coverage: 'Coverage', responseTimes: 'Response times', prices: 'Prices',
+    pricesSub: 'Changes are approved by operations', priceWaitingShort: 'Change sent {date}, waiting for operations', hoursShort: '{n} h',
+    ownerOnly: 'Only the owner can change settings.', saved: 'Saved',
+    coverageAgents: 'Field agents only work inside your coverage. To drop a governorate, first change the agents who cover it.',
+    capacity: 'Open cases you can take', capacityHint: 'Offers stop when this many cases are open in a governorate.',
+    maxHours: 'Platform maximum: {n} h', hours: 'h',
+    responseIntro: 'How fast you promise to work. Banks see these when they choose a provider, and they apply to new offers straight away.',
+    deliverWithin: 'Deliver the report within', firstContactTitle: 'First contact with the customer',
+    priceSent: 'Sent to operations. Current prices apply until they approve.', nowIs: 'Now {v}',
+    replaceRequest: 'Replace the request', sendPrices: 'Send for approval',
+    pricesIntro: 'Set prices inside the platform ranges. Operations approves every change; your current prices apply until then.',
+    withdraw: 'Withdraw the request', withdrawn: 'Request withdrawn',
+    range: 'Allowed {min} to {max}', rangePct: 'Allowed {min}% to {max}%',
+    noteForOps: 'Note for operations', notePlaceholder: 'Why are you changing prices?', changedCount: '{n} price(s) changed',
+    demoOps: 'Demo: the operations team',
+    expiredAgo: 'expired', daysLeft: '{n} days left',
+    alertExpired: '{docs} expired. You get no new offers until operations checks the renewed one.',
+    alertWaiting: 'Your renewed {docs} is with operations. New offers resume once they check it.',
+    alertExpiring: '{docs} expires in {n} days. Send the renewed one in time to keep receiving offers.',
+    sendRenewal: 'Send renewed document', replaceRenewal: 'Replace the renewal you sent',
+    pausedBody: 'New offers are paused because a document has expired. Cases you already have continue as normal.',
+    docsIntro: 'The commercial register and tax card expire. You get reminders 30 and 7 days before.',
+    verifiedOn: 'Verified {date}', renewalBody: 'Operations checks it. The current document stays in force until then.',
+    renewalBodyExpired: 'Operations checks it. New offers resume once they verify it.',
+    renewTitle: 'Renewed document', newExpiry: 'New expiry date', expiryHint: 'As printed on the document, for example 2027-06-30.',
+    send: 'Send', renewalSentToast: 'Sent to operations', demoExpire: 'Move the date past expiry'
+  },
   form: { pick: 'Choose', datePlaceholder: 'YYYY-MM-DD', scanHint: 'Take a clear photo of the document.', signHere: 'Sign here', clear: 'Clear', addRow: 'Add' }
 };
 
@@ -114,6 +142,34 @@ const ar: typeof en = {
     company: 'الشركة', role: 'الدور', phone: 'الموبايل', noNotifications: 'لا توجد إشعارات بعد', markAllRead: 'تحديد الكل كمقروء', simulated: 'خادم تجريبي: البيانات محفوظة على هذا الجهاز.'
   },
   teamScreen: { moveTo: 'نقل إلى مشرف', moved: 'تم نقل المندوب' },
+  settingsApp: {
+    title: 'الإعدادات', moreSub: 'نطاق التغطية وأوقات الاستجابة والأسعار والمستندات', coverage: 'نطاق التغطية', responseTimes: 'أوقات الاستجابة', prices: 'الأسعار',
+    pricesSub: 'يعتمد فريق العمليات أي تغيير', priceWaitingShort: 'أُرسل التغيير {date}، بانتظار فريق العمليات', hoursShort: '{n} س',
+    ownerOnly: 'المالك فقط يمكنه تغيير الإعدادات.', saved: 'تم الحفظ',
+    coverageAgents: 'يعمل المندوبون داخل نطاق تغطيتك فقط. لحذف محافظة، عدّل أولًا المندوبين الذين يغطونها.',
+    capacity: 'عدد الحالات المفتوحة التي يمكنك استقبالها', capacityHint: 'تتوقف العروض عند بلوغ هذا العدد من الحالات المفتوحة في المحافظة.',
+    maxHours: 'الحد الأقصى للمنصة: {n} س', hours: 'س',
+    responseIntro: 'السرعة التي تلتزم بها في العمل. تراها البنوك عند اختيار مقدم الخدمة، وتُطبق على العروض الجديدة فورًا.',
+    deliverWithin: 'تسليم التقرير خلال', firstContactTitle: 'أول تواصل مع العميل',
+    priceSent: 'أُرسل لفريق العمليات. تُطبق الأسعار الحالية حتى الاعتماد.', nowIs: 'الحالي {v}',
+    replaceRequest: 'استبدال الطلب', sendPrices: 'إرسال للاعتماد',
+    pricesIntro: 'حدد أسعارك ضمن نطاقات المنصة. يعتمد فريق العمليات كل تغيير، وتُطبق أسعارك الحالية حتى ذلك الحين.',
+    withdraw: 'سحب الطلب', withdrawn: 'تم سحب الطلب',
+    range: 'المسموح من {min} إلى {max}', rangePct: 'المسموح من {min}% إلى {max}%',
+    noteForOps: 'ملاحظة لفريق العمليات', notePlaceholder: 'لماذا تغيّر الأسعار؟', changedCount: 'تم تغيير {n} سعر',
+    demoOps: 'نسخة تجريبية: فريق العمليات',
+    expiredAgo: 'منتهي', daysLeft: 'متبقٍ {n} يوم',
+    alertExpired: 'انتهى {docs}. لن تصلك عروض جديدة حتى يراجع فريق العمليات النسخة المجددة.',
+    alertWaiting: 'النسخة المجددة من {docs} لدى فريق العمليات. تعود العروض الجديدة بعد مراجعتها.',
+    alertExpiring: 'ينتهي {docs} خلال {n} يوم. أرسل النسخة المجددة في الوقت المناسب لتستمر في تلقي العروض.',
+    sendRenewal: 'إرسال المستند المجدد', replaceRenewal: 'استبدال التجديد المرسل',
+    pausedBody: 'توقفت العروض الجديدة لأن أحد المستندات انتهى. تستمر الحالات الموجودة لديك كالمعتاد.',
+    docsIntro: 'السجل التجاري والبطاقة الضريبية لهما تاريخ انتهاء. تصلك تذكيرات قبل الانتهاء بـ 30 يومًا و7 أيام.',
+    verifiedOn: 'اعتُمد في {date}', renewalBody: 'يراجعه فريق العمليات، ويظل المستند الحالي ساريًا حتى ذلك الحين.',
+    renewalBodyExpired: 'يراجعه فريق العمليات، وتعود العروض الجديدة بعد اعتماده.',
+    renewTitle: 'المستند المجدد', newExpiry: 'تاريخ الانتهاء الجديد', expiryHint: 'كما هو مطبوع على المستند، مثل 2027-06-30.',
+    send: 'إرسال', renewalSentToast: 'أُرسل لفريق العمليات', demoExpire: 'تقديم التاريخ لما بعد الانتهاء'
+  },
   form: { pick: 'اختر', datePlaceholder: 'سنة-شهر-يوم', scanHint: 'التقط صورة واضحة للمستند.', signHere: 'وقّع هنا', clear: 'مسح', addRow: 'إضافة' }
 };
 
