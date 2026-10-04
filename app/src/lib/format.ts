@@ -74,7 +74,10 @@ export function errorText(e: any): string {
   return e.message || t('errors.generic');
 }
 
+/** "Street, City, Governorate", with the city in the current language when it is on the list. */
 export function addressLine(a: any): string {
   if (!a) return '-';
-  return [a.street, a.city, gov(a.governorate)].filter(Boolean).join(t('common.listSep'));
+  const cityId = a.city ? icm().config.cityIdOf(a.governorate, a.city) : null;
+  const city = cityId ? cityName(a.governorate, cityId) : a.city;
+  return [a.street, city, gov(a.governorate)].filter(Boolean).join(t('common.listSep'));
 }
