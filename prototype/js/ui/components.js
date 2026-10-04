@@ -206,7 +206,10 @@
   ui.addr = function (a) {
     if (!a) return '-';
     if (!a.street) return h`${ui.gov(a.governorate)} ${ui.masked(null)}`;
-    return h`${a.street}, ${a.city}, ${ui.gov(a.governorate)}${a.landmark ? h`<div class="faint small">${a.landmark}</div>` : ''}`;
+    // The city in the current language when it is on the governorate's list.
+    var cityId = ICM.config.cityIdOf ? ICM.config.cityIdOf(a.governorate, a.city) : null;
+    var city = cityId ? U.label(ICM.config.cityLabel(a.governorate, cityId)) : a.city;
+    return h`${a.street}, ${city}, ${ui.gov(a.governorate)}${a.landmark ? h`<div class="faint small">${a.landmark}</div>` : ''}`;
   };
 
   ui.pct = function (x) { return x == null ? '-' : U.pct(x); };
