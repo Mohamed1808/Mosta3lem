@@ -16,7 +16,8 @@
   var ASSIGNERS = ['provider_admin', 'provider_supervisor', 'freelancer'];
   // A company owner who also does field work acts on the cases assigned to them, like an agent.
   var FIELD = wf.FIELD_ROLES.concat(['provider_admin']);
-  var REVIEWERS = ['provider_admin', 'provider_supervisor', 'platform_qa', 'platform_admin'];
+  // Provider managers review company reports; staff with Quality review rights review the rest.
+  var REVIEWERS = ['provider_admin', 'provider_supervisor'].concat(wf.rolesWith('qa.review'));
 
   /** Field actions by an owner only on cases assigned to the owner's own field profile. */
   function ownFieldCase(c, actor) {
@@ -73,7 +74,7 @@
 
   function reviewerWhen(c, actor, ctx) {
     var qa = reviewedByQa(c, ctx);
-    var isPlatform = actor.role === 'platform_qa' || actor.role === 'platform_admin';
+    var isPlatform = wf.isPlatformRole(actor.role);
     if (qa && !isPlatform) return 'wf.err.reviewerQa';
     if (!qa && isPlatform) return 'wf.err.reviewerSupervisor';
     return null;

@@ -165,7 +165,7 @@
       case 'recall': E.notify(E.providerManagers(next.providerId).concat(E.agentUsers(next)), 'notif.case_recalled', { ref: ref }, link); break;
       case 'cancel':
         if (prev.providerId) E.notify(E.providerManagers(prev.providerId).concat(E.agentUsers(prev)), 'notif.case_cancelled', { ref: ref }, link);
-        if (actor.role === 'platform_admin') E.notify(E.entityUsers(next), 'notif.case_cancelled', { ref: ref }, link);
+        if (wf.isPlatformRole(actor.role)) E.notify(E.entityUsers(next), 'notif.case_cancelled', { ref: ref }, link);
         break;
       case 'force_reassign':
         E.notify(E.providerManagers(next.providerId), 'notif.offer_new', { count: 1 }, 'provider:offers');

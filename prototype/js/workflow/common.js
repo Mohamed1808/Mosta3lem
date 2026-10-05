@@ -53,6 +53,10 @@
     var list = wf.PERMISSIONS[role];
     return !!list && (list.indexOf('*') >= 0 || list.indexOf(permission) >= 0);
   };
+  /** Staff roles whose team has this permission (for transition role lists). */
+  wf.rolesWith = function (permission) {
+    return wf.PLATFORM_ROLES.filter(function (r) { return wf.can(r, permission); });
+  };
   /** Staff who see customers' national ID, phones, addresses and report answers. */
   wf.seesPersonalData = function (role) { return wf.can(role, 'personalData'); };
   /** Every permission a role has, the Super admin's expanded. */
@@ -217,7 +221,7 @@
 
   /** Admin force-reassign: send a fresh offer to another provider from any open state. */
   wf.forceReassignDef = function (openStates) {
-    return { action: 'force_reassign', from: openStates.filter(function (s) { return s !== 'draft'; }), to: 'awaiting_acceptance', roles: ['platform_admin'],
+    return { action: 'force_reassign', from: openStates.filter(function (s) { return s !== 'draft'; }), to: 'awaiting_acceptance', roles: wf.rolesWith('cases.manage'),
       guard: function (c, a, p) {
         if (!p.reason) return 'wf.err.reasonRequired';
         if (!p.providerId) return 'wf.err.providerRequired';
@@ -237,12 +241,12 @@
   };
 
   wf.cancelDef = function (openStates, entityRoles) {
-    return { action: 'cancel', from: openStates, to: 'cancelled', roles: entityRoles.concat(['platform_admin']),
+    return { action: 'cancel', from: openStates, to: 'cancelled', roles: entityRoles.concat(wf.rolesWith('cases.manage')),
       when: function (c, a) {
         if (wf.isEntityRole(a.role) && wf.PRE_ACCEPT.indexOf(c.status) < 0) return 'wf.err.entityCancelAfterAccept';
         return null;
       },
-      guard: function (c, a, p) { return a.role === 'platform_admin' && !p.reason ? 'wf.err.reasonRequired' : null; },
+      guard: function (c, a, p) { return wf.isPlatformRole(a.role) && !p.reason ? 'wf.err.reasonRequired' : null; },
       effect: function (n, p, a, ctx) { n.closedAt = ctx.now; n.cancelReason = p.reason || null; } };
   };
 

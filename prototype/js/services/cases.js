@@ -418,7 +418,7 @@
       batch: c.batchId ? (function (b) { return { id: b.id, ref: b.ref, name: b.name }; })(E.batchById(c.batchId)) : null,
       offer: offer ? { id: offer.id, status: offer.status, sentAt: offer.sentAt, expiresAt: offer.expiresAt, remaining: offer.expiresAt - now } : null,
       disputes: disputes,
-      rating: rating && (isEntity || a.role === 'platform_admin' || a.providerId === rating.providerId) ? rating : null,
+      rating: rating && (isEntity || wf.isPlatformRole(a.role) || a.providerId === rating.providerId) ? rating : null,
       canRate: isEntity && c.status === 'closed' && !c.ratingId && !c.batchId && !!c.providerId,
       canDispute: isEntity && !!c.providerId && !!c.acceptedAt && !openCaseDispute && ['cancelled', 'awaiting_acceptance'].indexOf(c.status) < 0,
       canOperate: c.service === 'collection' && !wf.collection.checkOperate(c, a),
@@ -619,7 +619,7 @@
     },
     forceReassign: function (id, providerId, reason) {
       return E.mutate(function () {
-        var c = E.mustCase(id), a = E.requireRole(['platform_admin']);
+        var c = E.mustCase(id), a = E.requirePermission('cases.manage');
         var p = E.providerById(providerId);
         if (!p || p.services.indexOf(c.service) < 0) throw new Err('errors.providerNotEligible');
         if (c.offerId) { var old = E.offerById(c.offerId); if (old && old.status === 'pending') old.status = 'withdrawn'; }
@@ -629,7 +629,7 @@
     },
     extendSla: function (id, hours, reason) {
       return E.mutate(function () {
-        var c = E.mustCase(id), a = E.requireRole(['platform_admin']);
+        var c = E.mustCase(id), a = E.requirePermission('cases.manage');
         if (!reason) throw new Err('wf.err.reasonRequired');
         if (!(+hours > 0)) throw new Err('errors.min');
         var add = +hours * H;
@@ -651,7 +651,7 @@
           if (c.status !== 'submitted_for_review') return false;
           var p = E.providerById(c.providerId);
           var qa = wf.reviewedByQa(c, { provider: p });
-          if (a.role === 'platform_qa' || a.role === 'platform_admin') return qa;
+          if (wf.isPlatformRole(a.role)) return wf.can(a.role, 'qa.review') && qa;
           if (a.role === 'provider_supervisor' || a.role === 'provider_admin') return !qa && c.providerId === a.providerId && p.kind === 'company' && D.caseInTeamScope(E.db(), a, c);
           return false;
         }).map(function (c) { return decorate(c, a, now); }).filter(Boolean)

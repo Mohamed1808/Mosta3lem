@@ -360,11 +360,13 @@
           c.openDisputes = db.disputes.filter(function (d) { return d.providerId === p.id && d.status === 'open'; }).length;
         }
         if (a.agentId) c.returned = db.cases.filter(function (x) { return x.agentId === a.agentId && x.status === 'returned_to_agent'; }).length;
-        if (a.role === 'platform_admin' || a.role === 'platform_qa') {
-          c.onboarding = db.providers.filter(function (p) { return wf.applicationOpen(p.verification.status); }).length;
-          c.qa = db.cases.filter(function (x) { return x.status === 'submitted_for_review' && wf.reviewedByQa(x, { provider: E.providerById(x.providerId) }); }).length;
-          c.disputes = db.disputes.filter(function (d) { return d.status === 'open'; }).length;
-          c.flagged = db.ratings.filter(function (r) { return r.flagged; }).length;
+        if (wf.isPlatformRole(a.role)) {
+          // Badges only for the work the person's team does.
+          if (wf.can(a.role, 'providers.approve') || wf.can(a.role, 'providers.signoff')) c.onboarding = db.providers.filter(function (p) { return wf.applicationOpen(p.verification.status); }).length;
+          if (wf.can(a.role, 'qa.review')) c.qa = db.cases.filter(function (x) { return x.status === 'submitted_for_review' && wf.reviewedByQa(x, { provider: E.providerById(x.providerId) }); }).length;
+          if (wf.can(a.role, 'disputes.view')) c.disputes = db.disputes.filter(function (d) { return d.status === 'open'; }).length;
+          if (a.role === 'platform_admin') c.flagged = db.ratings.filter(function (r) { return r.flagged; }).length;
+          if (wf.can(a.role, 'cases.manage')) c.late = db.cases.filter(function (x) { return wf.sla.state(x, E.now()) === 'breached'; }).length;
         }
         return c;
       });

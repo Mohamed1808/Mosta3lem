@@ -64,6 +64,15 @@
       photos: (c.photos || []).map(function (p) { return { id: p.id, at: p.at, hidden: true }; })
     });
     Object.keys(c.addresses || {}).forEach(function (k) { m.addresses[k] = maskAddress(c.addresses[k]); });
+    // Staff without personal-data access also lose free-text notes, which can name or
+    // locate the customer; the steps, times and who acted stay.
+    if (reason === 'staff_no_personal_data') {
+      var noNote = function (x) { return Object.assign({}, x, { note: null }); };
+      m.timeline = (c.timeline || []).map(noNote);
+      if (c.actions) m.actions = c.actions.map(noNote);
+      if (c.promises) m.promises = c.promises.map(noNote);
+      if (c.settlements) m.settlements = c.settlements.map(function (s) { return Object.assign({}, s, { note: null, decisionNote: null }); });
+    }
     if (c.service === 'collection') {
       m.amountRange = amountRange(+c.overdueAmount);
       m.originalAmount = null;
