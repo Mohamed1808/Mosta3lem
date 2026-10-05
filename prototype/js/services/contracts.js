@@ -192,6 +192,7 @@
       entityDashboard: '() -> EntityKpis',
       entityReports: '() -> ProviderComparison',
       providerDashboard: '(service) -> ProviderKpis',
+      platformReport: '() -> { months, services, providers, clients, governorates }   (Management, Data: totals only)',
       portfolioReport: '() -> BatchPortfolio[]',
       adminOverview: '() -> PlatformKpis',
       agentPerformance: '() -> AgentKpis',

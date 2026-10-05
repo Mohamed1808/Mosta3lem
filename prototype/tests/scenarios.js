@@ -1313,6 +1313,25 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(await errOf(S.config.updateScoring({ warnBelow: 70 })) === 'errors.forbidden', 'Management does not change platform settings');
   });
 
+  await scenario('34. Platform reports and the activity log', async () => {
+    const db = ICM.store.db;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    await as('Yara Nabil');
+    const r = await S.analytics.platformReport();
+    const text = JSON.stringify(r);
+    const names = db.cases.filter((c) => c.customer && c.customer.name).map((c) => c.customer.name);
+    ok(r.months.length === 6 && r.providers.length > 0 && r.months.every((m) => m.gmv === null), 'Data gets six months of totals, without money');
+    ok(!names.some((n) => text.indexOf(n) >= 0), 'the report holds no customer names');
+    await as('Karim Fawzy');
+    ok((await S.analytics.platformReport()).months.some((m) => m.gmv !== null), 'Management also sees the value of work');
+    await as('Hossam Tawfik');
+    ok(await errOf(S.analytics.platformReport()) === 'errors.forbidden', 'Finance has no platform reports');
+    await as('Nermine Saad');
+    ok((await S.audit.list({})).length > 0, 'Legal reads the activity log');
+    await as('Mai Adel');
+    ok(await errOf(S.audit.list({})) === 'errors.forbidden', 'Operations does not');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

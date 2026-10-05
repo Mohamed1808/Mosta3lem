@@ -9,7 +9,7 @@ import Link from "next/link";
 
 import { services } from "@/backend/engine";
 import { Card, Loading, PageHead } from "@/components/ui";
-import { money, num } from "@/lib/format";
+import { money, num, orgPlace } from "@/lib/format";
 import { useApp, useQuery, useT } from "@/lib/app";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +39,7 @@ export default function Organisations() {
                   <tr key={e.id} className="hover:bg-surface2">
                     <td className="px-4 py-3 ps-5">
                       <Link href={`/organisations/${e.id}`} className="font-medium text-accent hover:underline">{e.name}</Link>
-                      <div className="text-xs text-ink3">{t("entityType." + e.type)} · {e.city}{e.active === false ? " · " + t("common.inactive") : ""}</div>
+                      <div className="text-xs text-ink3">{t("entityType." + e.type)} · {orgPlace(e)}{e.active === false ? " · " + t("common.inactive") : ""}</div>
                     </td>
                     <td className="px-4 py-3">{num(e.users.length)}</td>
                     <td className="px-4 py-3">{num(e.open)}</td>
