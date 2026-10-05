@@ -1167,6 +1167,41 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(n.length && n.every((x) => ICM.wf.can(db.users.find((u) => u.id === x.userId).role, 'providers.approve')), 'new applications are announced to the teams that review them');
   });
 
+  await scenario('30. Platform staff on cases and the Quality queue', async () => {
+    const db = ICM.store.db;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const open = db.cases.find((c) => c.providerId && c.dueAt && !ICM.wf.isTerminal(c.status) && c.status !== 'awaiting_acceptance');
+    await as('Amira Galal');
+    ok(await errOf(S.cases.extendSla(open.id, 24, 'x')) === 'errors.forbidden', 'Customer support cannot extend a deadline');
+    ok((await S.cases.get(open.id)).actions.indexOf('cancel') < 0, 'Customer support cannot cancel');
+    const noted = db.cases.find((c) => (c.timeline || []).some((e) => e.note));
+    ok((await S.cases.get(noted.id)).case.timeline.every((e) => !e.note), 'Customer support sees the timeline without free-text notes');
+    await as('Mai Adel');
+    const before = db.cases.find((c) => c.id === open.id).dueAt;
+    await S.cases.extendSla(open.id, 24, 'Customer travelling');
+    ok(db.cases.find((c) => c.id === open.id).dueAt === before + 24 * 3600e3, 'Operations extends the deadline by 24 hours');
+    ok((await S.cases.get(open.id)).actions.indexOf('force_reassign') >= 0, 'Operations may move a case to another provider');
+
+    // An individual provider's report waits for Quality.
+    await as('Tamer Lotfy');
+    const c0 = await S.cases.createDraft('investigation', invValues('giza'));
+    await S.cases.sendOffer(c0.id, 'prv_fl_omar');
+    await as('Omar Hassan');
+    await S.offers.accept((await S.offers.inbox('investigation')).find((x) => x.caseIds.includes(c0.id)).id);
+    await S.cases.checkIn(c0.id);
+    for (const l of ['building', 'entrance', 'door']) await S.cases.addPhoto(c0.id, PHOTO, l);
+    await S.cases.saveReport(c0.id, 'residence', goodResidence(c0.id));
+    await S.cases.transition(c0.id, 'submit_report', {});
+    await as('Mai Adel');
+    ok((await S.cases.reviewQueue()).length === 0 && (await S.cases.get(c0.id)).actions.indexOf('approve') < 0, 'Operations does not review reports');
+    await as('Ziad Ezzat');
+    ok((await S.cases.reviewQueue()).some((c) => c.id === c0.id), 'the report is in the Quality queue');
+    await S.cases.transition(c0.id, 'return_to_agent', { comment: 'Photo of the door is blurred' });
+    ok(db.cases.find((c) => c.id === c0.id).status === 'returned_to_agent', 'Quality returns it to the provider with a comment');
+    await as('Yara Nabil');
+    ok((await S.cases.list({})).length === 0 && (await errOf(S.cases.get(c0.id))) !== null, 'Data sees no individual cases');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

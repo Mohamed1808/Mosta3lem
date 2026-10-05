@@ -40,7 +40,8 @@
   }
 
   function ctxFor(role) {
-    var freelancer = role === 'freelancer' || role === 'platform_qa' || role === 'platform_admin';
+    // Platform staff review reports from individuals, so their test provider is one.
+    var freelancer = role === 'freelancer' || (wf.isPlatformRole(role) && wf.can(role, 'qa.review'));
     return { now: 10 * H, provider: { id: 'p1', kind: freelancer ? 'freelancer' : 'company' } };
   }
 

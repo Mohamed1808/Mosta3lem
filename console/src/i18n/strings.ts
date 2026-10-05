@@ -13,7 +13,18 @@ const en = {
     staffOnly: 'This console is for Mosta3lem staff. Organisations and service providers use the mobile app.',
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
-    nav: { overview: 'Overview', providers: 'Providers', access: 'Teams and access' },
+    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', access: 'Teams and access' },
+    cases: {
+      sub: 'Every case on the platform.', scope: { open: 'Open', late: 'Past deadline', atRisk: 'At risk', closed: 'Closed', all: 'All' },
+      search: 'Search by reference, name or national ID', service: 'Service', allServices: 'All services', client: 'Client', allClients: 'All clients',
+      provider: 'Provider', allProviders: 'All providers', none: 'No cases match.', more: 'Show more ({n} left)', hidden: 'Hidden',
+      col: { ref: 'Case', customer: 'Customer', client: 'Client', provider: 'Provider', status: 'Status', due: 'Due' },
+      price: 'Price', agent: 'Field agent', hours: '{n} hours', reportHidden: 'Report answers are hidden for your team.',
+      maskedNote: 'Customer details and report answers are hidden for your team.', noOtherProvider: 'No other provider covers this case right now.',
+      returnBody: 'The report goes back to the field agent with your comment.', request: 'Request', evidence: 'Evidence and report', timeline: 'Timeline',
+      checkInHidden: 'Check-in location is hidden for your team.'
+    },
+    quality: { sub: 'Reports from individual providers and owners doing their own field work, oldest first.' },
     providers: {
       sub: 'Applications, live providers and their requests.', tab: { applications: 'Applications', live: 'Live providers', requests: 'Requests' },
       empty: { applications: 'No applications.', live: 'No live providers.', requests: 'No price changes or documents waiting.' },
@@ -61,7 +72,18 @@ const ar: typeof en = {
     staffOnly: 'لوحة التحكم هذه لموظفي مستعلم. الجهات ومقدمو الخدمة يستخدمون تطبيق الموبايل.',
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
-    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', access: 'الفرق والصلاحيات' },
+    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', access: 'الفرق والصلاحيات' },
+    cases: {
+      sub: 'كل الحالات على المنصة.', scope: { open: 'مفتوحة', late: 'تجاوزت الموعد', atRisk: 'معرضة للتأخير', closed: 'مغلقة', all: 'الكل' },
+      search: 'ابحث بالمرجع أو الاسم أو الرقم القومي', service: 'الخدمة', allServices: 'كل الخدمات', client: 'العميل', allClients: 'كل العملاء',
+      provider: 'مقدم الخدمة', allProviders: 'كل مقدمي الخدمة', none: 'لا توجد حالات مطابقة.', more: 'عرض المزيد (متبقٍ {n})', hidden: 'مخفي',
+      col: { ref: 'الحالة', customer: 'العميل النهائي', client: 'العميل', provider: 'مقدم الخدمة', status: 'الحالة', due: 'الموعد' },
+      price: 'السعر', agent: 'المندوب الميداني', hours: '{n} ساعة', reportHidden: 'إجابات التقرير مخفية لفريقك.',
+      maskedNote: 'بيانات العميل وإجابات التقرير مخفية لفريقك.', noOtherProvider: 'لا يوجد مقدم خدمة آخر يغطي هذه الحالة الآن.',
+      returnBody: 'يعود التقرير إلى المندوب الميداني مع تعليقك.', request: 'الطلب', evidence: 'الأدلة والتقرير', timeline: 'السجل الزمني',
+      checkInHidden: 'موقع تسجيل الوصول مخفي لفريقك.'
+    },
+    quality: { sub: 'تقارير مقدمي الخدمة الأفراد والملاك الذين يعملون ميدانيًا بأنفسهم، الأقدم أولًا.' },
     providers: {
       sub: 'طلبات الانضمام ومقدمو الخدمة النشطون وطلباتهم.', tab: { applications: 'طلبات الانضمام', live: 'مقدمو خدمة نشطون', requests: 'الطلبات' },
       empty: { applications: 'لا توجد طلبات انضمام.', live: 'لا يوجد مقدمو خدمة نشطون.', requests: 'لا توجد تغييرات أسعار أو مستندات بالانتظار.' },

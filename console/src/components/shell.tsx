@@ -11,12 +11,15 @@ import { ReactNode, useEffect, useState } from "react";
 
 import { DialogProvider } from "@/components/dialog";
 import { Loading } from "@/components/ui";
-import { useApp, useT } from "@/lib/app";
+import { services } from "@/backend/engine";
+import { useApp, useQuery, useT } from "@/lib/app";
 
 /** Menu entries, each shown only to teams with its permission (null: everyone). */
-export const NAV: { href: string; key: string; perm: string | null }[] = [
+export const NAV: { href: string; key: string; perm: string | null; count?: string }[] = [
   { href: "/", key: "console.nav.overview", perm: "overview" },
-  { href: "/providers", key: "console.nav.providers", perm: "providers.view" },
+  { href: "/providers", key: "console.nav.providers", perm: "providers.view", count: "onboarding" },
+  { href: "/cases", key: "console.nav.cases", perm: "cases.view", count: "late" },
+  { href: "/quality", key: "console.nav.quality", perm: "qa.review", count: "qa" },
   { href: "/access", key: "console.nav.access", perm: null },
 ];
 
@@ -26,6 +29,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { ready, error, session, signOut, can, lang, setLang } = useApp();
   const [open, setOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const counts = useQuery<any>(() => services().analytics.navCounts(null)).data || {};
 
   useEffect(() => { if (ready && !session) router.replace("/login"); }, [ready, session, router]);
   if (error) return <div className="p-8 text-bad">{error}</div>;
@@ -40,7 +45,10 @@ export function Shell({ children }: { children: ReactNode }) {
         return (
           <Link key={n.href} href={n.href} onClick={() => setOpen(false)}
             className={`block rounded-lg px-3 py-2 text-sm font-medium ${on ? "bg-accent-soft text-accent" : "text-ink2 hover:bg-surface2"}`}>
-            {t(n.key)}
+            <span className="flex items-center justify-between gap-2">
+              {t(n.key)}
+              {n.count && counts[n.count] ? <span className="rounded-full bg-warn-bg px-2 text-xs font-semibold text-warn">{counts[n.count]}</span> : null}
+            </span>
           </Link>
         );
       })}

@@ -1,4 +1,4 @@
-# Mosta3lem Console
+﻿# Mosta3lem Console
 
 The internal web console for the Mosta3lem team (Operations, Management, Finance, Quality, Legal, Customer support, Sales, Data and the Super admin). Organisations and service providers use the mobile app in `../app`.
 
@@ -25,4 +25,5 @@ Open http://localhost:3600 and sign in with a staff email (the sign-in page list
 ```bash
 npx tsc --noEmit
 npx eslint src
+node scripts/i18n-check.js
 ```

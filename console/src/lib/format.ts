@@ -23,6 +23,12 @@ export function cityName(govId: string, cityId: string) {
   const c = icm().config.cityLabel(govId, cityId);
   return c ? U().label(c) : cityId;
 }
+/** "Dokki, Giza" for a case's place; just the governorate when the city is unknown. */
+export function placeText(place: { gov: string; city: string | null } | null | undefined, govId?: string) {
+  const g = (place && place.gov) || govId;
+  if (!g) return "-";
+  return place && place.city ? cityName(g, place.city) + icm().t("common.listSep") + gov(g) : gov(g);
+}
 /** "Giza (Dokki, Haram), Cairo" from { governorate: [cities] }. */
 export function coverageText(cov: Record<string, string[]> | null | undefined) {
   const t = icm().t;
