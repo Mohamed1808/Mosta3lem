@@ -36,12 +36,11 @@ const en = {
       approve: 'Operations approves', verify: 'Management signs off', requestInfo: 'Ask for more information', reject: 'Reject', noteLabel: 'Message to the applicant'
     }
   },
-  tabs: { home: 'Home', offers: 'Offers', cases: 'Cases', tasks: 'My tasks', team: 'Team', more: 'More' },
+  tabs: { home: 'Home', offers: 'Offers', cases: 'Cases', tasks: 'My tasks', team: 'Team', more: 'More', newRequest: 'New' },
   client: {
     services: 'Your work covers', trend: 'Last 6 months', sent: 'Sent', closed: 'Closed', toRate: 'Providers to rate',
     organisation: 'Organisation', type: 'Type', email: 'Email', waitingDecision: 'Reports waiting for your decision',
-    nextSteps: 'Sending new requests from the app arrives in the next update.',
-    allServices: 'All', chooseProviderNext: 'Choosing a provider from the app arrives in the next update.',
+    allServices: 'All', toProvider: 'Choose provider', sendBest: 'Send to best match: {name}', rating: 'Rating', newProvider: 'New',
     group: { needs: 'Needs you', waiting: 'Waiting for provider', progress: 'In progress', drafts: 'Drafts', done: 'Done', stopped: 'Cancelled' },
     groupEmpty: {
       needs: 'Nothing needs your decision right now.', waiting: 'No offers waiting for a provider.', progress: 'No cases in progress.',
@@ -135,7 +134,8 @@ const en = {
     renewTitle: 'Renewed document', newExpiry: 'New expiry date', expiryHint: 'As printed on the document, for example 2027-06-30.',
     send: 'Send', renewalSentToast: 'Sent to operations', demoExpire: 'Move the date past expiry'
   },
-  form: { pick: 'Choose', datePlaceholder: 'YYYY-MM-DD', scanHint: 'Take a clear photo of the document.', signHere: 'Sign here', clear: 'Clear', addRow: 'Add' }
+  form: { pick: 'Choose', datePlaceholder: 'YYYY-MM-DD', scanHint: 'Take a clear photo of the document.', signHere: 'Sign here', clear: 'Clear', addRow: 'Add',
+    timePlaceholder: 'HH:MM', otherCity: 'Other (not on the list)', otherCityHint: 'Type the area or village', cityFirst: 'Choose the governorate first' }
 };
 
 const ar: typeof en = {
@@ -171,12 +171,11 @@ const ar: typeof en = {
       approve: 'موافقة العمليات', verify: 'اعتماد الإدارة', requestInfo: 'طلب معلومات إضافية', reject: 'رفض', noteLabel: 'رسالة إلى المتقدم'
     }
   },
-  tabs: { home: 'الرئيسية', offers: 'العروض', cases: 'الحالات', tasks: 'مهامي', team: 'الفريق', more: 'المزيد' },
+  tabs: { home: 'الرئيسية', offers: 'العروض', cases: 'الحالات', tasks: 'مهامي', team: 'الفريق', more: 'المزيد', newRequest: 'طلب جديد' },
   client: {
     services: 'يشمل عملك', trend: 'آخر 6 أشهر', sent: 'مُرسلة', closed: 'مغلقة', toRate: 'مقدمو خدمة بانتظار تقييمك',
     organisation: 'الجهة', type: 'النوع', email: 'البريد الإلكتروني', waitingDecision: 'تقارير بانتظار قرارك',
-    nextSteps: 'إرسال طلبات جديدة من التطبيق يصل في التحديث القادم.',
-    allServices: 'الكل', chooseProviderNext: 'اختيار مقدم الخدمة من التطبيق يصل في التحديث القادم.',
+    allServices: 'الكل', toProvider: 'اختيار مقدم الخدمة', sendBest: 'إرسال للأنسب: {name}', rating: 'التقييم', newProvider: 'جديد',
     group: { needs: 'تحتاجك', waiting: 'بانتظار مقدم الخدمة', progress: 'قيد التنفيذ', drafts: 'مسودات', done: 'منتهية', stopped: 'ملغاة' },
     groupEmpty: {
       needs: 'لا شيء يحتاج قرارك الآن.', waiting: 'لا توجد عروض بانتظار مقدم خدمة.', progress: 'لا توجد حالات قيد التنفيذ.',
@@ -270,7 +269,8 @@ const ar: typeof en = {
     renewTitle: 'المستند المجدد', newExpiry: 'تاريخ الانتهاء الجديد', expiryHint: 'كما هو مطبوع على المستند، مثل 2027-06-30.',
     send: 'إرسال', renewalSentToast: 'أُرسل لفريق العمليات', demoExpire: 'تقديم التاريخ لما بعد الانتهاء'
   },
-  form: { pick: 'اختر', datePlaceholder: 'سنة-شهر-يوم', scanHint: 'التقط صورة واضحة للمستند.', signHere: 'وقّع هنا', clear: 'مسح', addRow: 'إضافة' }
+  form: { pick: 'اختر', datePlaceholder: 'سنة-شهر-يوم', scanHint: 'التقط صورة واضحة للمستند.', signHere: 'وقّع هنا', clear: 'مسح', addRow: 'إضافة',
+    timePlaceholder: 'سا:دق', otherCity: 'أخرى (غير موجودة بالقائمة)', otherCityHint: 'اكتب المنطقة أو القرية', cityFirst: 'اختر المحافظة أولًا' }
 };
 
 export function installStrings(ICM: any) {

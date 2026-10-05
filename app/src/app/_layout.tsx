@@ -47,6 +47,8 @@ function Navigator() {
         <Stack.Screen name="application-edit" />
         <Stack.Screen name="(provider)" />
         <Stack.Screen name="client" />
+        <Stack.Screen name="request/[id]" />
+        <Stack.Screen name="select/[id]" />
         <Stack.Screen name="gate" />
         <Stack.Screen name="case/[id]" />
         <Stack.Screen name="field/[id]" />

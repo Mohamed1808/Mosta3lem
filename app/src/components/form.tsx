@@ -1,7 +1,8 @@
 /**
  * Mobile form renderer for the shared form definitions (prototype/js/config/forms.js and
- * reportForms.js): text, numbers, dates, dropdowns, yes/no, calculated fields, document
- * scans, photos, licences, repeatable rows (references) and on-screen signatures.
+ * reportForms.js): text, numbers, dates and times, dropdowns, yes/no, addresses, lists of
+ * mobiles, calculated fields, document scans, photos, licences, repeatable rows
+ * (references) and on-screen signatures.
  */
 import { ReactNode, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
@@ -175,6 +176,25 @@ function Control({ f, formId, values, value, error, errors, onValue, flashed, on
       return <SignaturePad value={value} onValue={onValue} bad={bad} />;
     case 'coverage':
       return <CoveragePicker value={value || {}} onValue={onValue} only={f.govs} cityLimit={f.cityLimit} bad={bad} />;
+    case 'address':
+      return <AddressControl name={f.name} value={value || {}} onValue={onValue} errors={errors} />;
+    case 'datetime':
+      return <DateTimeControl value={value || ''} onValue={onValue} bad={bad} label={label} />;
+    case 'phones': {
+      const list: string[] = Array.isArray(value) && value.length ? value : [''];
+      return (
+        <Stack gap={8}>
+          {list.map((p, i) => (
+            <Row key={i} gap={8}>
+              <TextInput value={p} onChangeText={(v) => onValue(list.map((x, j) => (j === i ? v.replace(/[^0-9]/g, '') : x)))} keyboardType="phone-pad" maxLength={11}
+                placeholder="01XXXXXXXXX" style={[...box, { flex: 1, textAlign: 'left', writingDirection: 'ltr' }]} accessibilityLabel={label + ' ' + (i + 1)} />
+              {list.length > 1 ? <Pressable onPress={() => onValue(list.filter((_, j) => j !== i))} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.delete')}><Icon name="x" /></Pressable> : null}
+            </Row>
+          ))}
+          {list.length < 4 ? <Button small kind="ghost" icon="plus" label={t('forms.addMobile')} onPress={() => onValue(list.concat(['']))} style={{ alignSelf: d.start }} /> : null}
+        </Stack>
+      );
+    }
     default:
       return <TextInput value={value || ''} onChangeText={onValue} style={[...box, { textAlign: d.align }]} accessibilityLabel={label} />;
   }
@@ -278,6 +298,65 @@ function SignaturePad({ value, onValue, bad }: { value: any; onValue: (v: any) =
         <Pressable onPress={() => { setPaths([]); setLive(''); onValue(''); }} accessibilityRole="button" hitSlop={8}><Txt v="sm" c="accent" b>{t('form.clear')}</Txt></Pressable>
       </Row>
     </Stack>
+  );
+}
+
+const OTHER_CITY = '__other';
+
+/**
+ * Governorate and city picked from the lists (so offers match providers by city), with
+ * "Other" for a place not on the list, then street and landmark. The city is stored as
+ * its list id, or as the typed name for Other.
+ */
+function AddressControl({ name, value, onValue, errors }: { name: string; value: Values; onValue: (v: any) => void; errors: Record<string, string> }) {
+  const t = useT();
+  const d = useDir();
+  const set = (k: string, v: any) => onValue({ ...value, [k]: v });
+  const gov = value.governorate || '';
+  const cities = gov ? (icm().config.citiesOf(gov) as any[]) : [];
+  const listed = !!value.city && cities.some((c) => c.id === value.city);
+  const [other, setOther] = useState(!!value.city && !listed);
+  const cityValue = other ? OTHER_CITY : listed ? value.city : '';
+  const err = (k: string) => errors[name + '.' + k];
+  const box = (k: string) => [inputStyle, { borderColor: err(k) ? colors.bad : colors.borderStrong, textAlign: d.align }];
+  const sub = (k: string, control: ReactNode) => (
+    <Stack gap={4}>
+      <Txt v="xs" c="faint">{t('address.' + k)}</Txt>
+      {control}
+      {err(k) ? <Txt v="xs" c="bad">{t(err(k))}</Txt> : null}
+    </Stack>
+  );
+  return (
+    <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: space.md, gap: 10, backgroundColor: colors.surface2 }}>
+      {sub('governorate', <SelectControl options={optionsOf({ list: 'governorates' }, '', t)} value={gov} label={t('address.governorate')} bad={!!err('governorate')}
+        onValue={(g) => { setOther(false); onValue({ ...value, governorate: g, city: '' }); }} />)}
+      {sub('city', gov ? (
+        <Stack gap={6}>
+          <SelectControl options={cities.map((c) => ({ value: c.id, label: icm().util.label(c) })).concat([{ value: OTHER_CITY, label: t('form.otherCity') }])}
+            value={cityValue} label={t('address.city')} bad={!!err('city')}
+            onValue={(c) => { if (c === OTHER_CITY) { setOther(true); set('city', ''); } else { setOther(false); set('city', c); } }} />
+          {other ? <TextInput value={value.city || ''} onChangeText={(v) => set('city', v)} placeholder={t('form.otherCityHint')} style={box('city')} accessibilityLabel={t('form.otherCity')} /> : null}
+        </Stack>
+      ) : <Txt v="sm" c="faint">{t('form.cityFirst')}</Txt>)}
+      {sub('street', <TextInput value={value.street || ''} onChangeText={(v) => set('street', v)} style={box('street')} accessibilityLabel={t('address.street')} />)}
+      {sub('landmark', <TextInput value={value.landmark || ''} onChangeText={(v) => set('landmark', v)} style={box('landmark')} accessibilityLabel={t('address.landmark')} />)}
+    </View>
+  );
+}
+
+/** "YYYY-MM-DDTHH:mm" (local time, as the shared forms store it) entered as a date and a time. */
+function DateTimeControl({ value, onValue, bad, label }: { value: string; onValue: (v: string) => void; bad?: boolean; label: string }) {
+  const t = useT();
+  const [date, time] = value ? value.split('T') : ['', ''];
+  const join = (dd: string, tt: string) => onValue(dd + 'T' + tt);
+  const box = [inputStyle, { borderColor: bad ? colors.bad : colors.borderStrong, textAlign: 'left' as const, writingDirection: 'ltr' as const }];
+  return (
+    <Row gap={8}>
+      <TextInput value={date || ''} onChangeText={(v) => join(v, time || '')} placeholder={t('form.datePlaceholder')} keyboardType="numbers-and-punctuation" maxLength={10}
+        style={[...box, { flex: 3 }]} accessibilityLabel={label} />
+      <TextInput value={time || ''} onChangeText={(v) => join(date || '', v)} placeholder={t('form.timePlaceholder')} keyboardType="numbers-and-punctuation" maxLength={5}
+        style={[...box, { flex: 2 }]} accessibilityLabel={label + ' ' + t('form.timePlaceholder')} />
+    </Row>
   );
 }
 

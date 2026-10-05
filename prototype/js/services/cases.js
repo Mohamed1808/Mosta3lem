@@ -29,6 +29,24 @@
     };
   }
 
+  /**
+   * Clients see the provider company, never the names of its staff: the field agent is
+   * left out and every step the provider's people took shows the company name instead
+   * (the role is kept, so "Field agent" still tells the client it was field work).
+   */
+  function hideProviderStaff(m, providerName) {
+    m.agentId = null;
+    m.agentName = null;
+    m.timeline = (m.timeline || []).map(function (e) {
+      return wf.isProviderSide(e.actorRole) ? Object.assign({}, e, { actorId: null, actorName: providerName }) : e;
+    });
+    var byCompany = function (x) { return Object.assign({}, x, { by: null, byName: providerName }); };
+    if (m.actions) m.actions = m.actions.map(byCompany);
+    if (m.promises) m.promises = m.promises.map(byCompany);
+    if (m.payments) m.payments = m.payments.map(byCompany);
+    if (m.settlements) m.settlements = m.settlements.map(function (s) { return Object.assign({}, s, { requestedBy: null, requestedByName: providerName }); });
+  }
+
   /** Masked copy plus display fields. Returns null when the viewer has no access. */
   function decorate(c, viewer, now) {
     var m = wf.masking.maskCase(c, viewer, now);
@@ -47,6 +65,7 @@
     m.providerKind = prov ? prov.kind : null;
     m.agentName = agent ? agent.name : null;
     m.entityName = ent ? ent.name : null;
+    if (viewer && wf.isEntityRole(viewer.role) && prov) hideProviderStaff(m, prov.name);
     m.batchRef = batch ? batch.ref : null;
     m.batchName = batch ? batch.name : null;
     if (c.service === 'collection') {
@@ -394,7 +413,7 @@
       case: m,
       actions: actions,
       provider: providerSummary(prov, c.service),
-      agent: c.agentId ? { id: c.agentId, name: (E.agentById(c.agentId) || {}).name } : null,
+      agent: c.agentId && !isEntity ? { id: c.agentId, name: (E.agentById(c.agentId) || {}).name } : null,
       entity: { id: c.entityId, name: E.entityById(c.entityId).name, clientRating: clientRatingOf(c.entityId) },
       batch: c.batchId ? (function (b) { return { id: b.id, ref: b.ref, name: b.name }; })(E.batchById(c.batchId)) : null,
       offer: offer ? { id: offer.id, status: offer.status, sentAt: offer.sentAt, expiresAt: offer.expiresAt, remaining: offer.expiresAt - now } : null,

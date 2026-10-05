@@ -1,8 +1,10 @@
 /**
- * What the client can do on one of its cases: accept a delivered report or ask for
- * rework, approve or reject a settlement, record its own decision on the customer,
- * recall or cancel. Rating the provider and raising disputes come with step 5.
+ * What the client can do on one of its cases: finish a draft and choose a provider (again
+ * after a decline or expiry), accept a delivered report or ask for rework, approve or
+ * reject a settlement, record its own decision on the customer, recall or cancel.
+ * Rating the provider and raising disputes come with step 5.
  */
+import { router } from 'expo-router';
 import { ReactNode } from 'react';
 import { Pressable } from 'react-native';
 
@@ -29,7 +31,9 @@ export function ClientActions({ d }: { d: any }) {
       out.push(<Notice key="declined" tone="warning" text={t('case.declinedNotice', { reason })} />);
     }
     if (c.status === 'expired') out.push(<Notice key="expired" tone="warning" text={t('case.expiredNotice')} />);
-    out.push(<Notice key="next" tone="info" text={t('client.chooseProviderNext')} />);
+    out.push(<Button key="choose" kind="primary" icon="users" block label={c.status === 'draft' ? t('request.continue') : t('case.selectProvider')}
+      onPress={() => router.push({ pathname: '/select/[id]', params: { id: c.id, from: 'case' } })} />);
+    if (c.status === 'draft') out.push(<Button key="edit" icon="edit" block label={t('request.editDraftBtn')} onPress={() => router.push({ pathname: '/request/[id]', params: { id: c.id } })} />);
   }
   if (c.status === 'awaiting_acceptance') {
     const name = d.provider ? d.provider.name : c.providerName || '';
