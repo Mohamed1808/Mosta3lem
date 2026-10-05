@@ -122,6 +122,9 @@
     },
     batches: {
       parseFile: '(file, service) -> { rows }',
+      parseRows: '(json rows header -> cell, service) -> validated rows (for callers that read the file themselves)',
+      templateSheets: '(service) -> [{ name, rows }] for an Excel template',
+      demoRows: '(service) -> 30 demo rows with 3 invalid ones',
       validateRows: '(service, rows) -> rows with errors',
       downloadTemplate: '(service) -> void',
       create: '(service, name, rows) -> Batch',

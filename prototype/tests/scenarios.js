@@ -983,6 +983,35 @@ async function runInvestigation(caseId, providerId, opts) {
     ok((await S.cases.get(c2.id)).case.place.city === null, 'a place typed under Other falls back to the governorate');
   });
 
+  await scenario('24. Bulk upload from rows read on the phone', async () => {
+    await as('Tamer Lotfy');
+    const sheets = await S.batches.templateSheets('investigation');
+    ok(sheets[0].name === 'Cases' && sheets[0].rows[0].indexOf('national_id') >= 0 && sheets[1].rows.length > 20, 'the template has the columns and the accepted values');
+    const demo = await S.batches.demoRows('investigation');
+    let rows = await S.batches.parseRows(demo, 'investigation');
+    ok(rows.length === 30 && rows.filter((r) => !r.valid).length === 3, 'the demo file gives 30 rows, 3 with errors');
+    const noId = rows.find((r) => r.errors.national_id);
+    noId.raw.national_id = '29001150101235';
+    rows.find((r) => r.errors.mobile).excluded = true;
+    rows = await S.batches.validateRows('investigation', rows, {});
+    ok(rows.filter((r) => !r.excluded && !r.valid).length === 1, 'fixing one row and leaving one out leaves one error');
+    let failed = null;
+    try { await S.batches.create('investigation', 'Phone upload', rows, {}); } catch (e) { failed = e.key; }
+    ok(failed === 'errors.batchHasErrors', 'a batch cannot be created while a row has errors');
+    rows.find((r) => r.errors.governorate).excluded = true;
+    const b = await S.batches.create('investigation', 'Phone upload', rows, {});
+    ok(b.caseIds.length === 28, 'the batch holds the 28 included rows');
+    const plan = await S.batches.plan(b.id);
+    const assignments = {};
+    plan.groups.forEach((g) => { assignments[g.governorate] = g.eligible.providers[0].id; });
+    await S.batches.assign(b.id, 'split', assignments);
+    const got = await S.batches.get(b.id);
+    ok(got.offers.length === plan.groups.length && got.assignable === 0, 'one offer per governorate, nothing left to assign');
+    let empty = null;
+    try { await S.batches.parseRows([{ full_name: '' }], 'investigation'); } catch (e) { empty = e.key; }
+    ok(empty === 'errors.fileEmpty', 'a file with no filled rows is refused');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

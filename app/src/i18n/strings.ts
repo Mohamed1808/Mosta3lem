@@ -40,6 +40,11 @@ const en = {
   client: {
     services: 'Your work covers', trend: 'Last 6 months', sent: 'Sent', closed: 'Closed', toRate: 'Providers to rate',
     organisation: 'Organisation', type: 'Type', email: 'Email', waitingDecision: 'Reports waiting for your decision',
+    bulkTitle: 'Many cases at once?', bulkBody: 'Upload an Excel or CSV file and send them as one batch.', bulkGetFile: 'Excel template',
+    pickFile: 'Choose Excel or CSV file', tryDemo: 'Try with the demo file (30 rows, 3 with errors)', demoFileName: 'Demo file',
+    fixHint: 'Tap a row to fix it or leave it out.', leftOut: 'Left out', fix: 'Fix', recheck: 'Check again', upload: 'Upload',
+    modeSingle: 'One provider', modeSplit: 'By governorate', pickBest: 'Pick the best match', casesN: '{n} cases',
+    rateBatchNext: 'Rating and closing batches comes with the ratings update.', reportsAccepted: 'Delivered reports accepted',
     allServices: 'All', toProvider: 'Choose provider', sendBest: 'Send to best match: {name}', rating: 'Rating', newProvider: 'New',
     group: { needs: 'Needs you', waiting: 'Waiting for provider', progress: 'In progress', drafts: 'Drafts', done: 'Done', stopped: 'Cancelled' },
     groupEmpty: {
@@ -175,6 +180,11 @@ const ar: typeof en = {
   client: {
     services: 'يشمل عملك', trend: 'آخر 6 أشهر', sent: 'مُرسلة', closed: 'مغلقة', toRate: 'مقدمو خدمة بانتظار تقييمك',
     organisation: 'الجهة', type: 'النوع', email: 'البريد الإلكتروني', waitingDecision: 'تقارير بانتظار قرارك',
+    bulkTitle: 'حالات كثيرة مرة واحدة؟', bulkBody: 'ارفع ملف Excel أو CSV وأرسلها كدفعة واحدة.', bulkGetFile: 'نموذج Excel',
+    pickFile: 'اختر ملف Excel أو CSV', tryDemo: 'جرّب بالملف التجريبي (30 صفًا، 3 بها أخطاء)', demoFileName: 'ملف تجريبي',
+    fixHint: 'اضغط على أي صف لتصحيحه أو استبعاده.', leftOut: 'مستبعد', fix: 'يحتاج تصحيح', recheck: 'تحقق مرة أخرى', upload: 'رفع ملف',
+    modeSingle: 'مقدم خدمة واحد', modeSplit: 'حسب المحافظة', pickBest: 'اختر الأنسب', casesN: '{n} حالة',
+    rateBatchNext: 'تقييم الدفعات وإغلاقها يأتي مع تحديث التقييمات.', reportsAccepted: 'تم قبول التقارير المسلّمة',
     allServices: 'الكل', toProvider: 'اختيار مقدم الخدمة', sendBest: 'إرسال للأنسب: {name}', rating: 'التقييم', newProvider: 'جديد',
     group: { needs: 'تحتاجك', waiting: 'بانتظار مقدم الخدمة', progress: 'قيد التنفيذ', drafts: 'مسودات', done: 'منتهية', stopped: 'ملغاة' },
     groupEmpty: {

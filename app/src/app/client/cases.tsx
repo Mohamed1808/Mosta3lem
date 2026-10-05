@@ -11,7 +11,7 @@ import { icm, services } from '@/backend/engine';
 import { CaseList } from '@/components/case';
 import { useApp, useQuery, useT } from '@/state/app';
 import { space } from '@/theme';
-import { Chips, Loading, Segmented, useDir } from '@/ui/core';
+import { Button, Chips, Loading, Segmented, useDir } from '@/ui/core';
 import { inputStyle } from '@/ui/dialogs';
 import { Screen } from '@/ui/screen';
 
@@ -45,7 +45,7 @@ export default function ClientCases() {
   rows.forEach((c) => { const g = clientGroup(c.status); counts[g] = (counts[g] || 0) + 1; });
   const shown = rows.filter((c) => clientGroup(c.status) === group).slice(0, group === 'done' || group === 'stopped' ? 60 : 200);
   return (
-    <Screen title={t('tabs.cases')} pad={false}>
+    <Screen title={t('tabs.cases')} pad={false} right={<Button small icon="layers" label={t('nav.batches')} onPress={() => router.push('/batches')} />}>
       <View style={{ paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.sm }}>
         {covered.length > 1 ? (
           <Segmented items={[{ id: 'all', label: t('client.allServices') }].concat(covered.map((s) => ({ id: s, label: t('service.' + s) })))} value={service} onChange={setService} />

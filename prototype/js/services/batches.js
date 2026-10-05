@@ -124,7 +124,70 @@
     });
   }
 
+  /** Spreadsheet rows as objects (header -> cell) -> validated rows. Blank rows are skipped. */
+  function rowsFromJson(json, service) {
+    var rows = json.map(function (r, i) {
+      var raw = {};
+      Object.keys(r).forEach(function (k) { raw[key(k)] = norm(r[k]); });
+      return { rowNo: i + 2, raw: raw, excluded: false };
+    }).filter(function (r) { return Object.keys(r.raw).some(function (k) { return r.raw[k]; }); });
+    if (!rows.length) throw new Err('errors.fileEmpty');
+    var d = defaultsFor(service);
+    return rows.map(function (r) { return validateRow(service, r, d); });
+  }
+
+  /** The template's sheets: the columns with one example row, and the accepted values. */
+  function templateSheets(service) {
+    var t = C.BULK_TEMPLATES[service], lists = E.db().config.lists;
+    var ref = [['governorate', 'inquiry_type / product_type']];
+    var second = service === 'investigation' ? lists.inquiryTypes : lists.productTypes;
+    var n = Math.max(lists.governorates.length, second.length);
+    for (var i = 0; i < n; i++) ref.push([(lists.governorates[i] || {}).en || '', (second[i] || {}).id || '']);
+    return [{ name: 'Cases', rows: [t.columns, t.example] }, { name: 'Reference', rows: ref }];
+  }
+
+  /** A 30-row demo sheet with 3 invalid rows, for trying the bulk flow end to end. */
+  function demoSheet(service) {
+    var R = U.prng(4242);
+    var t = C.BULK_TEMPLATES[service];
+    var first = ['Ahmed', 'Mona', 'Youssef', 'Salma', 'Karim', 'Heba', 'Omar', 'Nour', 'Tarek', 'Dina'];
+    var last = ['Hassan', 'Farouk', 'Mansour', 'Gaber', 'Nasr', 'Kamal', 'Soliman', 'Zaki'];
+    var govs = [['Giza', '21'], ['Cairo', '01'], ['Alexandria', '02']];
+    var aoa = [t.columns];
+    for (var i = 0; i < 30; i++) {
+      var g = govs[i % 3];
+      var nid = '2' + String(R.int(70, 99)) + String(R.int(1, 12)).padStart(2, '0') + String(R.int(1, 28)).padStart(2, '0') + g[1] + String(R.int(1000, 9999)) + '1';
+      var mob = '01' + R.pick(['0', '1', '2', '5']) + String(R.int(10000000, 99999999));
+      var name = R.pick(first) + ' ' + R.pick(first) + ' ' + R.pick(last);
+      if (i === 4) nid = '';                 // missing national ID
+      if (i === 11) mob = '0123';            // invalid phone
+      if (i === 19) g = ['Atlantis', '01'];  // unknown governorate
+      if (service === 'investigation') {
+        aoa.push([name, nid, mob, 'residence', g[0], R.pick(['Dokki', 'Maadi', 'Smouha', 'Haram']), R.int(2, 99) + ' Tahrir St', 'Near the pharmacy', '', '', '', '', '', 'BULK-' + (1000 + i), String(3100000 + i * 37)]);
+      } else {
+        var original = R.int(40, 400) * 1000, overdue = Math.round(original * 0.15);
+        aoa.push([name, nid, mob, '', g[0], R.pick(['Dokki', 'Maadi', 'Smouha']), R.int(2, 99) + ' Tahrir St', 'Near the pharmacy', 'CN-2025-' + R.int(10000, 99999), 'consumer_finance', original, overdue, Math.round(original / 36), R.int(31, 89), '', 'BULK-' + (2000 + i)]);
+      }
+    }
+    return aoa;
+  }
+
   S.batches = {
+    /** Rows read from a spreadsheet by the caller (the app reads files itself). */
+    parseRows: function (json, service) {
+      return E.run(function () { return rowsFromJson(json || [], service); });
+    },
+    /** Sheets for the caller to save as an Excel template: [{ name, rows }]. */
+    templateSheets: function (service) {
+      return E.run(function () { return templateSheets(service); });
+    },
+    /** The 30-row demo file as rows (header -> cell), to try the flow without a file. */
+    demoRows: function (service) {
+      return E.run(function () {
+        var aoa = demoSheet(service), head = aoa[0];
+        return aoa.slice(1).map(function (r) { var o = {}; head.forEach(function (h, i) { o[h] = r[i] == null ? '' : String(r[i]); }); return o; });
+      });
+    },
     parseFile: function (file, service) {
       return new Promise(function (resolve, reject) {
         if (!window.XLSX) return reject(new Err('errors.xlsxMissing'));
@@ -135,15 +198,8 @@
             var wb = window.XLSX.read(new Uint8Array(reader.result), { type: 'array', raw: false });
             var sheet = wb.Sheets[wb.SheetNames[0]];
             var json = window.XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
-            var rows = json.map(function (r, i) {
-              var raw = {};
-              Object.keys(r).forEach(function (k) { raw[key(k)] = norm(r[k]); });
-              return { rowNo: i + 2, raw: raw, excluded: false };
-            }).filter(function (r) { return Object.keys(r.raw).some(function (k) { return r.raw[k]; }); });
-            if (!rows.length) return reject(new Err('errors.fileEmpty'));
-            var d = defaultsFor(service);
-            resolve(rows.map(function (r) { return validateRow(service, r, d); }));
-          } catch (e) { reject(new Err('errors.fileRead')); }
+            resolve(rowsFromJson(json, service));
+          } catch (e) { reject(e instanceof Err ? e : new Err('errors.fileRead')); }
         };
         reader.readAsArrayBuffer(file);
       });
@@ -153,44 +209,16 @@
     },
     downloadTemplate: function (service) {
       return E.run(function () {
-        var t = C.BULK_TEMPLATES[service], lists = E.db().config.lists;
         var wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet([t.columns, t.example]), 'Cases');
-        var ref = [['governorate', 'inquiry_type / product_type']];
-        var second = service === 'investigation' ? lists.inquiryTypes : lists.productTypes;
-        var n = Math.max(lists.governorates.length, second.length);
-        for (var i = 0; i < n; i++) ref.push([(lists.governorates[i] || {}).en || '', (second[i] || {}).id || '']);
-        window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(ref), 'Reference');
+        templateSheets(service).forEach(function (sh) { window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(sh.rows), sh.name); });
         window.XLSX.writeFile(wb, service + '-bulk-template.xlsx');
         return null;
       });
     },
-    /** A 30-row demo file with 3 invalid rows, for trying the bulk flow end to end. */
     downloadDemoFile: function (service) {
       return E.run(function () {
-        var R = U.prng(4242);
-        var t = C.BULK_TEMPLATES[service];
-        var first = ['Ahmed', 'Mona', 'Youssef', 'Salma', 'Karim', 'Heba', 'Omar', 'Nour', 'Tarek', 'Dina'];
-        var last = ['Hassan', 'Farouk', 'Mansour', 'Gaber', 'Nasr', 'Kamal', 'Soliman', 'Zaki'];
-        var govs = [['Giza', '21'], ['Cairo', '01'], ['Alexandria', '02']];
-        var aoa = [t.columns];
-        for (var i = 0; i < 30; i++) {
-          var g = govs[i % 3];
-          var nid = '2' + String(R.int(70, 99)) + String(R.int(1, 12)).padStart(2, '0') + String(R.int(1, 28)).padStart(2, '0') + g[1] + String(R.int(1000, 9999)) + '1';
-          var mob = '01' + R.pick(['0', '1', '2', '5']) + String(R.int(10000000, 99999999));
-          var name = R.pick(first) + ' ' + R.pick(first) + ' ' + R.pick(last);
-          if (i === 4) nid = '';                 // missing national ID
-          if (i === 11) mob = '0123';            // invalid phone
-          if (i === 19) g = ['Atlantis', '01'];  // unknown governorate
-          if (service === 'investigation') {
-            aoa.push([name, nid, mob, 'residence', g[0], R.pick(['Dokki', 'Maadi', 'Smouha', 'Haram']), R.int(2, 99) + ' Tahrir St', 'Near the pharmacy', '', '', '', '', '', 'BULK-' + (1000 + i), String(3100000 + i * 37)]);
-          } else {
-            var original = R.int(40, 400) * 1000, overdue = Math.round(original * 0.15);
-            aoa.push([name, nid, mob, '', g[0], R.pick(['Dokki', 'Maadi', 'Smouha']), R.int(2, 99) + ' Tahrir St', 'Near the pharmacy', 'CN-2025-' + R.int(10000, 99999), 'consumer_finance', original, overdue, Math.round(original / 36), R.int(31, 89), '', 'BULK-' + (2000 + i)]);
-          }
-        }
         var wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(aoa), 'Cases');
+        window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(demoSheet(service)), 'Cases');
         window.XLSX.writeFile(wb, service + '-demo-30-rows.xlsx');
         return null;
       });

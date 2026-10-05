@@ -51,7 +51,8 @@
         {
           "locationWhenInUsePermission": "Mosta3lem records your location when you check in at a visit address and when you take visit photos."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
