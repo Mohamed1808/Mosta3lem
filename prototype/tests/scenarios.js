@@ -1274,6 +1274,45 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(await errOf(S.config.updatePricing({ pricing: Object.assign({}, cfg.pricing, { platformFeePct: 15 }) })) === 'errors.feeNeedsTwoTeams', 'the pricing settings cannot change the fee on their own');
   });
 
+  await scenario('33. Organisation accounts, sign-in help, staff and settings', async () => {
+    const db = ICM.store.db, C = ICM.config;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    await as('Sherif Lotfy');
+    ok((await S.entities.list()).every((e) => e.spend === null), 'Sales sees organisations without their spending');
+    const bad = await errOf(S.entities.create({ name: 'Horus Auto Finance', type: 'bank', governorate: 'cairo', adminName: 'X', adminEmail: 'x@y.example' }));
+    ok(bad === 'errors.orgNameTaken', 'an organisation name can only be used once');
+    const r = await S.entities.create({ name: 'Nile Insurance', type: 'insurance', governorate: 'alexandria', adminName: 'Hala Saber', adminEmail: 'Hala.Saber@nile-ins.example' });
+    ok(r.entity.governorate === 'alexandria' && r.admin.email === 'hala.saber@nile-ins.example', 'Sales opens an insurance company with its first Admin');
+    ok((await S.auth.checkPassword('hala.saber@nile-ins.example', C.DEMO_PASSWORD)).userId === r.admin.id, 'the new Admin can sign in to the app');
+    await as('Hossam Tawfik');
+    ok((await S.entities.list()).some((e) => e.spend !== null), 'Finance sees spending');
+
+    // Customer support helps a client user who locked themselves out.
+    const tamer = db.users.find((u) => u.name === 'Tamer Lotfy');
+    for (let i = 0; i < C.SIGN_IN_MAX_TRIES; i++) await errOf(S.auth.checkPassword(tamer.email, 'wrong'));
+    ok(await errOf(S.auth.checkPassword(tamer.email, C.DEMO_PASSWORD)) === 'errors.signInLocked', 'the client user is locked out');
+    await as('Amira Galal');
+    await S.accounts.resetLogin(tamer.id);
+    ok((await S.auth.checkPassword(tamer.email, C.DEMO_PASSWORD)).userId === tamer.id, 'Customer support resets the sign-in and it works again');
+    ok(await errOf(S.accounts.resetLogin(db.users.find((u) => u.name === 'Mai Adel').id)) === 'errors.forbidden', 'Customer support cannot reset staff accounts');
+    ok(await errOf(S.staff.list()) === 'errors.forbidden', 'only the Super admin manages staff');
+
+    await as('Laila Hosny');
+    const u = await S.staff.invite({ name: 'Omar Fikry', email: 'omar.fikry@platform.example', role: 'platform_support' });
+    ok(u.role === 'platform_support' && (await S.auth.checkPassword('omar.fikry@platform.example', C.DEMO_PASSWORD)).userId === u.id, 'the Super admin adds a staff member who can sign in');
+    await S.staff.setRole(u.id, 'platform_ops');
+    ok(db.users.find((x) => x.id === u.id).role === 'platform_ops', 'and moves them to Operations');
+    const laila = db.users.find((x) => x.name === 'Laila Hosny');
+    ok(await errOf(S.staff.setRole(laila.id, 'platform_ops')) === 'errors.ownRole' && await errOf(S.staff.setActive(laila.id, false)) === 'errors.cannotDeactivateSelf', 'nobody changes their own team or deactivates themselves');
+    await S.staff.setActive(u.id, false);
+    ok(await errOf(S.auth.checkPassword('omar.fikry@platform.example', C.DEMO_PASSWORD)) === 'errors.wrongPassword', 'a deactivated staff member cannot sign in');
+
+    await S.config.updateScoring({ warnBelow: 65 });
+    ok(db.config.scoring.warnBelow === 65, 'the Super admin changes the scoring thresholds');
+    await as('Karim Fawzy');
+    ok(await errOf(S.config.updateScoring({ warnBelow: 70 })) === 'errors.forbidden', 'Management does not change platform settings');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {
