@@ -22,6 +22,9 @@ export const NAV: { href: string; key: string; perm: string | null; count?: stri
   { href: "/quality", key: "console.nav.quality", perm: "qa.review", count: "qa" },
   { href: "/disputes", key: "console.nav.disputes", perm: "disputes.view", count: "disputes" },
   { href: "/finance", key: "console.nav.finance", perm: "billing.view", count: "toIssue" },
+  { href: "/organisations", key: "console.nav.organisations", perm: "orgs.view" },
+  { href: "/staff", key: "console.nav.staff", perm: "staff.manage" },
+  { href: "/settings", key: "console.nav.settings", perm: "settings.manage" },
   { href: "/access", key: "console.nav.access", perm: null },
 ];
 

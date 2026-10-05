@@ -546,8 +546,60 @@
     return a;
   }
 
+  /** Platform staff see an organisation's spending only when their team handles billing. */
+  function entityForStaff(e, a) {
+    var out = entityStats(e);
+    out.users = out.users.map(function (u) { return { id: u.id, name: u.name, email: u.email, role: u.role, active: u.active !== false, invited: !!u.invited, lockedUntil: u.lockedUntil || null, passwordResetAt: u.passwordResetAt || null }; });
+    if (!wf.can(a.role, 'billing.view')) out.spend = null;
+    return out;
+  }
+  var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  var ENTITY_TYPES = ['bank', 'auto_finance', 'consumer_finance', 'corporate', 'insurance', 'real_estate', 'employer', 'other'];
+
   S.entities = {
-    list: function () { return E.run(function () { E.requireRole(['platform_admin']); return E.db().entities.map(entityStats); }); },
+    list: function () {
+      return E.run(function () {
+        var a = E.requirePermission('orgs.view');
+        return E.db().entities.map(function (e) { return entityForStaff(e, a); });
+      });
+    },
+    get: function (id) {
+      return E.run(function () {
+        var a = E.requirePermission('orgs.view');
+        var e = E.entityById(id);
+        if (!e) throw new Err('errors.notFound');
+        var out = entityForStaff(e, a);
+        out.audit = wf.can(a.role, 'audit.view') ? E.db().audit.filter(function (x) { return (x.targetType === 'entity' && x.targetId === id) || (x.targetType === 'user' && out.users.some(function (u) { return u.id === x.targetId; })); }).slice(-20).reverse() : [];
+        return out;
+      });
+    },
+    /**
+     * Sales opens an organisation account with its first Admin, who then adds the rest of
+     * the team from the app. values: { name, type, governorate, adminName, adminEmail }.
+     */
+    create: function (values) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('orgs.create');
+        var v = values || {}, errors = {};
+        var name = String(v.name || '').trim(), adminName = String(v.adminName || '').trim(), email = String(v.adminEmail || '').trim().toLowerCase();
+        if (!name) errors.name = 'errors.required';
+        else if (db.entities.some(function (e) { return e.name.toLowerCase() === name.toLowerCase(); })) errors.name = 'errors.orgNameTaken';
+        if (ENTITY_TYPES.indexOf(v.type) < 0) errors.type = 'errors.required';
+        if (!v.governorate || !db.config.lists.governorates.some(function (g) { return g.id === v.governorate; })) errors.governorate = 'errors.required';
+        if (!adminName) errors.adminName = 'errors.required';
+        if (!EMAIL_RE.test(email)) errors.adminEmail = 'errors.emailFormat';
+        else if (db.users.some(function (u) { return (u.email || '').toLowerCase() === email; })) errors.adminEmail = 'errors.emailTaken';
+        var keys = Object.keys(errors);
+        if (keys.length) throw new Err(errors[keys[0]], { field: keys[0], errors: errors });
+        var gov = db.config.lists.governorates.filter(function (g) { return g.id === v.governorate; })[0];
+        var e = { id: U.uid('ent'), name: name, type: v.type, city: gov.en, governorate: gov.id, products: (db.config.lists.productTypes || []).map(function (p) { return p.id; }), createdAt: E.now(), createdBy: a.name, active: true };
+        db.entities.push(e);
+        var u = { id: U.uid('u'), name: adminName, email: email, role: 'entity_admin', entityId: e.id, active: true, invited: true, createdAt: E.now() };
+        db.users.push(u);
+        E.audit('entity.created', 'entity', e.id, e.name, null, { type: e.type, admin: u.email }, null, a);
+        return { entity: e, admin: { id: u.id, name: u.name, email: u.email } };
+      });
+    },
     mine: function () {
       return E.run(function () {
         var a = E.actor();
@@ -559,7 +611,7 @@
       return E.run(function () {
         var a = E.actor();
         var id = entityId || a.entityId;
-        if (a.role !== 'platform_admin' && a.entityId !== id) throw new Err('errors.forbidden');
+        if (!(wf.isPlatformRole(a.role) && wf.can(a.role, 'orgs.view')) && a.entityId !== id) throw new Err('errors.forbidden');
         return E.db().users.filter(function (u) { return u.entityId === id; });
       });
     },

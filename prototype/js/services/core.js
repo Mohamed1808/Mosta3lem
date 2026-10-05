@@ -110,7 +110,7 @@
     get: function () { return E.run(function () { return E.db().config; }); },
     updateScoring: function (patch) {
       return E.mutate(function (db) {
-        E.requireRole(['platform_admin']);
+        E.requirePermission('settings.manage');
         var next = Object.assign({}, db.config.scoring);
         Object.keys(patch).forEach(function (k) { next[k] = +patch[k]; });
         if (next.operationalWeight + next.ratingWeight !== 100) throw new Err('errors.weightsSum');
@@ -125,7 +125,7 @@
     },
     updatePricing: function (patch) {
       return E.mutate(function (db) {
-        E.requireRole(['platform_admin']);
+        E.requirePermission('settings.manage');
         var before = U.clone({ pricing: db.config.pricing, sla: db.config.lists.inquiryTypes.map(function (t) { return [t.id, t.defaultSlaHours]; }) });
         var p = Object.assign({}, db.config.pricing, patch.pricing || {});
         // The fee changes only through billing.proposeFee / confirmFee (Finance and Management).
@@ -141,7 +141,7 @@
     },
     updateList: function (name, items) {
       return E.mutate(function (db) {
-        E.requireRole(['platform_admin']);
+        E.requirePermission('settings.manage');
         if (!db.config.lists[name]) throw new Err('errors.notFound');
         var ids = {};
         items.forEach(function (it) {
@@ -327,6 +327,85 @@
         var u = E.currentUser();
         ICM.store.tx(function (db) { db.notifications.forEach(function (n) { if (u && n.userId === u.id) n.read = true; }); });
         return null;
+      });
+    }
+  };
+
+  // ---------------------------------------------------------------- accounts
+  /** "n****@horus-auto.example" for messages about someone's sign-in. */
+  function masked(email) { var at = (email || '').indexOf('@'); return at > 1 ? email.charAt(0) + '****' + email.slice(at) : email || ''; }
+  function activeSuperAdmins(db) { return db.users.filter(function (u) { return u.role === 'platform_admin' && u.active !== false; }); }
+
+  S.accounts = {
+    /**
+     * Customer support helps someone who cannot sign in: the lock after wrong passwords is
+     * lifted and the password is reset. With the real backend the person gets a link by
+     * email to choose a new one; in the demo the demo password works again. Support resets
+     * organisation users; staff accounts are reset by the Super admin.
+     */
+    resetLogin: function (userId) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('accounts.resetLogin');
+        var u = E.userById(userId);
+        if (!u || !u.email) throw new Err('errors.notFound');
+        var staffAccount = wf.isPlatformRole(u.role);
+        if (!wf.isEntityRole(u.role) && !staffAccount) throw new Err('errors.forbidden');
+        if (staffAccount && !wf.can(a.role, 'staff.manage')) throw new Err('errors.forbidden');
+        if (u.id === a.userId) throw new Err('errors.forbidden');
+        u.passwordHash = null; u.lockedUntil = null; u.signInFails = 0; u.passwordResetAt = E.now();
+        E.audit('user.login_reset', 'user', u.id, u.name, null, null, null, a);
+        return { maskedEmail: masked(u.email) };
+      });
+    }
+  };
+
+  /** Platform staff accounts: the Super admin adds people, sets their team and deactivates them. */
+  S.staff = {
+    list: function () {
+      return E.run(function () {
+        E.requirePermission('staff.manage');
+        return E.db().users.filter(function (u) { return wf.isPlatformRole(u.role); }).map(function (u) {
+          return { id: u.id, name: u.name, email: u.email, role: u.role, active: u.active !== false, invited: !!u.invited, lockedUntil: u.lockedUntil || null, createdAt: u.createdAt || null };
+        });
+      });
+    },
+    invite: function (v) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('staff.manage');
+        var name = String((v && v.name) || '').trim(), email = String((v && v.email) || '').trim().toLowerCase();
+        if (!name) throw new Err('errors.required', { field: 'name' });
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Err('errors.emailFormat', { field: 'email' });
+        if (db.users.some(function (u) { return (u.email || '').toLowerCase() === email; })) throw new Err('errors.emailTaken', { field: 'email' });
+        if (!wf.isPlatformRole(v.role)) throw new Err('errors.required', { field: 'role' });
+        var u = { id: U.uid('u'), name: name, email: email, role: v.role, active: true, invited: true, createdAt: E.now() };
+        db.users.push(u);
+        E.audit('staff.invited', 'user', u.id, u.name, null, { role: u.role }, null, a);
+        return u;
+      });
+    },
+    setRole: function (userId, role) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('staff.manage');
+        var u = E.userById(userId);
+        if (!u || !wf.isPlatformRole(u.role) || !wf.isPlatformRole(role)) throw new Err('errors.forbidden');
+        if (u.id === a.userId) throw new Err('errors.ownRole');
+        if (u.role === 'platform_admin' && role !== 'platform_admin' && activeSuperAdmins(db).length < 2) throw new Err('errors.lastSuperAdmin');
+        var before = u.role;
+        u.role = role;
+        E.audit('staff.role', 'user', u.id, u.name, { role: before }, { role: role }, null, a);
+        return u;
+      });
+    },
+    setActive: function (userId, active) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('staff.manage');
+        var u = E.userById(userId);
+        if (!u || !wf.isPlatformRole(u.role)) throw new Err('errors.forbidden');
+        if (u.id === a.userId) throw new Err('errors.cannotDeactivateSelf');
+        if (!active && u.role === 'platform_admin' && activeSuperAdmins(db).length < 2) throw new Err('errors.lastSuperAdmin');
+        u.active = !!active;
+        E.audit(active ? 'staff.activated' : 'staff.deactivated', 'user', u.id, u.name, null, null, null, a);
+        return u;
       });
     }
   };

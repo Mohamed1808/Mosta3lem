@@ -15,6 +15,15 @@
       checkPassword: '(email, password) -> { userId, name, maskedEmail }; organisation and platform staff, locks after repeated wrong tries',
       logout: '() -> void'
     },
+    accounts: {
+      resetLogin: '(userId) -> { maskedEmail }   (Customer support: organisation users; Super admin: anyone)'
+    },
+    staff: {
+      list: '() -> StaffUser[]',
+      invite: '({ name, email, role }) -> User',
+      setRole: '(userId, role) -> User',
+      setActive: '(userId, active) -> User'
+    },
     config: {
       get: '() -> PlatformConfig { scoring, pricing, lists }',
       updateScoring: '(patch) -> PlatformConfig   (admin; recalculates every score)',
@@ -112,7 +121,9 @@
       ofProvider: '(providerId) -> hierarchy   (admin, read only)'
     },
     entities: {
-      list: '() -> Entity[] with volume, spend and data-quality rating   (admin)',
+      list: '() -> Entity[] with volume, spend (billing teams) and data-quality rating   (staff with orgs.view)',
+      get: '(entityId) -> Entity with users and recent history',
+      create: '({ name, type, governorate, adminName, adminEmail }) -> { entity, admin }   (Sales)',
       mine: '() -> Entity',
       users: '(entityId?) -> User[]',
       invite: '(values) -> User',

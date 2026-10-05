@@ -13,7 +13,30 @@ const en = {
     staffOnly: 'This console is for Mosta3lem staff. Organisations and service providers use the mobile app.',
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
-    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', access: 'Teams and access' },
+    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
+    orgs: {
+      sub: 'Client organisations, their work with providers and how providers rate them as clients.', new: 'New organisation', none: 'No organisations yet.',
+      col: { name: 'Organisation', users: 'Users', open: 'Open cases', volume: 'All cases', spend: 'Spend to date', rating: 'Rated by providers' },
+      ratingLine: 'Data {data} · paying {pay} ({n})', ratingSub: 'Data quality / paying on time, {n} ratings', noRatings: 'Not rated yet',
+      newSub: 'Open the account and its first Admin. The Admin adds the rest of the team from the app.', organisation: 'Organisation', name: 'Organisation name', type: 'Type',
+      firstAdmin: 'First Admin', adminNote: 'Demo: no email is sent. The Admin signs in to the app with this email and the password {pw}.',
+      create: 'Open the account', created: '{name} is ready', since: 'client since {date}', users: 'Users ({n})',
+      createdNote: 'Account opened. The Admin signs in to the app with their email and the password {pw}, then adds their team.'
+    },
+    accounts: {
+      reset: 'Reset sign-in', resetBody: 'Unlocks {name} and resets the password. With the real system they get a link by email; in the demo the demo password works again.',
+      resetDone: 'Sign-in reset for {name}', resetAt: 'sign-in reset {at}', locked: 'Locked after wrong passwords'
+    },
+    staff: {
+      sub: 'Everyone on the Mosta3lem team and the team they belong to.', add: 'Add a staff member', addShort: 'Add', you: 'You',
+      added: '{name} added', inviteNote: 'Demo: no email is sent. They sign in to this console with their email and the password {pw}.',
+      changeTeam: 'Change team', changeTeamBody: '{name} moves to {team} and gets the access of that team straight away.', teamChanged: 'Team changed',
+      deactivateBody: '{name} can no longer sign in. Their past actions stay in the history.', deactivated: 'Staff member deactivated', reactivated: 'Staff member reactivated'
+    },
+    settings: {
+      sub: 'Provider scoring and the marketplace rules.', scoring: 'Provider scoring and automatic enforcement', marketplace: 'Marketplace rules',
+      feeElsewhere: 'The platform fee ({pct}%) is changed by Finance and Management together, from the Finance page.'
+    },
     finance: {
       sub: 'Invoices, payments and the platform fee.', outstanding: 'Issued, not paid yet', toIssue: 'Ready to issue', paidMonth: 'Paid this month',
       revenueMonth: 'Platform revenue this month', invoicesN: 'Invoices: {n}', payouts: 'Provider payouts pending: {amount}', casesN: 'cases: {n}',
@@ -100,7 +123,30 @@ const ar: typeof en = {
     staffOnly: 'لوحة التحكم هذه لموظفي مستعلم. الجهات ومقدمو الخدمة يستخدمون تطبيق الموبايل.',
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
-    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', access: 'الفرق والصلاحيات' },
+    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },
+    orgs: {
+      sub: 'الجهات العميلة وأعمالها مع مقدمي الخدمة وتقييم مقدمي الخدمة لها كعملاء.', new: 'جهة جديدة', none: 'لا توجد جهات بعد.',
+      col: { name: 'الجهة', users: 'المستخدمون', open: 'حالات مفتوحة', volume: 'كل الحالات', spend: 'الإنفاق حتى الآن', rating: 'تقييم مقدمي الخدمة' },
+      ratingLine: 'البيانات {data} · السداد {pay} ({n})', ratingSub: 'جودة البيانات / السداد في الموعد، {n} تقييم', noRatings: 'لم تُقيَّم بعد',
+      newSub: 'افتح الحساب وأول مدير له. يضيف المدير باقي الفريق من التطبيق.', organisation: 'الجهة', name: 'اسم الجهة', type: 'النوع',
+      firstAdmin: 'أول مدير', adminNote: 'نسخة تجريبية: لا يُرسل بريد. يسجّل المدير الدخول إلى التطبيق بهذا البريد وكلمة المرور {pw}.',
+      create: 'فتح الحساب', created: '{name} جاهزة', since: 'عميل منذ {date}', users: 'المستخدمون ({n})',
+      createdNote: 'تم فتح الحساب. يسجّل المدير الدخول إلى التطبيق ببريده وكلمة المرور {pw}، ثم يضيف فريقه.'
+    },
+    accounts: {
+      reset: 'إعادة تعيين الدخول', resetBody: 'يفتح حساب {name} ويعيد تعيين كلمة المرور. في النظام الفعلي يصله رابط بالبريد؛ في النسخة التجريبية تعمل كلمة المرور التجريبية مجددًا.',
+      resetDone: 'أُعيد تعيين الدخول لـ {name}', resetAt: 'أُعيد تعيين الدخول {at}', locked: 'مقفل بعد كلمات مرور خاطئة'
+    },
+    staff: {
+      sub: 'كل أعضاء فريق مستعلم والفريق الذي ينتمي إليه كل منهم.', add: 'إضافة موظف', addShort: 'إضافة', you: 'أنت',
+      added: 'تمت إضافة {name}', inviteNote: 'نسخة تجريبية: لا يُرسل بريد. يسجّل الدخول إلى لوحة التحكم ببريده وكلمة المرور {pw}.',
+      changeTeam: 'تغيير الفريق', changeTeamBody: 'ينتقل {name} إلى {team} ويحصل على صلاحيات هذا الفريق فورًا.', teamChanged: 'تم تغيير الفريق',
+      deactivateBody: 'لن يتمكن {name} من تسجيل الدخول. تبقى إجراءاته السابقة في السجل.', deactivated: 'تم إيقاف الموظف', reactivated: 'تمت إعادة تفعيل الموظف'
+    },
+    settings: {
+      sub: 'تقييم مقدمي الخدمة وقواعد السوق.', scoring: 'تقييم مقدمي الخدمة والإجراءات التلقائية', marketplace: 'قواعد السوق',
+      feeElsewhere: 'عمولة المنصة ({pct}%) تغيّرها المالية والإدارة معًا من صفحة المالية.'
+    },
     finance: {
       sub: 'الفواتير والمدفوعات وعمولة المنصة.', outstanding: 'صادرة ولم تُدفع بعد', toIssue: 'جاهزة للإصدار', paidMonth: 'المدفوع هذا الشهر',
       revenueMonth: 'إيراد المنصة هذا الشهر', invoicesN: 'الفواتير: {n}', payouts: 'مستحقات مقدمي الخدمة المعلقة: {amount}', casesN: 'الحالات: {n}',
