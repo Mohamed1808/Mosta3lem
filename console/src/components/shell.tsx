@@ -21,6 +21,7 @@ export const NAV: { href: string; key: string; perm: string | null; count?: stri
   { href: "/cases", key: "console.nav.cases", perm: "cases.view", count: "late" },
   { href: "/quality", key: "console.nav.quality", perm: "qa.review", count: "qa" },
   { href: "/disputes", key: "console.nav.disputes", perm: "disputes.view", count: "disputes" },
+  { href: "/finance", key: "console.nav.finance", perm: "billing.view", count: "toIssue" },
   { href: "/access", key: "console.nav.access", perm: null },
 ];
 

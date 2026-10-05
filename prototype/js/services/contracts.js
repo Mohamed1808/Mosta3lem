@@ -160,6 +160,11 @@
     },
     billing: {
       invoices: '() -> Invoice[]',
+      adjustLine: '(invoiceId, caseId, pct, reason) -> Invoice   (Finance: bill pct of one case on an unpaid invoice)',
+      fee: '() -> { pct, proposal, history }',
+      proposeFee: '(pct, note) -> FeeProposal   (Finance or Management: first step)',
+      confirmFee: '() -> { pct }   (the other team: invoices opened from now on use it)',
+      sendBackFee: '(note) -> null   (the other team disagrees)',
       markPaid: '(invoiceId) -> Invoice',
       issue: '(invoiceId) -> Invoice   (admin)',
       earnings: '(service?) -> EarningsSummary { scope: all|team, rows, byAgent, totals }   (owner and individual: all; supervisor: own agents; agents: forbidden)',

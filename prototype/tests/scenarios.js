@@ -3,7 +3,7 @@
    Each scenario switches users exactly as a tester would with the header switcher. */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
-const files = ['js/core/util.js', 'js/core/i18n.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js',
+const files = ['js/core/util.js', 'js/core/i18n.js', 'js/i18n/en.js', 'js/i18n/ar.js', 'js/i18n/registration.en.js', 'js/i18n/registration.ar.js', 'js/i18n/investigation.en.js', 'js/i18n/investigation.ar.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js',
   'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/settings.js', 'js/workflow/reports.js',
   'js/store/store.js', 'js/store/domain.js', 'js/store/seed.js',
   'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/exports.js', 'js/services/index.js'];
@@ -1235,6 +1235,43 @@ async function runInvestigation(caseId, providerId, opts) {
     x = db.disputes.find((y) => y.id === d.id);
     ok(x.status === 'resolved' && x.outcome === 'partial' && x.decision.proposedRole === 'platform_management' && x.decision.confirmedRole === 'platform_legal', 'Legal confirms Management\'s proposal and the decision takes effect');
     ok(db.cases.find((c) => c.id === target.id).billingAdjustment === 0.5, 'a partly upheld case dispute halves the billed amount');
+  });
+
+  await scenario('32. Finance: invoices, payments, adjustments and the fee', async () => {
+    const db = ICM.store.db;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    await as('Mai Adel');
+    ok((await S.billing.invoices()).length === 0 && await errOf(S.billing.proposeFee(12, 'x')) === 'errors.forbidden', 'Operations sees no invoices and cannot change the fee');
+    await as('Hossam Tawfik');
+    const all = await S.billing.invoices();
+    ok(all.length === db.invoices.length, 'Finance sees every invoice (' + all.length + ')');
+
+    const draft = db.invoices.find((i) => i.status === 'draft' && i.lines.length);
+    const line = draft.lines[0];
+    const before = (await S.billing.invoices()).find((i) => i.id === draft.id).subtotal;
+    const adj = await S.billing.adjustLine(draft.id, line.caseId, 50, 'Photos were missing on the first visit');
+    ok(adj.subtotal < before && db.invoices.find((i) => i.id === draft.id).lines[0].adjustReason, 'Finance bills a case at 50% with a reason');
+    await S.billing.issue(draft.id);
+    await S.billing.markPaid(draft.id);
+    const paid = db.invoices.find((i) => i.id === draft.id);
+    ok(paid.status === 'paid' && paid.paidBy.side === 'platform', 'Finance issues it and records the payment received');
+    ok(await errOf(S.billing.adjustLine(draft.id, line.caseId, 100, 'x')) === 'errors.invoicePaid', 'a paid invoice cannot be adjusted');
+
+    const fee = db.config.pricing.platformFeePct;
+    await S.billing.proposeFee(12, 'Market average is 12%');
+    ok(db.config.pricing.platformFeePct === fee && db.config.feeProposal.pct === 12, 'the proposed fee does not apply yet');
+    ok(await errOf(S.billing.confirmFee()) === 'errors.sameApprover', 'the person who proposed cannot confirm');
+    await as('Karim Fawzy');
+    await S.billing.sendBackFee('Wait for the Q4 review');
+    ok(!db.config.feeProposal && db.config.pricing.platformFeePct === fee, 'Management sends the first proposal back');
+    await S.billing.proposeFee(12, 'Agreed in the Q4 review');
+    await as('Hossam Tawfik');
+    await S.billing.confirmFee();
+    ok(db.config.pricing.platformFeePct === 12 && db.config.feeHistory.length === 2, 'Finance confirms Management\'s proposal: the fee is 12%');
+    ok(db.invoices.filter((i) => i.status === 'draft').every((i) => i.platformFeePct === fee), 'invoices already open keep their fee');
+    await as('Laila Hosny');
+    const cfg = await S.config.get();
+    ok(await errOf(S.config.updatePricing({ pricing: Object.assign({}, cfg.pricing, { platformFeePct: 15 }) })) === 'errors.feeNeedsTwoTeams', 'the pricing settings cannot change the fee on their own');
   });
 
   // ---------------------------------------------------------------- report

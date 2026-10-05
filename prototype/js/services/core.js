@@ -128,7 +128,8 @@
         E.requireRole(['platform_admin']);
         var before = U.clone({ pricing: db.config.pricing, sla: db.config.lists.inquiryTypes.map(function (t) { return [t.id, t.defaultSlaHours]; }) });
         var p = Object.assign({}, db.config.pricing, patch.pricing || {});
-        if (p.platformFeePct < 0 || p.platformFeePct > 50) throw new Err('errors.feeRange');
+        // The fee changes only through billing.proposeFee / confirmFee (Finance and Management).
+        if (+p.platformFeePct !== +db.config.pricing.platformFeePct) throw new Err('errors.feeNeedsTwoTeams');
         if (p.offerWindowHours < 1 || p.offerWindowHours > 72) throw new Err('errors.windowRange');
         Object.keys(p.investigationBands).forEach(function (k) { if (+p.investigationBands[k].min >= +p.investigationBands[k].max) throw new Err('errors.bandOrder'); });
         Object.keys(p.collectionFeeBands).forEach(function (k) { if (+p.collectionFeeBands[k].min >= +p.collectionFeeBands[k].max) throw new Err('errors.bandOrder'); });

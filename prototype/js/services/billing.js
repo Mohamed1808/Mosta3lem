@@ -27,7 +27,7 @@
       return E.run(function () {
         var a = E.actor();
         return E.db().invoices.filter(function (i) {
-          if (a.role === 'platform_admin') return true;
+          if (wf.isPlatformRole(a.role)) return wf.can(a.role, 'billing.view');
           if (wf.isEntityRole(a.role)) return seesClientMoney(a) && i.entityId === a.entityId;
           // Invoices show the whole company's billing: the owner or the individual provider only.
           if (a.providerId) return i.providerId === a.providerId && D.moneyScope(E.db(), a).all === true;
@@ -35,14 +35,16 @@
         }).map(withTotals).sort(function (x, y) { return y.month.localeCompare(x.month) || x.providerName.localeCompare(y.providerName); });
       });
     },
+    /** The client's Admin records paying it, or Finance records the payment received. */
     markPaid: function (id) {
       return E.mutate(function (db) {
         var a = E.actor();
-        if (!seesClientMoney(a)) throw new Err('errors.forbidden');
+        var finance = wf.isPlatformRole(a.role) && wf.can(a.role, 'billing.pay');
+        if (!seesClientMoney(a) && !finance) throw new Err('errors.forbidden');
         var inv = E.invoiceById(id);
-        if (!inv || inv.entityId !== a.entityId) throw new Err('errors.forbidden');
+        if (!inv || (!finance && inv.entityId !== a.entityId)) throw new Err('errors.forbidden');
         if (inv.status !== 'issued') throw new Err('errors.invoiceNotIssued');
-        inv.status = 'paid'; inv.paidAt = E.now();
+        inv.status = 'paid'; inv.paidAt = E.now(); inv.paidBy = { name: a.name, side: finance ? 'platform' : 'client' };
         E.audit('invoice.paid', 'invoice', inv.id, inv.ref, { status: 'issued' }, { status: 'paid' }, null, a);
         E.notify(D.providerUsers(db, inv.providerId, ['provider_admin', 'freelancer']), 'notif.invoice_paid', { ref: inv.ref }, 'provider:earnings');
         return withTotals(inv);
@@ -50,7 +52,7 @@
     },
     issue: function (id) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('billing.issue');
         var inv = E.invoiceById(id);
         if (!inv || inv.status !== 'draft') throw new Err('errors.invoiceNotDraft');
         if (!inv.lines.length) throw new Err('errors.invoiceEmpty');
@@ -60,6 +62,91 @@
         return withTotals(inv);
       });
     },
+    /**
+     * Finance changes what one case is billed on an unpaid invoice: pct of the amount (0 to
+     * 100), with a reason. Both the client's Admin and the provider's owner are told.
+     */
+    adjustLine: function (invoiceId, caseId, pct, reason) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('billing.adjust');
+        var inv = E.invoiceById(invoiceId);
+        if (!inv) throw new Err('errors.notFound');
+        if (inv.status === 'paid') throw new Err('errors.invoicePaid');
+        var line = inv.lines.filter(function (l) { return l.caseId === caseId; })[0];
+        if (!line) throw new Err('errors.notFound');
+        pct = +pct;
+        if (!(pct >= 0 && pct <= 100)) throw new Err('errors.pctRange');
+        if (!String(reason || '').trim()) throw new Err('wf.err.reasonRequired');
+        var before = line.adjustment == null ? 1 : line.adjustment;
+        line.adjustment = pct / 100;
+        line.adjustReason = String(reason).trim();
+        line.adjustedBy = a.name;
+        line.adjustedAt = E.now();
+        E.audit('invoice.line_adjusted', 'invoice', inv.id, inv.ref, { caseRef: line.caseRef, pct: Math.round(before * 100) }, { caseRef: line.caseRef, pct: pct }, reason, a);
+        var who = db.users.filter(function (u) { return u.active !== false && ((u.entityId === inv.entityId && u.role === 'entity_admin') || (u.providerId === inv.providerId && ['provider_admin', 'freelancer'].indexOf(u.role) >= 0)); });
+        E.notify(who, 'notif.invoice_adjusted', { ref: inv.ref, caseRef: line.caseRef, pct: pct }, 'entity:invoices');
+        return withTotals(inv);
+      });
+    },
+
+    // ---- the platform fee: Finance and Management decide together (wf.DUAL_APPROVAL)
+    /** The current fee, a change waiting for the second team, and past changes. */
+    fee: function () {
+      return E.run(function () {
+        E.requirePermission('billing.view');
+        var c = E.db().config;
+        return { pct: c.pricing.platformFeePct, proposal: c.feeProposal || null, history: (c.feeHistory || []).slice().reverse() };
+      });
+    },
+    proposeFee: function (pct, note) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('fee.change');
+        if (db.config.feeProposal) throw new Err('errors.decisionPending');
+        pct = +pct;
+        if (!(pct >= 0 && pct <= 50)) throw new Err('errors.feeRange');
+        if (pct === db.config.pricing.platformFeePct) throw new Err('errors.feeUnchanged');
+        if (!String(note || '').trim()) throw new Err('wf.err.reasonRequired');
+        db.config.feeProposal = { pct: pct, from: db.config.pricing.platformFeePct, note: String(note).trim(), by: a.userId, byName: a.name, role: a.role, at: E.now() };
+        E.audit('config.fee_change_proposed', 'config', 'pricing', null, { pct: db.config.pricing.platformFeePct }, { pct: pct }, note, a);
+        E.notify(E.secondApprovers(a, 'fee.change'), 'notif.fee_change_pending', { pct: pct }, 'admin:finance');
+        return db.config.feeProposal;
+      });
+    },
+    /** The other team confirms: invoices opened from now on use the new fee. */
+    confirmFee: function () {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('fee.change');
+        var p = db.config.feeProposal;
+        if (!p) throw new Err('errors.noDecisionPending');
+        var err = E.secondApproval(p, a, 'fee.change');
+        if (err) throw new Err(err.key, err.params);
+        var before = db.config.pricing.platformFeePct;
+        db.config.pricing = Object.assign({}, db.config.pricing, { platformFeePct: p.pct });
+        db.config.feeHistory = (db.config.feeHistory || []).concat([{ from: before, to: p.pct, note: p.note, proposedBy: p.byName, proposedRole: p.role, proposedAt: p.at, confirmedBy: a.name, confirmedRole: a.role, confirmedAt: E.now() }]);
+        db.config.feeProposal = null;
+        E.audit('config.fee_changed', 'config', 'pricing', null, { pct: before }, { pct: p.pct }, p.note, a);
+        E.notify(E.staffWith('fee.change'), 'notif.fee_changed', { pct: p.pct }, 'admin:finance');
+        E.notify(db.users.filter(function (u) { return u.active !== false && ['provider_admin', 'freelancer'].indexOf(u.role) >= 0; }), 'notif.platform_fee_changed', { pct: p.pct }, 'provider:earnings');
+        return { pct: p.pct };
+      });
+    },
+    sendBackFee: function (note) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('fee.change');
+        var p = db.config.feeProposal;
+        if (!p) throw new Err('errors.noDecisionPending');
+        if (!String(note || '').trim()) throw new Err('wf.err.reasonRequired');
+        var err = E.secondApproval(p, a, 'fee.change');
+        if (err) throw new Err(err.key, err.params);
+        db.config.feeHistory = (db.config.feeHistory || []).concat([{ from: p.from, to: p.pct, note: p.note, proposedBy: p.byName, proposedRole: p.role, proposedAt: p.at, sentBackBy: a.name, sentBackRole: a.role, sentBackNote: String(note).trim(), sentBackAt: E.now() }]);
+        db.config.feeProposal = null;
+        E.audit('config.fee_change_sent_back', 'config', 'pricing', null, null, null, note, a);
+        var proposer = E.userById(p.by);
+        if (proposer) E.notify([proposer], 'notif.fee_change_sent_back', { pct: p.pct }, 'admin:finance');
+        return null;
+      });
+    },
+
     /**
      * Earnings per closed case, after the platform fee, following the team structure: the
      * owner and an individual provider see everything, a supervisor sees the cases of their
@@ -367,6 +454,10 @@
           if (wf.can(a.role, 'disputes.view')) c.disputes = db.disputes.filter(function (d) { return d.status === 'open'; }).length;
           if (a.role === 'platform_admin') c.flagged = db.ratings.filter(function (r) { return r.flagged; }).length;
           if (wf.can(a.role, 'cases.manage')) c.late = db.cases.filter(function (x) { return wf.sla.state(x, E.now()) === 'breached'; }).length;
+          if (wf.can(a.role, 'billing.issue')) {
+            var thisMonth = U.monthKey(E.now());
+            c.toIssue = db.invoices.filter(function (i) { return i.status === 'draft' && i.month < thisMonth && i.lines.length; }).length + (db.config.feeProposal ? 1 : 0);
+          }
         }
         return c;
       });
