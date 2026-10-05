@@ -12,12 +12,12 @@
       to: 'To', updated: 'Updated', view: 'View', when: 'When', yes: 'Yes', no: 'No'
     },
     time: { dh: '{d}d {h}h', hm: '{h}h {m}m', m: '{m}m', hoursShort: '{h} h' },
-    portal: { entity: 'Requesting entities', provider: 'Service providers', agent: 'Field agents', admin: 'Platform' },
+    portal: { entity: 'Clients', provider: 'Service providers', agent: 'Field agents', admin: 'Platform' },
     service: { investigation: 'Investigation', collection: 'Collection' },
     kind: { company: 'Company', freelancer: 'Individual' },
-    entityType: { bank: 'Bank', auto_finance: 'Auto finance', consumer_finance: 'Consumer finance', corporate: 'Corporate' },
+    entityType: { bank: 'Bank', auto_finance: 'Auto finance', consumer_finance: 'Consumer finance', corporate: 'Company', insurance: 'Insurance', real_estate: 'Real estate', employer: 'Employer', other: 'Other organisation' },
     role: {
-      entity_admin: 'Admin', entity_credit: 'Credit', entity_operations: 'Operations', entity_collections: 'Collections',
+      entity_admin: 'Admin', entity_credit: 'Investigations', entity_operations: 'Operations', entity_collections: 'Collections',
       provider_admin: 'Owner', provider_supervisor: 'Supervisor', agent: 'Field agent', freelancer: 'Individual provider',
       platform_admin: 'Platform admin', platform_qa: 'QA reviewer', system: 'System'
     },
@@ -32,7 +32,7 @@
       offers: 'Offers', caseBoard: 'Cases', assignment: 'Assignment', reviewQueue: 'Review queue', team: 'Team',
       portfolio: 'Portfolio report', feedback: 'Ratings and feedback', rateClients: 'Rate clients', earnings: 'Earnings',
       profile: 'Profile and settings', groupAccount: 'Account', overview: 'Overview', onboarding: 'Onboarding',
-      providers: 'Providers', entities: 'Entities', allCases: 'Cases and batches', qaQueue: 'QA queue', disputes: 'Disputes',
+      providers: 'Providers', entities: 'Clients', allCases: 'Cases and batches', qaQueue: 'QA queue', disputes: 'Disputes',
       moderation: 'Ratings moderation', billing: 'Billing', groupConfig: 'Configuration', scoring: 'Scoring', pricing: 'Pricing and SLA',
       settings: 'Settings', audit: 'Audit log', demo: 'Demo controls', workspace: 'Workspace', fieldApp: 'Open field app',
       providerPortal: 'Provider portal', privacy: 'Privacy Policy', terms: 'Terms and Conditions'
@@ -43,19 +43,19 @@
     },
     login: {
       title: 'Sign in', headline: 'Field investigations and collections, from request to rating',
-      body1: 'Banks and finance companies send customer verifications and overdue accounts to verified investigation and collection providers. They pick a provider from a ranked list and follow every step.',
+      body1: 'Companies and organisations send customer verifications and overdue accounts to verified investigation and collection providers. They pick a provider from a ranked list and follow every step.',
       body2: 'Providers see only masked details until they accept. Every action is timed, logged and rated.',
       demoNote: 'This is a demo. Pick any user to sign in; switch users at any time from the header.',
       tests: 'Workflow tests', pick: 'Choose a demo user', pickHint: 'Users are grouped by portal and organisation.',
-      providers: 'Service providers and field agents', entityGroupHint: 'Requesting entity', companyGroupHint: 'Provider company with field team',
+      providers: 'Service providers and field agents', entityGroupHint: 'Requesting client', companyGroupHint: 'Provider company with field team',
       freelancers: 'Individual providers', freelancerHint: 'Works alone and does the field work personally'
     },
     status: {
       draft: 'Draft', submitted: 'Submitted', awaiting_acceptance: 'Awaiting acceptance', declined: 'Declined', expired: 'Expired',
       accepted: 'Accepted', assigned: 'Assigned', in_field: 'In field', submitted_for_review: 'Submitted for review',
       returned_to_agent: 'Returned to agent', delivered: 'Delivered', rework_requested: 'Rework requested',
-      accepted_by_entity: 'Accepted by entity', closed: 'Closed', cancelled: 'Cancelled', active: 'Active',
-      awaiting_entity_approval: 'Awaiting entity approval', recalled: 'Recalled', accepted_offer: 'Accepted', withdrawn: 'Withdrawn',
+      accepted_by_entity: 'Accepted by client', closed: 'Closed', cancelled: 'Cancelled', active: 'Active',
+      awaiting_entity_approval: 'Awaiting client approval', recalled: 'Recalled', accepted_offer: 'Accepted', withdrawn: 'Withdrawn',
       pending: 'Pending', issued: 'Issued', paid: 'Paid', open: 'Open', resolved: 'Resolved', pending_acceptance: 'Pending acceptance',
       in_progress: 'In progress', partially_closed: 'Partially closed', verified: 'Verified', rejected: 'Rejected',
       info_requested: 'Info requested', kept: 'Kept', broken: 'Broken', approved: 'Approved'
@@ -72,10 +72,10 @@
       title: 'Timeline', empty: 'No activity yet', created: 'Request created', submit: 'Request submitted', send_offer: 'Offer sent to provider',
       decline: 'Offer declined', expire: 'Offer expired', accept: 'Offer accepted, data released', assign: 'Agent assigned',
       check_in: 'Agent checked in', submit_report: 'Report submitted for review', return_to_agent: 'Report returned to agent',
-      resume: 'Agent resumed work', approve: 'Report delivered to entity', request_rework: 'Rework requested',
-      accept_report: 'Report accepted by entity', close: 'Case closed', cancel: 'Case cancelled', force_reassign: 'Reassigned by admin',
+      resume: 'Agent resumed work', approve: 'Report delivered to client', request_rework: 'Rework requested',
+      accept_report: 'Report accepted by client', close: 'Case closed', cancel: 'Case cancelled', force_reassign: 'Reassigned by admin',
       start: 'Collection work started', request_settlement: 'Settlement requested', approve_settlement: 'Settlement approved',
-      reject_settlement: 'Settlement rejected', recall: 'Recalled by entity', log_action: 'Action logged',
+      reject_settlement: 'Settlement rejected', recall: 'Recalled by client', log_action: 'Action logged',
       promise_to_pay: 'Promise to pay recorded', payment_recorded: 'Payment recorded', promise_broken: 'Promise to pay broken',
       sla_at_risk: 'SLA at risk', sla_breached: 'SLA breached', sla_extended: 'SLA extended', dispute_opened: 'Dispute opened',
       dispute_resolved: 'Dispute resolved', rated: 'Provider rated'
@@ -98,7 +98,7 @@
       accuracy: 'Accuracy', evidence: 'Evidence completeness', timeliness: 'Timeliness', communication: 'Communication',
       conduct: 'Professional conduct', instructions: 'Following instructions', updates: 'Update quality', results: 'Results'
     },
-    outcome: { fully_recovered: 'Fully recovered', partially_recovered: 'Partially recovered', unrecoverable: 'Unrecoverable', returned_to_entity: 'Returned to entity' },
+    outcome: { fully_recovered: 'Fully recovered', partially_recovered: 'Partially recovered', unrecoverable: 'Unrecoverable', returned_to_entity: 'Returned to client' },
     paymentMethod: { cash: 'Cash', bank_transfer: 'Bank transfer', instapay: 'InstaPay', fawry: 'Fawry', cheque: 'Cheque' },
     amountRange: { r0: 'Up to EGP 10,000', r1: 'EGP 10,000 to 25,000', r2: 'EGP 25,000 to 50,000', r3: 'EGP 50,000 to 100,000', r4: 'EGP 100,000 to 250,000', r5: 'Above EGP 250,000' },
     address: { home: 'Home address', work: 'Work address', business: 'Business address', governorate: 'Governorate', city: 'City / district', street: 'Street and building', landmark: 'Landmark' },
@@ -126,7 +126,7 @@
     rating: {
       title: 'Rating', new: 'New', count: '{n} ratings', outOf: '{n} out of 5', overall: 'Overall rating', tags: 'Tags',
       feedback: 'Written feedback', feedbackHint: 'What went well, what should improve', rateProvider: 'Rate {name}',
-      caseIntro: 'Case {ref} is closed. Your rating updates the provider score. Other entities see feedback without your name.',
+      caseIntro: 'Case {ref} is closed. Your rating updates the provider score. Other clients see feedback without your name.',
       later: 'Later', submit: 'Submit rating', saved: 'Rating saved', removed: 'Removed from score', providerReply: 'Provider reply',
       yourReply: 'Your reply', reply: 'Reply', editReply: 'Edit reply', replyHint: 'Replies are public and shown under the feedback.',
       replyLabel: 'Reply', publishReply: 'Publish reply', replySaved: 'Reply published', dispute: 'Dispute rating',
@@ -201,15 +201,15 @@
       discountText: '{pct}% discount', instalmentsText: '{count} instalments', requestedBy: 'Requested by {name}, {time}',
       decidedBy: 'Decided by {name}, {time}', outstandingAt: 'outstanding {amount} at request', newTarget: 'New amount to collect: {amount}',
       approveBody: 'The customer can settle on these terms. The outstanding balance will be recalculated.', approved: 'Settlement approved',
-      rejected: 'Settlement rejected', sent: 'Settlement sent to the entity for approval', waitingEntity: 'Waiting for the entity to approve or reject the settlement.',
-      authorityDiscount: 'The entity allows discounts up to {pct}%.', authorityInstalments: 'The entity allows instalment plans.'
+      rejected: 'Settlement rejected', sent: 'Settlement sent to the client for approval', waitingEntity: 'Waiting for the client to approve or reject the settlement.',
+      authorityDiscount: 'The client allows discounts up to {pct}%.', authorityInstalments: 'The client allows instalment plans.'
     },
     collection: {
       balance: 'Balance', recovered: 'Recovered', outstanding: 'Outstanding', settledTarget: 'Settled amount', instalmentPlan: 'Instalment plan',
       planText: '{count} x {amount}', outcome: 'Outcome', log: 'Action log', entry: 'Entry', noActions: 'No actions logged yet',
       promise: 'Promise to pay', promises: 'Promises to pay', payment: 'Payment', receipt: 'Receipt', dueOn: 'due {date}',
       logAction: 'Log action', recordPromise: 'Record promise to pay', recordPayment: 'Record payment', closeCase: 'Close case',
-      allowedIntro: 'Allowed by the entity: {list}.', actionLogged: 'Action logged', promiseIntro: 'Outstanding balance: {amount}.',
+      allowedIntro: 'Allowed by the client: {list}.', actionLogged: 'Action logged', promiseIntro: 'Outstanding balance: {amount}.',
       promiseRecorded: 'Promise recorded', paymentIntro: 'Outstanding balance: {amount}. Attach the receipt if you have it.',
       paymentRecorded: 'Payment recorded', closeIntro: 'Closing is final. Fully recovered needs a zero balance; partial needs at least one payment.',
       closed: 'Case closed'
@@ -245,7 +245,7 @@
     },
     provider: {
       verified: 'Verified', memberSince: 'On the platform since {date}', coverage: 'Coverage and capacity', recentFeedback: 'Recent feedback',
-      anonymised: 'Feedback is shown without the name of the entity that wrote it.', noFeedback: 'No written feedback yet',
+      anonymised: 'Feedback is shown without the name of the client that wrote it.', noFeedback: 'No written feedback yet',
       openInFieldApp: 'Open in field app',
       dashboard: {
         title: '{service} workspace', byStatus: 'Cases by status', byBucket: 'Recovery rate by days-past-due bucket', promises: 'Promises to pay',
@@ -258,7 +258,7 @@
       from: 'From', maskedNotice: 'Customer details are released when you accept.', feeTerms: 'Fee terms', total: 'Total',
       all: '({n})', expiresIn: '{time} to respond', expired: 'Expired', acceptanceWindow: 'Acceptance window',
       declinedWith: 'Declined: {reason}', acceptTitle: 'Accept offer', acceptBody: 'Accept {n} case(s)? Full customer data is released and the SLA starts.',
-      accepted: 'Offer accepted', declineTitle: 'Decline offer', declineBody: 'The entity is told the reason and picks another provider.',
+      accepted: 'Offer accepted', declineTitle: 'Decline offer', declineBody: 'The client is told the reason and picks another provider.',
       declined: 'Offer declined', openOffer: 'This case is an open offer.'
     },
     board: { kanban: 'Board', table: 'Table' },
@@ -289,10 +289,10 @@
       reasonLabel: 'Reason', details: 'Details', submit: 'Open dispute', opened: 'Dispute opened',
       reason: { report_inaccurate: 'Report inaccurate', evidence_missing: 'Evidence missing', sla_missed: 'SLA missed', conduct: 'Conduct', billing: 'Billing', other: 'Other', rating_unfair: 'Rating unfair', wrong_case: 'Wrong case', abusive: 'Abusive language' },
       outcome: { upheld: 'Upheld', rejected: 'Rejected', partial: 'Partially upheld' },
-      party: { entity: 'Entity', provider: 'Provider', admin: 'Platform' },
+      party: { entity: 'Client', provider: 'Provider', admin: 'Platform' },
       kindLabel: { case: 'Case', rating: 'Rating' },
-      adminSubtitle: 'Disputes raised by entities about cases and by providers about ratings.', ref: 'Dispute', kind: 'About', raisedBy: 'Raised by',
-      parties: 'Entity / provider', none: 'No disputes', entitySide: 'Entity: {name}', providerSide: 'Provider: {name}', noStatement: 'No statement yet',
+      adminSubtitle: 'Disputes raised by clients about cases and by providers about ratings.', ref: 'Dispute', kind: 'About', raisedBy: 'Raised by',
+      parties: 'Client / provider', none: 'No disputes', entitySide: 'Client: {name}', providerSide: 'Provider: {name}', noStatement: 'No statement yet',
       disputedRating: 'Disputed rating', caseTimeline: 'Case {ref} timeline', openCase: 'Open case', adminNotes: 'Platform notes',
       resolve: 'Resolve dispute', outcomeLabel: 'Outcome', resolutionNote: 'Decision note',
       ratingEffects: 'Upheld removes the rating from the score. Partial halves its weight. Rejected keeps it.',
@@ -336,7 +336,7 @@
       accruingSub: 'Draft, not issued yet', paidTotal: 'Paid', ref: 'Invoice', month: 'Month', provider: 'Provider', client: 'Client', lines: 'Lines',
       total: 'Total', markPaid: 'Mark as paid', payBody: 'Record that this invoice is paid. This is a simulation; no money moves.', paid: 'Invoice marked as paid',
       none: 'No invoices', title: 'Invoice {ref}', closed: 'Closed', amount: 'Amount', adjusted: 'adjusted to {pct}% after dispute',
-      platformFee: 'Platform fee', issue: 'Issue', issueBody: 'Issue this invoice to the entity. It can then be paid.', issued: 'Invoice issued'
+      platformFee: 'Platform fee', issue: 'Issue', issueBody: 'Issue this invoice to the client. It can then be paid.', issued: 'Invoice issued'
     },
     earnings: {
       subtitle: 'Per case earnings after the {pct}% platform fee.', monthGross: 'This month, gross', monthNet: 'This month, net', afterFee: 'after platform fee',
@@ -371,7 +371,7 @@
       newExplain: 'Stars are shown to clients once you have {n} ratings.', weighting: 'Ratings from the last {days} days count double. One client can contribute at most {cap}% of the rating part.'
     },
     clientRating: {
-      subtitle: 'Rate the entities you work for on data quality and payment timeliness. Other providers see the averages.',
+      subtitle: 'Rate the clients you work for on data quality and payment timeliness. Other providers see the averages.',
       pending: 'Waiting for your rating ({n})', nonePending: 'Nothing to rate', given: 'Your ratings', rateBtn: 'Rate client', rateTitle: 'Rate {name}',
       intro: 'About {ref}.', dataQuality: 'Data quality', dataQualityHint: 'Were addresses, phones and instructions complete and correct?',
       paymentTimeliness: 'Payment timeliness', none: 'No client ratings yet', basedOn: 'from {n} provider ratings', batchOf: 'batch, {n} cases'
@@ -399,7 +399,7 @@
     },
     admin: {
       overviewTitle: 'Platform overview', gmvMonth: 'GMV this month', gmvTotal: '{amount} all time', gmv: 'GMV', revenueMonth: 'Platform revenue this month',
-      missedTotal: '{n} missed in total', activeEntities: 'Active entities', activeProviders: 'Active providers', suspendedN: '{n} suspended',
+      missedTotal: '{n} missed in total', activeEntities: 'Active clients', activeProviders: 'Active providers', suspendedN: '{n} suspended',
       openDisputes: 'Open disputes', casesByStatus: 'Cases by status', gmvSeries: 'GMV by month', topProviders: 'Top providers', bottomProviders: 'Lowest scores',
       providersSubtitle: 'Verified providers with score and enforcement status.', openCases: 'Open cases', enforcement: 'Enforcement',
       warn: 'Warn', reduce: 'Reduce ranking', suspend: 'Suspend', reactivate: 'Reactivate', backToAuto: 'Back to automatic',
@@ -410,10 +410,10 @@
         warned: 'The provider is warned. Ranking is lowered slightly.', reduced: 'The provider is ranked lower in the marketplace.',
         suspended: 'The provider disappears from the marketplace and cannot accept offers.'
       },
-      enforced: 'Status updated', entitiesSubtitle: 'Requesting entities with volume, spend and data quality ratings from providers.',
+      enforced: 'Status updated', entitiesSubtitle: 'Clients with volume, spend and data quality ratings from providers.',
       spend: 'Spend', dataQualityRating: 'Rated by providers', forceReassign: 'Force reassign', extendSla: 'Extend SLA', reasonRequired: 'Admin actions need a reason.',
       reassignBody: 'The current provider loses the case and a new offer goes to the provider you pick.', reassigned: 'Offer sent to the new provider',
-      extendHours: 'Extend by (hours)', extended: 'SLA extended', cancelBody: 'The case is cancelled for both sides.', billingSubtitle: 'Issue draft invoices to entities.'
+      extendHours: 'Extend by (hours)', extended: 'SLA extended', cancelBody: 'The case is cancelled for both sides.', billingSubtitle: 'Issue draft invoices to clients.'
     },
     onboarding: {
       subtitle: 'Applications from companies and individuals, self-registered or registered by the platform.', applied: 'Applied {date}', contact: 'Contact', freelancerChecks: 'Checks for individuals',
@@ -430,7 +430,7 @@
       subtitle: 'Changes recalculate every provider score and enforcement level immediately.', weights: 'Weights and window',
       operationalWeight: 'Operational metrics (%)', ratingWeight: 'Client ratings (%)', sumHint: 'The two weights must add up to 100.',
       recencyDays: 'Recency window (days)', recencyHint: 'Ratings inside the window count {x} times.', minRatings: 'Minimum ratings before stars show',
-      minRatingsHint: 'Below this, a New badge is shown.', entityCap: 'Max share of one entity (%)', entityCapHint: 'Stops a single client dominating the rating part.',
+      minRatingsHint: 'Below this, a New badge is shown.', entityCap: 'Max share of one client (%)', entityCapHint: 'Stops a single client dominating the rating part.',
       thresholds: 'Enforcement thresholds', thresholdsHint: 'A provider whose score falls below a threshold is warned, ranked lower, or suspended automatically. Suspend < reduce < warn.',
       warnBelow: 'Warn below', reduceBelow: 'Reduce ranking below', suspendBelow: 'Suspend below', saveRecalc: 'Save and recalculate',
       confirmBody: 'All scores and enforcement levels are recalculated now.', saved: 'Scores recalculated', savedChanges: 'Scores recalculated. Changed: {list}',
@@ -453,7 +453,7 @@
     },
     audit: {
       subtitle: '{n} entries shown, newest first.', who: 'Who', what: 'What', target: 'Target', beforeAfter: 'Before and after',
-      type: { case: 'Case', offer: 'Offer', batch: 'Batch', provider: 'Provider', rating: 'Rating', dispute: 'Dispute', invoice: 'Invoice', config: 'Config', user: 'User', agent: 'Agent', entity: 'Entity', clock: 'Clock' },
+      type: { case: 'Case', offer: 'Offer', batch: 'Batch', provider: 'Provider', rating: 'Rating', dispute: 'Dispute', invoice: 'Invoice', config: 'Config', user: 'User', agent: 'Agent', entity: 'Client', clock: 'Clock' },
       action: {
         case_submit: 'Case submitted', case_send_offer: 'Offer sent', case_decline: 'Offer declined', case_expire: 'Offer expired', case_accept: 'Case accepted',
         case_assign: 'Agent assigned', case_check_in: 'Checked in', case_submit_report: 'Report submitted', case_return_to_agent: 'Report returned',
@@ -481,21 +481,21 @@
       advance1d: 'Advance 1 day', hours: 'Hours', advanceBy: 'Advance', resetClock: 'Back to real time', advanced: 'Clock advanced',
       tickSummary: 'Last jump: {expired} offers expired, {warned} expiry warnings, {atRisk} at risk, {breached} breached, {promises} promises broken.',
       clockHint: 'The clock also ticks every 30 seconds in real time.', data: 'Demo data', reset: 'Reset demo data',
-      resetHint: 'Restore the seed: 3 entities, 8 providers, about 90 cases, ratings, disputes and invoices.', resetTitle: 'Reset demo data',
+      resetHint: 'Restore the seed: 3 clients, 8 providers, about 90 cases, ratings, disputes and invoices.', resetTitle: 'Reset demo data',
       resetMessage: 'All changes are lost and the seed data is restored.', resetDone: 'Demo data restored',
       simulateHint: 'Drive every open case of a batch through the workflow (accept, assign, check in, report, approve or collect).',
       simulate: 'Simulate field work', simulateBody: 'Every open case in this batch moves forward through the real workflow.', simulated: '{n} cases moved forward',
       guide: 'Test scenarios',
       scenario: {
         1: 'Investigation: as Tamer Lotfy (Horus, Credit) create a residence request in Giza, sort by score and select. Accept as the provider admin, assign as the supervisor, check in, add 3 photos and submit as the agent, approve as the supervisor, then accept and rate as Tamer.',
-        2: 'Rework: on a delivered report, request rework as the entity. The supervisor sends it back to the agent, the agent resubmits. The first-time acceptance rate drops on the provider profile.',
-        3: 'Offer expiry: send an offer, then advance the clock 5 hours here. The entity is notified; use Auto-select best on the case.',
+        2: 'Rework: on a delivered report, request rework as the client. The supervisor sends it back to the agent, the agent resubmits. The first-time acceptance rate drops on the provider profile.',
+        3: 'Offer expiry: send an offer, then advance the clock 5 hours here. The client is notified; use Auto-select best on the case.',
         4: 'Collection: as Youssef Kamel create a collection with a 20% discount authority for Recovery Partners. As Tarek Helmy log a call and a promise, advance a day, record a partial payment and request a 15% discount. Approve as Youssef, pay the rest, close as Rehab Anwar, rate as Youssef.',
         5: 'Bulk: download the sample file on Bulk upload, fix the 3 bad rows, create the batch, split by governorate (Giza to Omar Hassan, the rest to Sphinx), accept as providers, simulate field work here, accept all and close the batch with a rating.',
         6: 'Individual provider: send a Giza residence case to Omar Hassan. His report goes to the QA queue (Ziad Ezzat), not a supervisor.',
         7: 'Rating dispute: as Adel Morsy (Recovery Partners) dispute a 1-star rating. Uphold it as admin; the rating leaves the score.',
         8: 'Enforcement: raise the suspension threshold to 85 (reduce 90, warn 95) in Scoring. Recovery Partners is suspended and leaves the marketplace. Set it back to 40, 50 and 60 afterwards.',
-        9: 'SLA: advance the clock on an accepted case; it turns amber at 80% and red at the deadline. Entity, provider and admin are notified.',
+        9: 'SLA: advance the clock on an accepted case; it turns amber at 80% and red at the deadline. Client, provider and admin are notified.',
         10: 'Arabic: switch the language in the header and repeat scenario 1. The layout mirrors right to left.'
       }
     },
@@ -517,6 +517,7 @@
       provider_verified: 'Your account is verified', batch_progress: 'Batch {ref} moved forward'
     },
     errors: {
+      wrongPassword: 'Wrong email or password', signInLocked: 'Too many wrong tries. Try again in {min} minutes.',
       generic: 'Something went wrong', required: 'Required', number: 'Enter a number', min: 'Value too low', max: 'Value too high', date: 'Enter a valid date',
       nationalIdFormat: 'National ID must be 14 digits starting with 2 or 3', nationalIdDate: 'National ID has an invalid birth date',
       nationalIdGov: 'National ID has an unknown governorate code', mobileFormat: 'Mobile must be 11 digits starting with 010, 011, 012 or 015',
@@ -549,13 +550,13 @@
         providerDeclined: 'This provider already declined the case', sameProvider: 'Choose a different provider', reasonRequired: 'A reason is required',
         agentRequired: 'Choose an agent', checkInRequired: 'Check in at the address first', photosRequired: 'Add the minimum number of photos',
         reportIncomplete: 'Complete every report form', commentRequired: 'Add a comment for the agent', reviewerQa: 'Reports from individual providers are reviewed by platform QA',
-        reviewerSupervisor: 'Company reports are reviewed by their supervisor', entityCancelAfterAccept: 'Entities can cancel only before acceptance. Recall or ask the platform.',
-        settlementKind: 'Choose a settlement type', noSettlementAuthority: 'The entity gave no settlement authority on this case',
+        reviewerSupervisor: 'Company reports are reviewed by their supervisor', entityCancelAfterAccept: 'Clients can cancel only before acceptance. Recall or ask the platform.',
+        settlementKind: 'Choose a settlement type', noSettlementAuthority: 'The client gave no settlement authority on this case',
         settlementKindNotAllowed: 'This settlement type is not allowed on this case', discountRequired: 'Enter a discount',
-        discountAboveAuthority: 'Discount is above the authority set by the entity', instalmentsRequired: 'Enter at least 2 instalments',
+        discountAboveAuthority: 'Discount is above the authority set by the client', instalmentsRequired: 'Enter at least 2 instalments',
         outcomeRequired: 'Choose an outcome', balanceNotZero: 'Fully recovered needs a zero outstanding balance',
         partialNeedsPayment: 'Partially recovered needs a payment and a remaining balance', actionTypeRequired: 'Choose an action type',
-        actionNotAllowed: 'The entity did not allow this type of action', amountRequired: 'Enter an amount', promiseDatePast: 'The promised date must not be in the past',
+        actionNotAllowed: 'The client did not allow this type of action', amountRequired: 'Enter an amount', promiseDatePast: 'The promised date must not be in the past',
         amountAboveOutstanding: 'Amount is above the outstanding balance', methodRequired: 'Choose a payment method',
         batchClosed: 'The batch is already closed', batchOpenCases: 'Some cases in the batch are still open', ratingRequired: 'Rate every provider in the batch'
       }

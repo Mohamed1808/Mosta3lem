@@ -12,6 +12,7 @@
       listDemoUsers: '() -> User[] with orgName, portal',
       currentUser: '() -> SessionUser | null  (user + entity/provider/agent summary)',
       loginAs: '(userId) -> SessionUser',
+      checkPassword: '(email, password) -> { userId, name, maskedEmail }; organisation and platform staff, locks after repeated wrong tries',
       logout: '() -> void'
     },
     config: {

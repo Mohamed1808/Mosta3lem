@@ -5,16 +5,10 @@
  *   field agent:          Home, My tasks, More
  */
 import { Tabs } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { services } from '@/backend/engine';
-import { num } from '@/lib/format';
+import { TabBar, TabDef } from '@/components/tabBar';
 import { useApp, useQuery, useT } from '@/state/app';
-import { colors } from '@/theme';
-import { Icon, useDir } from '@/ui/core';
-
-type TabDef = { name: string; label: string; icon: string; count?: number };
 
 function tabsFor(role: string): string[] {
   if (role === 'agent') return ['home', 'cases', 'more'];
@@ -25,7 +19,7 @@ function tabsFor(role: string): string[] {
 
 export default function ProviderTabs() {
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <ProviderTabBar {...props} />}>
       <Tabs.Screen name="home" />
       <Tabs.Screen name="offers" />
       <Tabs.Screen name="cases" />
@@ -35,10 +29,8 @@ export default function ProviderTabs() {
   );
 }
 
-function TabBar({ state, navigation }: any) {
+function ProviderTabBar({ state, navigation }: any) {
   const t = useT();
-  const d = useDir();
-  const insets = useSafeAreaInsets();
   const { session, service } = useApp();
   const role = session?.user?.role || '';
   const counts = useQuery<any>(() => services().analytics.navCounts(service), [service]).data || {};
@@ -49,29 +41,5 @@ function TabBar({ state, navigation }: any) {
     team: { name: 'team', label: t('tabs.team'), icon: 'users' },
     more: { name: 'more', label: t('tabs.more'), icon: 'moreH' },
   };
-  const visible = tabsFor(role).map((n) => defs[n]);
-  const current = state.routes[state.index]?.name;
-  return (
-    <View style={{ flexDirection: d.row, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingBottom: insets.bottom }}>
-      {visible.map((tab) => {
-        const on = current === tab.name;
-        const route = state.routes.find((r: any) => r.name === tab.name);
-        return (
-          <Pressable key={tab.name} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={tab.label}
-            onPress={() => { if (!on && route) navigation.navigate(route.name); }}
-            style={{ flex: 1, alignItems: 'center', paddingTop: 8, paddingBottom: 6, gap: 2 }}>
-            <View>
-              <Icon name={tab.icon} size={22} color={on ? colors.accent : colors.text3} />
-              {tab.count ? (
-                <View style={{ position: 'absolute', top: -4, [d.rtl ? 'left' : 'right']: -10, backgroundColor: colors.bad, borderRadius: 8, minWidth: 16, paddingHorizontal: 4, alignItems: 'center' }}>
-                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700', lineHeight: 15 }}>{tab.count > 99 ? '99+' : num(tab.count)}</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={{ fontSize: 11.5, color: on ? colors.accent : colors.text2, fontWeight: on ? '700' : '500' }}>{tab.label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+  return <TabBar state={state} navigation={navigation} tabs={tabsFor(role).map((n) => defs[n])} />;
 }

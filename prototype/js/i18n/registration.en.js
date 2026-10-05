@@ -29,7 +29,7 @@
         individualBody: 'You work on your own and do the field work yourself. You need a valid national ID.'
       },
       svc: {
-        investigationBody: 'Field inquiries for lenders: residence, employment, business and guarantor checks with photos and a report.',
+        investigationBody: 'Field inquiries for companies and organisations: residence, employment, business and guarantor checks with photos and a report.',
         collectionBody: 'Recovering overdue payments through calls, messages and field visits, within the terms the client sets.',
         bothHint: 'Tick both if you provide both. Each service gets its own workspace after approval.'
       },
@@ -81,7 +81,7 @@
       after: {
         c1: 'Set your prices and SLA commitments inside the platform bands.',
         c2: 'Add supervisors, then add field agents under each supervisor.',
-        c3: 'Offers from banks and finance companies start arriving for your coverage areas.',
+        c3: 'Offers from companies and organisations start arriving for your coverage areas.',
         i1: 'Set your prices and SLA commitments inside the platform bands.',
         i2: 'Offers for your coverage areas arrive in your inbox.',
         i3: 'Do the field work in the field app. Platform QA reviews your reports.'
