@@ -40,7 +40,13 @@ const en = {
   client: {
     services: 'Your work covers', trend: 'Last 6 months', sent: 'Sent', closed: 'Closed', toRate: 'Providers to rate',
     organisation: 'Organisation', type: 'Type', email: 'Email', waitingDecision: 'Reports waiting for your decision',
-    nextSteps: 'Sending requests and following cases arrive in the next updates of the app.'
+    nextSteps: 'Sending new requests from the app arrives in the next update.',
+    allServices: 'All', chooseProviderNext: 'Choosing a provider from the app arrives in the next update.',
+    group: { needs: 'Needs you', waiting: 'Waiting for provider', progress: 'In progress', drafts: 'Drafts', done: 'Done', stopped: 'Cancelled' },
+    groupEmpty: {
+      needs: 'Nothing needs your decision right now.', waiting: 'No offers waiting for a provider.', progress: 'No cases in progress.',
+      drafts: 'No drafts.', done: 'No finished cases yet.', stopped: 'No cancelled or recalled cases.'
+    }
   },
   home: {
     hello: 'Hello, {name}', workspace: 'Workspace', toAssign: 'Cases waiting for an agent', toReview: 'Reports to review',
@@ -169,7 +175,13 @@ const ar: typeof en = {
   client: {
     services: 'يشمل عملك', trend: 'آخر 6 أشهر', sent: 'مُرسلة', closed: 'مغلقة', toRate: 'مقدمو خدمة بانتظار تقييمك',
     organisation: 'الجهة', type: 'النوع', email: 'البريد الإلكتروني', waitingDecision: 'تقارير بانتظار قرارك',
-    nextSteps: 'إرسال الطلبات ومتابعة الحالات يصلان في التحديثات القادمة للتطبيق.'
+    nextSteps: 'إرسال طلبات جديدة من التطبيق يصل في التحديث القادم.',
+    allServices: 'الكل', chooseProviderNext: 'اختيار مقدم الخدمة من التطبيق يصل في التحديث القادم.',
+    group: { needs: 'تحتاجك', waiting: 'بانتظار مقدم الخدمة', progress: 'قيد التنفيذ', drafts: 'مسودات', done: 'منتهية', stopped: 'ملغاة' },
+    groupEmpty: {
+      needs: 'لا شيء يحتاج قرارك الآن.', waiting: 'لا توجد عروض بانتظار مقدم خدمة.', progress: 'لا توجد حالات قيد التنفيذ.',
+      drafts: 'لا توجد مسودات.', done: 'لا توجد حالات منتهية بعد.', stopped: 'لا توجد حالات ملغاة أو مسحوبة.'
+    }
   },
   home: {
     hello: 'مرحبًا، {name}', workspace: 'مساحة العمل', toAssign: 'حالات تنتظر مندوبًا', toReview: 'تقارير للمراجعة',
