@@ -154,7 +154,9 @@
       get: '(disputeId) -> DisputeDetail',
       open: '(values) -> Dispute',
       respond: '(disputeId, text) -> Dispute',
-      resolve: '(disputeId, outcome, note) -> Dispute   (admin)'
+      propose: '(disputeId, outcome, note) -> Dispute   (Legal or Management: first step)',
+      confirm: '(disputeId) -> Dispute   (the other team: the decision takes effect)',
+      sendBack: '(disputeId, note) -> Dispute   (the other team disagrees; the dispute stays open)'
     },
     billing: {
       invoices: '() -> Invoice[]',

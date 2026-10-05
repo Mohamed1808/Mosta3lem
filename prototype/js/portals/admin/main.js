@@ -393,7 +393,9 @@
           <div class="stack">${d.case ? ui.card(t('dispute.caseTimeline', { ref: d.case.ref }), h`<div class="row wrap mb-8">${ui.serviceBadge(d.case.service)}${ui.status(d.case.status)}<a href="#/admin/cases/${d.case.id}" class="small">${t('dispute.openCase')}</a></div>${ui.timeline(d.case.timeline)}`) : ''}</div>
           <div class="stack">
             ${adminNotes.length ? side(t('dispute.adminNotes'), adminNotes.map(function (r) { return { by: r.byName, text: r.text, at: r.at }; })) : ''}
-            ${open ? ui.card(t('dispute.resolve'), h`<form data-submit="resolve" class="stack">
+            ${open && d.proposal ? ui.card(t('dispute.proposalTitle'), h`<div class="stack"><p><strong>${t('dispute.outcome.' + d.proposal.outcome)}</strong></p><p class="small">${d.proposal.note}</p><p class="xs faint">${t('dispute.proposedBy', { name: d.proposal.byName, team: t('role.' + d.proposal.role) })}</p>
+              <div class="row end"><button type="button" class="btn" data-action="sendBack">${t('dispute.sendBack')}</button><button type="button" class="btn btn-primary" data-action="confirmDecision">${t('dispute.confirmDecision')}</button></div></div>`, { cls: 'accent-edge' })
+            : open ? ui.card(t('dispute.resolve'), h`<form data-submit="resolve" class="stack">
               <div class="field"><label>${t('dispute.outcomeLabel')}<span class="req">*</span></label>${ui.select('outcome', [{ value: '', label: t('common.select') }].concat(['upheld', 'partial', 'rejected'].map(function (o) { return { value: o, label: t('dispute.outcome.' + o) }; })), '')}</div>
               <p class="xs faint">${d.kind === 'rating' ? t('dispute.ratingEffects') : t('dispute.caseEffects')}</p>
               <div class="field"><label>${t('dispute.resolutionNote')}<span class="req">*</span></label><textarea class="textarea" name="note" rows="3"></textarea></div>
@@ -407,7 +409,17 @@
         if (!v.outcome || !String(v.note || '').trim()) return ui.toast(t('dispute.needOutcome'), 'danger');
         var ok = await ui.confirm({ title: t('dispute.resolve'), message: t('dispute.resolveConfirm', { outcome: t('dispute.outcome.' + v.outcome) }), confirmLabel: t('dispute.resolve') });
         if (!ok) return;
-        await S.disputes.resolve(ctx.params.id, v.outcome, v.note); ui.toast(t('dispute.resolved'), 'success'); ctx.reload();
+        await S.disputes.propose(ctx.params.id, v.outcome, v.note); ui.toast(t('dispute.proposed'), 'success'); ctx.reload();
+      },
+      confirmDecision: async function (el, ev, ctx) {
+        var ok = await ui.confirm({ title: t('dispute.confirmDecision'), message: t('dispute.confirmBody'), confirmLabel: t('dispute.confirmDecision') });
+        if (!ok) return;
+        await S.disputes.confirm(ctx.params.id); ui.toast(t('dispute.resolved'), 'success'); ctx.reload();
+      },
+      sendBack: async function (el, ev, ctx) {
+        var v = await ui.confirm({ title: t('dispute.sendBack'), reason: 'required', confirmLabel: t('dispute.sendBack') });
+        if (!v) return;
+        await S.disputes.sendBack(ctx.params.id, v.reason); ctx.reload();
       },
       note: async function (el, ev, ctx) {
         var v = await ui.confirm({ title: t('dispute.addNote'), reason: 'required', confirmLabel: t('common.save') });

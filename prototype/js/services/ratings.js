@@ -207,7 +207,7 @@
 
   // ---------------------------------------------------------------- disputes
   function canSeeDispute(d, a) {
-    if (a.role === 'platform_admin' || a.role === 'platform_qa') return true;
+    if (wf.isPlatformRole(a.role)) return wf.can(a.role, 'disputes.view');
     if (wf.isEntityRole(a.role)) return d.entityId === a.entityId;
     if (a.providerId) return d.providerId === a.providerId;
     return false;
@@ -215,12 +215,41 @@
   function decorateDispute(d, viewer) {
     var p = E.providerById(d.providerId), e = E.entityById(d.entityId);
     var out = Object.assign({}, d, { providerName: p ? p.name : '', entityName: e ? e.name : '' });
+    // Staff without personal-data access see who said what and when, not the free text
+    // (statements can name or locate the customer). Platform notes and decisions stay.
+    if (viewer && wf.isPlatformRole(viewer.role) && !wf.seesPersonalData(viewer.role)) {
+      out = Object.assign(out, { details: null, textHidden: true });
+      out.responses = (out.responses || []).map(function (r) { return r.party === 'admin' ? r : Object.assign({}, r, { text: null }); });
+    }
     // Clients see the provider company, never the names of its people.
     if (viewer && wf.isEntityRole(viewer.role)) {
       if (out.raisedByParty === 'provider') out = Object.assign(out, { raisedBy: null, raisedByName: out.providerName });
       out.responses = (out.responses || []).map(function (r) { return r.party === 'provider' ? Object.assign({}, r, { by: null, byName: out.providerName }) : r; });
     }
     return out;
+  }
+
+  function openDispute(id) {
+    var d = E.disputeById(id);
+    if (!d || d.status !== 'open') throw new Err('errors.disputeClosed');
+    return d;
+  }
+  /**
+   * Dispute decisions need two people from the two teams in wf.DUAL_APPROVAL (Legal and
+   * Management): the second must be another person, from the other team. The Super admin
+   * can stand in for either team.
+   */
+  function secondCheck(first, a) {
+    if (first.by === a.userId) return { key: 'errors.sameApprover' };
+    var teams = wf.DUAL_APPROVAL['disputes.decide'];
+    if (a.role !== 'platform_admin' && first.role !== 'platform_admin' && a.role === first.role) {
+      return { key: 'errors.otherTeam', params: { team: ICM.t('role.' + teams.filter(function (r) { return r !== a.role; })[0]) } };
+    }
+    return null;
+  }
+  /** Who can give the second approval after this person proposed. */
+  function secondApprovers(first) {
+    return E.staffWith('disputes.decide').filter(function (u) { return !secondCheck({ by: first.userId, role: first.role }, { userId: u.id, role: u.role }); });
   }
 
   S.disputes = {
@@ -253,9 +282,12 @@
           createdAt: E.now(), resolvedAt: null, resolvedBy: null, responses: []
         };
         if (v.kind === 'case') {
-          if (!wf.isEntityRole(a.role)) throw new Err('errors.forbidden');
+          // A client opens it, or Customer support opens it on the client's behalf.
+          var onBehalf = wf.isPlatformRole(a.role) && wf.can(a.role, 'disputes.openOnBehalf');
+          if (!wf.isEntityRole(a.role) && !onBehalf) throw new Err('errors.forbidden');
           var c = E.mustCase(v.caseId);
-          if (c.entityId !== a.entityId || !c.providerId) throw new Err('errors.forbidden');
+          if ((!onBehalf && c.entityId !== a.entityId) || !c.providerId) throw new Err('errors.forbidden');
+          if (onBehalf) d.onBehalfOf = { by: a.userId, byName: a.name, role: a.role };
           if (db.disputes.some(function (x) { return x.caseId === c.id && x.kind === 'case' && x.status === 'open'; })) throw new Err('errors.disputeExists');
           d.caseId = c.id; d.caseRef = c.ref; d.entityId = c.entityId; d.providerId = c.providerId; d.raisedByParty = 'entity';
           var n = wf.withEntry(Object.assign({}, c, { disputed: true, disputeIds: (c.disputeIds || []).concat([d.id]) }), a, E.now(), 'dispute_opened', { note: d.details });
@@ -281,20 +313,42 @@
         if (!d || !canSeeDispute(d, a)) throw new Err('errors.forbidden');
         if (d.status !== 'open') throw new Err('errors.disputeClosed');
         if (!String(text || '').trim()) throw new Err('errors.required');
-        var party = a.role === 'platform_admin' ? 'admin' : wf.isEntityRole(a.role) ? 'entity' : 'provider';
+        var party = wf.isPlatformRole(a.role) ? 'admin' : wf.isEntityRole(a.role) ? 'entity' : 'provider';
         d.responses.push({ by: a.userId, byName: a.name, party: party, text: String(text).trim(), at: E.now() });
         E.audit('dispute.response', 'dispute', d.id, d.ref, null, null, text, a);
         return d;
       });
     },
-    resolve: function (id, outcome, note) {
+    /**
+     * First step of a dispute decision (Legal or Management): propose the outcome. Nothing
+     * changes for the parties until a person from the other team confirms it.
+     */
+    propose: function (id, outcome, note) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
-        var d = E.disputeById(id);
-        if (!d || d.status !== 'open') throw new Err('errors.disputeClosed');
+        var a = E.requirePermission('disputes.decide');
+        var d = openDispute(id);
+        if (d.proposal) throw new Err('errors.decisionPending');
         if (['upheld', 'rejected', 'partial'].indexOf(outcome) < 0) throw new Err('errors.outcomeRequired');
         if (!String(note || '').trim()) throw new Err('wf.err.reasonRequired');
-        d.status = 'resolved'; d.outcome = outcome; d.resolutionNote = note; d.resolvedAt = E.now(); d.resolvedBy = a.name;
+        d.proposal = { outcome: outcome, note: String(note).trim(), by: a.userId, byName: a.name, role: a.role, at: E.now() };
+        E.audit('dispute.decision_proposed', 'dispute', d.id, d.ref, null, { outcome: outcome }, note, a);
+        E.notify(secondApprovers(a), 'notif.dispute_decision_pending', { ref: d.ref }, 'dispute:' + d.id);
+        return d;
+      });
+    },
+    /** Second step: a person from the other team confirms, and the decision takes effect. */
+    confirm: function (id) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('disputes.decide');
+        var d = openDispute(id);
+        if (!d.proposal) throw new Err('errors.noDecisionPending');
+        var err = secondCheck(d.proposal, a);
+        if (err) throw new Err(err.key, err.params);
+        var outcome = d.proposal.outcome, note = d.proposal.note;
+        d.status = 'resolved'; d.outcome = outcome; d.resolutionNote = note; d.resolvedAt = E.now();
+        d.resolvedBy = d.proposal.byName + ' / ' + a.name;
+        d.decision = { proposedBy: d.proposal.byName, proposedRole: d.proposal.role, proposedAt: d.proposal.at, confirmedBy: a.name, confirmedRole: a.role, confirmedAt: E.now() };
+        d.proposal = null;
         if (d.kind === 'rating') {
           var r = E.ratingById(d.ratingId);
           r.disputed = false;
@@ -314,6 +368,23 @@
         E.audit('dispute.resolved', 'dispute', d.id, d.ref, { status: 'open' }, { status: 'resolved', outcome: outcome }, note, a);
         var parties = db.users.filter(function (u) { return u.active !== false && ((u.entityId === d.entityId && (u.id === d.raisedBy || u.role === 'entity_admin')) || (u.providerId === d.providerId && ['provider_admin', 'freelancer'].indexOf(u.role) >= 0)); });
         E.notify(parties, 'notif.dispute_resolved', { ref: d.ref, outcome: outcome }, 'dispute:' + d.id);
+        return d;
+      });
+    },
+    /** The second person disagrees: the proposal goes back with a note and the dispute stays open. */
+    sendBack: function (id, note) {
+      return E.mutate(function () {
+        var a = E.requirePermission('disputes.decide');
+        var d = openDispute(id);
+        if (!d.proposal) throw new Err('errors.noDecisionPending');
+        if (!String(note || '').trim()) throw new Err('wf.err.reasonRequired');
+        var err = secondCheck(d.proposal, a);
+        if (err) throw new Err(err.key, err.params);
+        d.proposals = (d.proposals || []).concat([Object.assign({}, d.proposal, { sentBackBy: a.name, sentBackRole: a.role, sentBackNote: String(note).trim(), sentBackAt: E.now() })]);
+        var proposer = E.userById(d.proposal.by);
+        d.proposal = null;
+        E.audit('dispute.decision_sent_back', 'dispute', d.id, d.ref, null, null, note, a);
+        if (proposer) E.notify([proposer], 'notif.dispute_decision_sent_back', { ref: d.ref }, 'dispute:' + d.id);
         return d;
       });
     }

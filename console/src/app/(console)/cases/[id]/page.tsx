@@ -62,12 +62,24 @@ function Body({ d }: { d: Any }) {
     if (v) await run(() => services().cases.transition(c.id, "return_to_agent", { comment: v.note }), t("review.returned"));
   };
 
+  const openDispute = async () => {
+    const v = await ask({
+      title: t("console.cases.disputeForClient"), message: t("console.cases.disputeForClientBody", { client: c.entityName }),
+      options: ["report_inaccurate", "evidence_missing", "sla_missed", "conduct", "billing", "other"].map((r) => ({ value: r, label: t("dispute.reason." + r) })),
+      optionLabel: t("dispute.reasonLabel"), note: "required", noteLabel: t("dispute.details"), confirmLabel: t("dispute.submit"),
+    });
+    if (v && v.option) await run(() => services().disputes.open({ kind: "case", caseId: c.id, reason: v.option, details: v.note }), t("dispute.opened"));
+  };
+  const disputeOpen = (d.disputes || []).some((x: Any) => x.kind === "case" && x.status === "open");
+
   const actions = [
     a.indexOf("approve") >= 0 ? <Button key="approve" kind="primary" onClick={approve}>{t("action.approve")}</Button> : null,
     a.indexOf("return_to_agent") >= 0 ? <Button key="back" onClick={giveBack}>{t("action.return_to_agent")}</Button> : null,
     manage && c.dueAt && !icm().wf.isTerminal(c.status) ? <Button key="extend" onClick={extend}>{t("admin.extendSla")}</Button> : null,
     a.indexOf("force_reassign") >= 0 ? <Button key="reassign" onClick={reassign}>{t("admin.forceReassign")}</Button> : null,
     a.indexOf("cancel") >= 0 ? <Button key="cancel" kind="danger" onClick={cancel}>{t("action.cancel")}</Button> : null,
+    can("disputes.openOnBehalf") && c.providerId && c.acceptedAt && !disputeOpen && ["cancelled", "awaiting_acceptance"].indexOf(c.status) < 0
+      ? <Button key="dispute" onClick={openDispute}>{t("console.cases.disputeForClient")}</Button> : null,
   ].filter(Boolean);
 
   return (

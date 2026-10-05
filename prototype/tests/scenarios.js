@@ -268,8 +268,10 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(!!oneStar, 'provider finds a 1-star rating');
     const before = score('prv_recovery', 'collection').score;
     const dsp = await S.disputes.open({ kind: 'rating', ratingId: oneStar.id, reason: 'rating_unfair', details: 'No complaint was ever raised.' });
-    await as('Laila Hosny');
-    await S.disputes.resolve(dsp.id, 'upheld', 'Evidence supports the provider.');
+    await as('Nermine Saad');
+    await S.disputes.propose(dsp.id, 'upheld', 'Evidence supports the provider.');
+    await as('Karim Fawzy');
+    await S.disputes.confirm(dsp.id);
     const after = score('prv_recovery', 'collection').score;
     const r = ICM.store.db.ratings.find((x) => x.id === oneStar.id);
     ok(r.status === 'removed' && after > before, 'rating removed, score ' + before + ' -> ' + after);
@@ -1200,6 +1202,39 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(db.cases.find((c) => c.id === c0.id).status === 'returned_to_agent', 'Quality returns it to the provider with a comment');
     await as('Yara Nabil');
     ok((await S.cases.list({})).length === 0 && (await errOf(S.cases.get(c0.id))) !== null, 'Data sees no individual cases');
+  });
+
+  await scenario('31. Disputes are decided by Legal and Management together', async () => {
+    const db = ICM.store.db;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const target = db.cases.find((c) => c.providerId && c.acceptedAt && !c.disputed && ['cancelled', 'awaiting_acceptance'].indexOf(c.status) < 0 && !ICM.wf.isTerminal(c.status));
+    await as('Amira Galal');
+    const d = await S.disputes.open({ kind: 'case', caseId: target.id, reason: 'sla_missed', details: 'Client called: the visit is three days late.' });
+    ok(d.onBehalfOf && d.raisedByParty === 'entity', 'Customer support opens a dispute on the client\'s behalf');
+    ok((await S.disputes.get(d.id)).details === null, 'Customer support does not see the statements');
+    ok(await errOf(S.disputes.propose(d.id, 'upheld', 'x')) === 'errors.forbidden', 'Customer support cannot decide');
+
+    await as('Nermine Saad');
+    ok((await S.disputes.get(d.id)).details.indexOf('three days late') > 0, 'Legal sees the statements');
+    await S.disputes.propose(d.id, 'upheld', 'The provider missed the deadline without notice.');
+    ok(await errOf(S.disputes.confirm(d.id)) === 'errors.sameApprover', 'the person who proposed cannot confirm');
+    ok(db.disputes.find((x) => x.id === d.id).status === 'open', 'nothing changes until it is confirmed');
+    db.users.push({ id: 'u_legal_two', name: 'Second Legal', role: 'platform_legal', email: 'legal2@platform.example', active: true });
+    await S.auth.loginAs('u_legal_two');
+    ok(await errOf(S.disputes.confirm(d.id)) === 'errors.otherTeam', 'another person from the same team cannot confirm');
+    await as('Mai Adel');
+    ok(await errOf(S.disputes.confirm(d.id)) === 'errors.forbidden', 'Operations cannot confirm');
+
+    await as('Karim Fawzy');
+    await S.disputes.sendBack(d.id, 'Check whether the client changed the address first.');
+    let x = db.disputes.find((y) => y.id === d.id);
+    ok(!x.proposal && x.proposals.length === 1 && x.status === 'open', 'Management sends the proposal back with a note');
+    await S.disputes.propose(d.id, 'partial', 'Late, but the address changed during the visit window.');
+    await as('Nermine Saad');
+    await S.disputes.confirm(d.id);
+    x = db.disputes.find((y) => y.id === d.id);
+    ok(x.status === 'resolved' && x.outcome === 'partial' && x.decision.proposedRole === 'platform_management' && x.decision.confirmedRole === 'platform_legal', 'Legal confirms Management\'s proposal and the decision takes effect');
+    ok(db.cases.find((c) => c.id === target.id).billingAdjustment === 0.5, 'a partly upheld case dispute halves the billed amount');
   });
 
   // ---------------------------------------------------------------- report

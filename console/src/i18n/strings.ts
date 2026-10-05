@@ -13,7 +13,17 @@ const en = {
     staffOnly: 'This console is for Mosta3lem staff. Organisations and service providers use the mobile app.',
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
-    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', access: 'Teams and access' },
+    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', access: 'Teams and access' },
+    disputes: {
+      sub: 'Legal and Management decide together: one proposes, the other team confirms.', tab: { toDecide: 'To decide', toConfirm: 'To confirm', resolved: 'Resolved' },
+      empty: { toDecide: 'No dispute waits for a decision.', toConfirm: 'No proposed decision waits for confirmation.', resolved: 'No resolved disputes yet.' },
+      proposed: 'Proposed: {outcome}', waiting: 'Waiting for a decision', onBehalf: 'for the client', textHidden: 'Hidden for your team',
+      hiddenNote: 'Statements from the parties are hidden for your team; times, names and decisions stay visible.',
+      propose: 'Propose a decision', twoSteps: 'Your proposal takes effect once a person from the other team confirms it.',
+      decidedBy: 'Legal and Management decide disputes.', waitingFor: 'Waiting for {team} to confirm.', sentBack: 'Decision sent back',
+      noteAdded: 'Note added', decision: 'Decision', sentBackTitle: 'Sent back earlier', noNotes: 'No platform notes yet.', case: 'Case',
+      proposedLine: 'Proposed by {name} ({team}), {at}', confirmedLine: 'Confirmed by {name} ({team}), {at}'
+    },
     cases: {
       sub: 'Every case on the platform.', scope: { open: 'Open', late: 'Past deadline', atRisk: 'At risk', closed: 'Closed', all: 'All' },
       search: 'Search by reference, name or national ID', service: 'Service', allServices: 'All services', client: 'Client', allClients: 'All clients',
@@ -22,7 +32,8 @@ const en = {
       price: 'Price', agent: 'Field agent', hours: '{n} hours', reportHidden: 'Report answers are hidden for your team.',
       maskedNote: 'Customer details and report answers are hidden for your team.', noOtherProvider: 'No other provider covers this case right now.',
       returnBody: 'The report goes back to the field agent with your comment.', request: 'Request', evidence: 'Evidence and report', timeline: 'Timeline',
-      checkInHidden: 'Check-in location is hidden for your team.'
+      checkInHidden: 'Check-in location is hidden for your team.', disputeForClient: 'Open a dispute for the client',
+      disputeForClientBody: 'Opened on behalf of {client}. Legal and Management will decide it.'
     },
     quality: { sub: 'Reports from individual providers and owners doing their own field work, oldest first.' },
     providers: {
@@ -72,7 +83,17 @@ const ar: typeof en = {
     staffOnly: 'لوحة التحكم هذه لموظفي مستعلم. الجهات ومقدمو الخدمة يستخدمون تطبيق الموبايل.',
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
-    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', access: 'الفرق والصلاحيات' },
+    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', access: 'الفرق والصلاحيات' },
+    disputes: {
+      sub: 'تقرر الشؤون القانونية والإدارة معًا: أحدهما يقترح والفريق الآخر يؤكد.', tab: { toDecide: 'للقرار', toConfirm: 'للتأكيد', resolved: 'محسومة' },
+      empty: { toDecide: 'لا يوجد نزاع بانتظار قرار.', toConfirm: 'لا يوجد قرار مقترح بانتظار التأكيد.', resolved: 'لا توجد نزاعات محسومة بعد.' },
+      proposed: 'مقترح: {outcome}', waiting: 'بانتظار قرار', onBehalf: 'نيابة عن العميل', textHidden: 'مخفي لفريقك',
+      hiddenNote: 'أقوال الطرفين مخفية لفريقك؛ تظل الأوقات والأسماء والقرارات ظاهرة.',
+      propose: 'اقتراح قرار', twoSteps: 'يسري اقتراحك بعد أن يؤكده شخص من الفريق الآخر.',
+      decidedBy: 'الشؤون القانونية والإدارة هما من يقرران في النزاعات.', waitingFor: 'بانتظار تأكيد {team}.', sentBack: 'أُعيد القرار',
+      noteAdded: 'تمت إضافة الملاحظة', decision: 'القرار', sentBackTitle: 'أُعيد سابقًا', noNotes: 'لا توجد ملاحظات من المنصة بعد.', case: 'الحالة',
+      proposedLine: 'اقترحه {name} ({team})، {at}', confirmedLine: 'أكده {name} ({team})، {at}'
+    },
     cases: {
       sub: 'كل الحالات على المنصة.', scope: { open: 'مفتوحة', late: 'تجاوزت الموعد', atRisk: 'معرضة للتأخير', closed: 'مغلقة', all: 'الكل' },
       search: 'ابحث بالمرجع أو الاسم أو الرقم القومي', service: 'الخدمة', allServices: 'كل الخدمات', client: 'العميل', allClients: 'كل العملاء',
@@ -81,7 +102,8 @@ const ar: typeof en = {
       price: 'السعر', agent: 'المندوب الميداني', hours: '{n} ساعة', reportHidden: 'إجابات التقرير مخفية لفريقك.',
       maskedNote: 'بيانات العميل وإجابات التقرير مخفية لفريقك.', noOtherProvider: 'لا يوجد مقدم خدمة آخر يغطي هذه الحالة الآن.',
       returnBody: 'يعود التقرير إلى المندوب الميداني مع تعليقك.', request: 'الطلب', evidence: 'الأدلة والتقرير', timeline: 'السجل الزمني',
-      checkInHidden: 'موقع تسجيل الوصول مخفي لفريقك.'
+      checkInHidden: 'موقع تسجيل الوصول مخفي لفريقك.', disputeForClient: 'فتح نزاع نيابة عن العميل',
+      disputeForClientBody: 'يُفتح نيابة عن {client}. تقرر فيه الشؤون القانونية والإدارة.'
     },
     quality: { sub: 'تقارير مقدمي الخدمة الأفراد والملاك الذين يعملون ميدانيًا بأنفسهم، الأقدم أولًا.' },
     providers: {
