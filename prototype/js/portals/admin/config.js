@@ -76,7 +76,7 @@
       return h`${ui.pageHead(t('nav.pricing'), t('pricing.subtitle'))}
         <form data-submit="save" class="stack">
           ${ui.card(t('pricing.general'), h`<div class="form-grid cols-4">
-            ${numField('platformFeePct', p.platformFeePct, t('pricing.fee'), t('pricing.feeHint'), 'min="0" max="50" step="0.5"')}
+            ${numField('platformFeePct', p.platformFeePct, t('pricing.fee'), t('errors.feeNeedsTwoTeams'), 'readonly')}
             ${numField('offerWindowHours', p.offerWindowHours, t('pricing.window'), t('pricing.windowHint'), 'min="1" max="72"')}
             ${numField('offerWarnMinutes', p.offerWarnMinutes, t('pricing.warn'), null, 'min="5"')}
             ${numField('defaultCollectionDays', p.defaultCollectionDays, t('pricing.collectionDays'), null, 'min="1"')}

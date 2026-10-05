@@ -342,13 +342,13 @@
       subtitle: 'Monthly invoices per provider. Lines are added when cases close.', outstanding: 'Outstanding', accruing: 'Accruing this month',
       accruingSub: 'Draft, not issued yet', paidTotal: 'Paid', ref: 'Invoice', month: 'Month', provider: 'Provider', client: 'Client', lines: 'Lines',
       total: 'Total', markPaid: 'Mark as paid', payBody: 'Record that this invoice is paid. This is a simulation; no money moves.', paid: 'Invoice marked as paid',
-      none: 'No invoices', title: 'Invoice {ref}', closed: 'Closed', amount: 'Amount', adjusted: 'adjusted to {pct}% after dispute',
+      none: 'No invoices', title: 'Invoice {ref}', closed: 'Closed', amount: 'Amount', adjusted: 'billed at {pct}% after an adjustment',
       platformFee: 'Platform fee', issue: 'Issue', issueBody: 'Issue this invoice to the client. It can then be paid.', issued: 'Invoice issued'
     },
     earnings: {
       subtitle: 'Per case earnings after the {pct}% platform fee.', monthGross: 'This month, gross', monthNet: 'This month, net', afterFee: 'after platform fee',
       accruing: 'Accruing', accruingSub: 'Invoice not issued yet', pending: 'Payout pending', pendingSub: 'Invoice issued, not paid', paidOut: 'Paid out',
-      perCase: 'Per case', gross: 'Gross', fee: 'Platform fee', net: 'Net', payout: 'Payout', none: 'No earnings yet', adjusted: 'adjusted by dispute'
+      perCase: 'Per case', gross: 'Gross', fee: 'Platform fee', net: 'Net', payout: 'Payout', none: 'No earnings yet', adjusted: 'adjusted'
     },
     reports: {
       subtitle: 'How the providers you work with perform.', onTime: 'On-time rate by provider (%)', volume: 'Cases per month by provider',
@@ -473,6 +473,7 @@
         batch_created: 'Batch created', batch_assigned: 'Batch assigned', batch_closed: 'Batch closed', rating_created: 'Rating given', rating_reply: 'Rating reply',
         rating_flagged: 'Feedback reported', rating_hidden: 'Feedback hidden', rating_restored: 'Feedback restored', rating_flag_dismissed: 'Report dismissed',
         client_rating_created: 'Client rated', dispute_opened: 'Dispute opened', dispute_response: 'Dispute note', dispute_resolved: 'Dispute resolved', dispute_decision_proposed: 'Dispute decision proposed', dispute_decision_sent_back: 'Dispute decision sent back',
+        invoice_line_adjusted: 'Invoice line adjusted', config_fee_change_proposed: 'Fee change proposed', config_fee_changed: 'Platform fee changed', config_fee_change_sent_back: 'Fee change sent back',
         invoice_paid: 'Invoice paid', invoice_issued: 'Invoice issued', provider_verify: 'Provider verified', provider_reject: 'Application rejected',
         provider_request_info: 'More info requested', provider_check_idVerified: 'ID check updated', provider_check_certified: 'Training check updated',
         provider_enforcement_auto: 'Automatic enforcement', provider_enforcement_manual: 'Enforcement set by admin', provider_enforcement_auto_on: 'Automatic enforcement on',
@@ -520,7 +521,10 @@
       sla_extended: 'SLA for {ref} extended by {hours} hours', ptp_broken: 'Promise to pay on {ref} was broken', payment_recorded: 'Payment of {amount} recorded on {ref}',
       rating_received: 'You received a {stars}-star rating', rating_flagged: 'Feedback on {ref} was reported', dispute_opened: 'Dispute {ref} was opened',
       dispute_resolved: 'Dispute {ref} resolved: {outcome}', dispute_decision_pending: 'A decision on dispute {ref} waits for your confirmation',
-      dispute_decision_sent_back: 'Your proposed decision on dispute {ref} was sent back', invoice_issued: 'Invoice {ref} was issued', invoice_paid: 'Invoice {ref} was paid',
+      dispute_decision_sent_back: 'Your proposed decision on dispute {ref} was sent back',
+      invoice_adjusted: 'Invoice {ref}: {caseRef} is now billed at {pct}%', fee_change_pending: 'A platform fee of {pct}% waits for your confirmation',
+      fee_changed: 'The platform fee is now {pct}%', fee_change_sent_back: 'Your proposed fee of {pct}% was sent back',
+      platform_fee_changed: 'The platform fee is now {pct}% for invoices opened from today', invoice_issued: 'Invoice {ref} was issued', invoice_paid: 'Invoice {ref} was paid',
       enforcement_changed: 'Your account status changed: {level}', enforcement_admin: '{provider} status changed automatically: {level}',
       provider_verified: 'Your account is verified', batch_progress: 'Batch {ref} moved forward'
     },
@@ -549,7 +553,8 @@
       fixedFeeOutOfBand: 'Fixed fee must be at most {max}', coverageRequired: 'Cover at least one governorate',
       freelancerChecks: 'Individual providers need ID verification and training before verification', documentsMissing: 'Some documents are missing',
       emailFormat: 'Enter a valid email', emailTaken: 'This email is already used', lastAdmin: 'Keep at least one admin', cannotDeactivateSelf: 'You cannot deactivate yourself',
-      invoiceNotIssued: 'Only issued invoices can be paid', invoiceNotDraft: 'Only draft invoices can be issued', invoiceEmpty: 'The invoice has no lines',
+      invoiceNotIssued: 'Only issued invoices can be paid', invoicePaid: 'A paid invoice cannot be changed', pctRange: 'Enter a percentage from 0 to 100',
+      feeUnchanged: 'This is already the current fee', feeNeedsTwoTeams: 'The platform fee changes only with Finance and Management, from the Finance page', invoiceNotDraft: 'Only draft invoices can be issued', invoiceEmpty: 'The invoice has no lines',
       storageFull: 'Browser storage is full. Reset the demo data or remove photos.'
     },
     wf: {

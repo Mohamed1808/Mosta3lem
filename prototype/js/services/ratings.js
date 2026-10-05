@@ -234,23 +234,9 @@
     if (!d || d.status !== 'open') throw new Err('errors.disputeClosed');
     return d;
   }
-  /**
-   * Dispute decisions need two people from the two teams in wf.DUAL_APPROVAL (Legal and
-   * Management): the second must be another person, from the other team. The Super admin
-   * can stand in for either team.
-   */
-  function secondCheck(first, a) {
-    if (first.by === a.userId) return { key: 'errors.sameApprover' };
-    var teams = wf.DUAL_APPROVAL['disputes.decide'];
-    if (a.role !== 'platform_admin' && first.role !== 'platform_admin' && a.role === first.role) {
-      return { key: 'errors.otherTeam', params: { team: ICM.t('role.' + teams.filter(function (r) { return r !== a.role; })[0]) } };
-    }
-    return null;
-  }
-  /** Who can give the second approval after this person proposed. */
-  function secondApprovers(first) {
-    return E.staffWith('disputes.decide').filter(function (u) { return !secondCheck({ by: first.userId, role: first.role }, { userId: u.id, role: u.role }); });
-  }
+  /** Dispute decisions need Legal and Management (see E.secondApproval). */
+  function secondCheck(first, a) { return E.secondApproval(first, a, 'disputes.decide'); }
+  function secondApprovers(first) { return E.secondApprovers(first, 'disputes.decide'); }
 
   S.disputes = {
     list: function () {

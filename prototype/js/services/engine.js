@@ -128,6 +128,23 @@
   E.providerSupervisors = function (pid) { return pid ? D.providerUsers(E.db(), pid, ['provider_supervisor', 'freelancer']) : []; };
   E.agentUsers = function (c) { var u = c.agentId ? D.agentUser(E.db(), c.agentId) : null; return u ? [u] : []; };
   E.admins = function () { return D.platformUsers(E.db(), 'platform_admin'); };
+  /**
+   * Decisions in wf.DUAL_APPROVAL need two people from the two teams: the second must be
+   * another person, from the other team. The Super admin can stand in for either team.
+   * first: { by, role } of the proposal; a: the person giving the second approval.
+   */
+  E.secondApproval = function (first, a, permission) {
+    if (first.by === a.userId) return { key: 'errors.sameApprover' };
+    var teams = wf.DUAL_APPROVAL[permission] || [];
+    if (a.role !== 'platform_admin' && first.role !== 'platform_admin' && a.role === first.role) {
+      return { key: 'errors.otherTeam', params: { team: ICM.t('role.' + (teams.filter(function (r) { return r !== a.role; })[0] || a.role)) } };
+    }
+    return null;
+  };
+  /** Who can give the second approval after this person proposed. */
+  E.secondApprovers = function (first, permission) {
+    return E.staffWith(permission).filter(function (u) { return !E.secondApproval({ by: first.userId, role: first.role }, { userId: u.id, role: u.role }, permission); });
+  };
   /** Active staff whose team has this permission (who to notify about work for that team). */
   E.staffWith = function (permission) {
     return E.db().users.filter(function (u) { return u.active !== false && wf.isPlatformRole(u.role) && wf.can(u.role, permission); });

@@ -341,13 +341,13 @@
       subtitle: 'فواتير شهرية لكل مقدم خدمة، تُضاف البنود عند إغلاق الحالات.', outstanding: 'المستحق', accruing: 'قيد الاستحقاق هذا الشهر',
       accruingSub: 'مسودة لم تصدر بعد', paidTotal: 'المدفوع', ref: 'الفاتورة', month: 'الشهر', provider: 'مقدم الخدمة', client: 'الجهة', lines: 'البنود',
       total: 'الإجمالي', markPaid: 'تعليم كمدفوعة', payBody: 'تسجيل أن هذه الفاتورة مدفوعة. هذه محاكاة ولا تتحرك أموال فعلية.', paid: 'تم تعليم الفاتورة كمدفوعة',
-      none: 'لا توجد فواتير', title: 'الفاتورة {ref}', closed: 'تاريخ الإغلاق', amount: 'المبلغ', adjusted: 'عُدّلت إلى {pct}% بعد نزاع',
+      none: 'لا توجد فواتير', title: 'الفاتورة {ref}', closed: 'تاريخ الإغلاق', amount: 'المبلغ', adjusted: 'تُحاسب بنسبة {pct}% بعد تعديل',
       platformFee: 'رسوم المنصة', issue: 'إصدار', issueBody: 'إصدار هذه الفاتورة للجهة لتصبح قابلة للدفع.', issued: 'تم إصدار الفاتورة'
     },
     earnings: {
       subtitle: 'الأرباح لكل حالة بعد رسوم المنصة البالغة {pct}%.', monthGross: 'هذا الشهر، إجمالي', monthNet: 'هذا الشهر، صافي', afterFee: 'بعد رسوم المنصة',
       accruing: 'قيد الاستحقاق', accruingSub: 'لم تصدر الفاتورة بعد', pending: 'بانتظار الصرف', pendingSub: 'صدرت الفاتورة ولم تُدفع', paidOut: 'تم الصرف',
-      perCase: 'لكل حالة', gross: 'الإجمالي', fee: 'رسوم المنصة', net: 'الصافي', payout: 'الصرف', none: 'لا توجد أرباح بعد', adjusted: 'معدلة بسبب نزاع'
+      perCase: 'لكل حالة', gross: 'الإجمالي', fee: 'رسوم المنصة', net: 'الصافي', payout: 'الصرف', none: 'لا توجد أرباح بعد', adjusted: 'معدّلة'
     },
     reports: {
       subtitle: 'أداء مقدمي الخدمة الذين تتعامل معهم.', onTime: 'نسبة الالتزام بالموعد لكل مقدم خدمة (%)', volume: 'الحالات شهريًا لكل مقدم خدمة',
@@ -472,6 +472,7 @@
         batch_created: 'أُنشئت دفعة', batch_assigned: 'أُسندت دفعة', batch_closed: 'أُغلقت دفعة', rating_created: 'أُعطي تقييم', rating_reply: 'رد على تقييم',
         rating_flagged: 'أُبلغ عن ملاحظة', rating_hidden: 'أُخفيت ملاحظة', rating_restored: 'استُعيدت ملاحظة', rating_flag_dismissed: 'تُجوهل بلاغ',
         client_rating_created: 'قُيّم عميل', dispute_opened: 'فُتح نزاع', dispute_response: 'ملاحظة على نزاع', dispute_resolved: 'حُسم نزاع', dispute_decision_proposed: 'اقتُرح قرار في نزاع', dispute_decision_sent_back: 'أُعيد قرار مقترح في نزاع',
+        invoice_line_adjusted: 'عُدّل بند في فاتورة', config_fee_change_proposed: 'اقتُرح تغيير العمولة', config_fee_changed: 'تغيرت عمولة المنصة', config_fee_change_sent_back: 'أُعيد تغيير العمولة المقترح',
         invoice_paid: 'دُفعت فاتورة', invoice_issued: 'صدرت فاتورة', provider_verify: 'اعتُمد مقدم خدمة', provider_reject: 'رُفض طلب انضمام',
         provider_request_info: 'طُلبت معلومات إضافية', provider_check_idVerified: 'حُدّث فحص الهوية', provider_check_certified: 'حُدّث فحص التدريب',
         provider_enforcement_auto: 'إجراء تلقائي', provider_enforcement_manual: 'إجراء بقرار المدير', provider_enforcement_auto_on: 'تفعيل الإجراءات التلقائية',
@@ -519,7 +520,10 @@
       sla_extended: 'مُدد مستوى الخدمة لـ {ref} بمقدار {hours} ساعة', ptp_broken: 'لم يُوفَ بالوعد بالسداد على {ref}', payment_recorded: 'سُجلت دفعة {amount} على {ref}',
       rating_received: 'حصلت على تقييم {stars} نجوم', rating_flagged: 'أُبلغ عن ملاحظة على {ref}', dispute_opened: 'فُتح النزاع {ref}',
       dispute_resolved: 'حُسم النزاع {ref}: {outcome}', dispute_decision_pending: 'قرار في النزاع {ref} ينتظر تأكيدك',
-      dispute_decision_sent_back: 'أُعيد قرارك المقترح في النزاع {ref}', invoice_issued: 'صدرت الفاتورة {ref}', invoice_paid: 'دُفعت الفاتورة {ref}',
+      dispute_decision_sent_back: 'أُعيد قرارك المقترح في النزاع {ref}',
+      invoice_adjusted: 'الفاتورة {ref}: أصبحت {caseRef} تُحاسب بنسبة {pct}%', fee_change_pending: 'عمولة منصة بنسبة {pct}% تنتظر تأكيدك',
+      fee_changed: 'أصبحت عمولة المنصة {pct}%', fee_change_sent_back: 'أُعيد اقتراحك بعمولة {pct}%',
+      platform_fee_changed: 'أصبحت عمولة المنصة {pct}% للفواتير التي تُفتح من اليوم', invoice_issued: 'صدرت الفاتورة {ref}', invoice_paid: 'دُفعت الفاتورة {ref}',
       enforcement_changed: 'تغيرت حالة حسابك: {level}', enforcement_admin: 'تغيرت حالة {provider} تلقائيًا: {level}',
       provider_verified: 'تم اعتماد حسابك', batch_progress: 'تقدمت الدفعة {ref}'
     },
@@ -549,7 +553,8 @@
       fixedFeeOutOfBand: 'يجب ألا يتجاوز الرسم الثابت {max}', coverageRequired: 'غطِّ محافظة واحدة على الأقل',
       freelancerChecks: 'يحتاج مقدم الخدمة الفرد للتحقق من الهوية واجتياز التدريب قبل الاعتماد', documentsMissing: 'بعض المستندات ناقصة',
       emailFormat: 'أدخل بريدًا إلكترونيًا صحيحًا', emailTaken: 'هذا البريد مستخدم بالفعل', lastAdmin: 'يجب الإبقاء على مدير واحد على الأقل', cannotDeactivateSelf: 'لا يمكنك إيقاف نفسك',
-      invoiceNotIssued: 'يمكن دفع الفواتير الصادرة فقط', invoiceNotDraft: 'يمكن إصدار المسودات فقط', invoiceEmpty: 'الفاتورة بلا بنود',
+      invoiceNotIssued: 'يمكن دفع الفواتير الصادرة فقط', invoicePaid: 'لا يمكن تعديل فاتورة مدفوعة', pctRange: 'أدخل نسبة من 0 إلى 100',
+      feeUnchanged: 'هذه هي العمولة الحالية بالفعل', feeNeedsTwoTeams: 'تتغير عمولة المنصة فقط بموافقة المالية والإدارة، من صفحة المالية', invoiceNotDraft: 'يمكن إصدار المسودات فقط', invoiceEmpty: 'الفاتورة بلا بنود',
       storageFull: 'مساحة تخزين المتصفح ممتلئة. أعد ضبط بيانات العرض أو احذف بعض الصور.'
     },
     wf: {
