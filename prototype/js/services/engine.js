@@ -128,6 +128,10 @@
   E.providerSupervisors = function (pid) { return pid ? D.providerUsers(E.db(), pid, ['provider_supervisor', 'freelancer']) : []; };
   E.agentUsers = function (c) { var u = c.agentId ? D.agentUser(E.db(), c.agentId) : null; return u ? [u] : []; };
   E.admins = function () { return D.platformUsers(E.db(), 'platform_admin'); };
+  /** Active staff whose team has this permission (who to notify about work for that team). */
+  E.staffWith = function (permission) {
+    return E.db().users.filter(function (u) { return u.active !== false && wf.isPlatformRole(u.role) && wf.can(u.role, permission); });
+  };
   E.qa = function () { return D.platformUsers(E.db(), 'platform_qa'); };
   E.reviewersFor = function (c) {
     var p = E.providerById(c.providerId);
@@ -222,7 +226,7 @@
         p.enforcement = { level: level, source: 'auto', since: now };
         E.audit('provider.enforcement_auto', 'provider', p.id, p.name, { level: before }, { level: level, score: s.overall }, null, wf.SYSTEM);
         E.notify(D.providerUsers(db, p.id, ['provider_admin', 'freelancer']), 'notif.enforcement_changed', { level: level }, 'provider:dashboard');
-        E.notify(E.admins(), 'notif.enforcement_admin', { provider: p.name, level: level }, 'provider-admin:' + p.id);
+        E.notify(E.staffWith('providers.enforce'), 'notif.enforcement_admin', { provider: p.name, level: level }, 'provider-admin:' + p.id);
       }
     });
   };
@@ -259,7 +263,7 @@
           var owners = D.providerUsers(db, p.id, ['provider_admin', 'freelancer']);
           if (due === 'expired') {
             E.notify(owners, 'notif.document_expired', { doc: d.type }, 'provider:profile');
-            E.notify(E.admins(), 'notif.document_expired_admin', { name: p.name, doc: d.type }, 'provider-admin:' + p.id);
+            E.notify(E.staffWith('providers.documents'), 'notif.document_expired_admin', { name: p.name, doc: d.type }, 'provider-admin:' + p.id);
             E.audit('provider.document_expired', 'provider', p.id, p.name, null, { type: d.type }, null, wf.SYSTEM);
           } else {
             E.notify(owners, 'notif.document_expiring', { doc: d.type, days: Math.max(1, Math.ceil((d.expiresAt - now) / U.DAY)) }, 'provider:profile');
@@ -309,7 +313,7 @@
             } else {
               n.slaFlags.breached = true;
               n = wf.withEntry(n, wf.SYSTEM, now, 'sla_breached');
-              E.notify(E.entityUsers(n).concat(E.providerManagers(n.providerId), E.agentUsers(n), E.admins()), 'notif.sla_breached', { ref: n.ref }, 'case:' + n.id);
+              E.notify(E.entityUsers(n).concat(E.providerManagers(n.providerId), E.agentUsers(n), E.staffWith('cases.manage')), 'notif.sla_breached', { ref: n.ref }, 'case:' + n.id);
               E.audit('case.sla_breached', 'case', n.id, n.ref, null, { dueAt: n.dueAt }, null, wf.SYSTEM);
               summary.breached++;
             }

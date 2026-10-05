@@ -271,7 +271,7 @@
         } else throw new Err('errors.forbidden');
         db.disputes.push(d);
         E.audit('dispute.opened', 'dispute', d.id, d.ref, null, { kind: d.kind, reason: d.reason }, d.details, a);
-        E.notify(E.admins(), 'notif.dispute_opened', { ref: d.ref }, 'dispute:' + d.id);
+        E.notify(E.staffWith('disputes.decide'), 'notif.dispute_opened', { ref: d.ref }, 'dispute:' + d.id);
         return d;
       });
     },

@@ -359,7 +359,7 @@ async function runInvestigation(caseId, providerId, opts) {
     try { await S.registration.update(app.values); } catch (e) { fail = e.key; }
     ok(fail === 'errors.applicationLocked', 'details lock again once the application is back in review');
 
-    await as('Laila Hosny');
+    await as('Mai Adel');
     fail = null;
     try { await S.providers.approve(r.providerId); } catch (e) { fail = e.key; }
     ok(fail === 'errors.documentsMissing', 'operations cannot approve while documents are missing');
@@ -373,17 +373,21 @@ async function runInvestigation(caseId, providerId, opts) {
     app = await S.registration.mine();
     ok(app.verification.status === 'pending' && app.verification.documents.find((d) => d.type === 'owner_id_front').url, 'resent after a rejection, with the document image kept');
 
-    await as('Laila Hosny');
+    await as('Karim Fawzy');
     fail = null;
     try { await S.providers.verify(r.providerId); } catch (e) { fail = e.key; }
     ok(fail === 'errors.notAwaitingSignoff', 'management cannot sign off before operations approves');
+    await as('Mai Adel');
     await S.providers.approve(r.providerId);
+    fail = null;
+    try { await S.providers.verify(r.providerId); } catch (e) { fail = e.key; }
+    ok(fail === 'errors.forbidden', 'Operations cannot sign off');
     await as('Sherif Mansour');
     app = await S.registration.mine();
     s = await S.auth.currentUser();
     ok(app.verification.status === 'awaiting_signoff' && app.stage === 2 && s.portal === 'applicant', 'operations approves; the applicant waits for management sign-off');
     ok(notifs(uid('Sherif Mansour'), 'notif.application_ops_approved').length === 1, 'applicant told operations approved');
-    await as('Laila Hosny');
+    await as('Karim Fawzy');
     await S.providers.verify(r.providerId);
     await as('Sherif Mansour');
     s = await S.auth.currentUser();
@@ -1127,6 +1131,40 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(wf.can('platform_management', 'disputes.decide') && wf.can('platform_legal', 'disputes.decide') && !wf.can('platform_ops', 'disputes.decide'), 'disputes are decided by Legal and Management');
     ok(wf.DUAL_APPROVAL['fee.change'].join() === 'platform_finance,platform_management' && wf.DUAL_APPROVAL['disputes.decide'].join() === 'platform_legal,platform_management', 'fee changes and dispute decisions need two teams');
     ok(wf.can('platform_admin', 'anything.at.all') && wf.permissionsOf('platform_admin').indexOf('staff.manage') >= 0, 'the Super admin can do everything, including staff and settings');
+  });
+
+  await scenario('29. Provider decisions follow the teams', async () => {
+    const db = ICM.store.db;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const app = db.providers.find((p) => p.verification.status === 'verified' && p.kind === 'company');
+    // A fresh application, registered by Operations.
+    await as('Mai Adel');
+    const reg = await S.registration.adminRegister(Object.assign({}, newCompany, { companyName: 'Delta Field Checks', taxId: '519-204-776', commercialRegNo: '88213', companyEmail: 'info@deltafield.example', ownerPhone: '01099887711', mainPhone: '0239988771', focalPhone: '01299887722', ownerNationalId: '28501010112345' }), {}).catch((e) => ({ error: e.key, params: e.params }));
+    ok(!reg.error, 'Operations registers a provider (' + (reg.error || 'ok') + ')');
+    ok(await errOf(S.registration.adminRegister({}, { verifyNow: true })) === 'errors.forbidden', 'Operations cannot verify a provider on the spot');
+    const pid = reg.providerId;
+    db.providers.find((p) => p.id === pid).verification.documents.forEach((d) => { d.status = 'uploaded'; });
+    await as('Hossam Tawfik');
+    ok(await errOf(S.providers.approve(pid)) === 'errors.forbidden', 'Finance cannot approve applications');
+    await as('Karim Fawzy');
+    await S.providers.approve(pid);
+    ok(await errOf(S.providers.verify(pid)) === 'errors.sameApprover', 'the Management member who approved cannot also sign off');
+    await as('Laila Hosny');
+    await S.providers.verify(pid);
+    ok(db.providers.find((p) => p.id === pid).verification.status === 'verified', 'another person signs it off and the provider goes live');
+
+    await as('Sherif Lotfy');
+    const seen = await S.providers.get(app.id);
+    ok(seen.verification.documents.every((d) => !d.url) && !(seen.owner && seen.owner.nationalId), 'Sales sees the provider without document images or the owner national ID');
+    ok(await errOf(S.providers.enforce(app.id, 'warned', 'x')) === 'errors.forbidden', 'Sales cannot warn or suspend');
+    await as('Mai Adel');
+    ok(await errOf(S.providers.enforce(app.id, 'suspended', 'x')) === 'errors.forbidden', 'Operations cannot suspend; Management decides');
+    await as('Karim Fawzy');
+    await S.providers.enforce(app.id, 'warned', 'Late reports this month');
+    ok(db.providers.find((p) => p.id === app.id).enforcement.level === 'warned', 'Management warns a provider');
+    await S.providers.setAutomatic(app.id);
+    const n = db.notifications.filter((x) => x.key === 'notif.application_new');
+    ok(n.length && n.every((x) => ICM.wf.can(db.users.find((u) => u.id === x.userId).role, 'providers.approve')), 'new applications are announced to the teams that review them');
   });
 
   // ---------------------------------------------------------------- report

@@ -203,6 +203,11 @@
       }
       var fn = { approve: S.providers.approve, verify: S.providers.verify, requestInfo: S.providers.requestInfo, reject: S.providers.reject }[action];
       if (!fn) return Promise.reject(new Err('errors.forbidden'));
+      // Operations does the first step, Management the sign-off (two different people).
+      var ops = E.staffWith('providers.approve').filter(function (u) { return u.role === 'platform_ops'; })[0];
+      var mgmt = E.staffWith('providers.signoff').filter(function (u) { return u.role === 'platform_management'; })[0];
+      if (action === 'verify' && mgmt) admin = mgmt;
+      else if (action !== 'verify' && ops) admin = ops;
       E.setSession(admin.id);
       var out;
       try { out = fn(pid, note); } finally { E.setSession(me.id); }

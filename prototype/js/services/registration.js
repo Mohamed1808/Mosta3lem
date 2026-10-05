@@ -183,7 +183,7 @@
     db.providers.push(p);
     var by = actor || D.actorOf(user);
     E.audit(source === 'self' ? 'provider.registered' : 'provider.registered_by_admin', 'provider', p.id, p.name, null, { kind: p.kind, services: p.services, ref: p.registration.ref }, null, by);
-    E.notify(E.admins().filter(function (u) { return !actor || u.id !== actor.userId; }), 'notif.application_new', { name: p.name }, 'admin:onboarding');
+    E.notify(E.staffWith('providers.approve').filter(function (u) { return !actor || u.id !== actor.userId; }), 'notif.application_new', { name: p.name }, 'admin:onboarding');
     return { provider: p, user: user };
   }
 
@@ -206,7 +206,9 @@
     /** Admin registration from the panel. verifyNow: documents were checked in person. */
     adminRegister: function (values, opts) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.approve');
+        // Verifying on the spot skips both review steps, so it needs the sign-off permission too.
+        if (opts && opts.verifyNow && !wf.can(a.role, 'providers.signoff')) throw new Err('errors.forbidden');
         var r = createApplication(values, 'admin', a);
         var p = r.provider;
         if (opts && opts.verifyNow) {
@@ -285,7 +287,7 @@
         ver.submittedAt = E.now();
         ver.notes.push({ at: E.now(), by: x.a.name, text: String(note).trim(), kind: 'resubmitted' });
         E.audit('provider.resubmitted', 'provider', x.p.id, x.p.name, { status: before }, { status: 'pending' }, note, x.a);
-        E.notify(E.admins(), 'notif.application_updated', { name: x.p.name }, 'admin:onboarding');
+        E.notify(E.staffWith('providers.approve'), 'notif.application_updated', { name: x.p.name }, 'admin:onboarding');
         return x.p;
       });
     }
@@ -494,7 +496,7 @@
     /** Read-only hierarchy for the platform admin's provider page. */
     ofProvider: function (providerId) {
       return E.run(function () {
-        E.requireRole(['platform_admin']);
+        E.requirePermission('providers.view');
         var db = E.db();
         var agents = db.agents.filter(function (ag) { return ag.providerId === providerId; });
         var sups = supervisorsOf(providerId);

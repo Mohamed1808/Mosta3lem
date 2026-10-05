@@ -9,12 +9,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
+import { DialogProvider } from "@/components/dialog";
 import { Loading } from "@/components/ui";
 import { useApp, useT } from "@/lib/app";
 
 /** Menu entries, each shown only to teams with its permission (null: everyone). */
 export const NAV: { href: string; key: string; perm: string | null }[] = [
   { href: "/", key: "console.nav.overview", perm: "overview" },
+  { href: "/providers", key: "console.nav.providers", perm: "providers.view" },
   { href: "/access", key: "console.nav.access", perm: null },
 ];
 
@@ -66,7 +68,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <button type="button" onClick={async () => { await signOut(); router.replace("/login"); }} className="text-sm font-medium text-bad">{t("console.signOut")}</button>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8"><DialogProvider>{children}</DialogProvider></main>
       </div>
     </div>
   );

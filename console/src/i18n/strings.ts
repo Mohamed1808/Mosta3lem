@@ -13,7 +13,18 @@ const en = {
     staffOnly: 'This console is for Mosta3lem staff. Organisations and service providers use the mobile app.',
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
-    nav: { overview: 'Overview', access: 'Teams and access' },
+    nav: { overview: 'Overview', providers: 'Providers', access: 'Teams and access' },
+    providers: {
+      sub: 'Applications, live providers and their requests.', tab: { applications: 'Applications', live: 'Live providers', requests: 'Requests' },
+      empty: { applications: 'No applications.', live: 'No live providers.', requests: 'No price changes or documents waiting.' },
+      services: 'Services', applied: 'Applied', waiting: 'Waiting', openCases: 'Open cases', priceChange: 'Price change', docsN: 'Documents: {n}',
+      review: 'Application review', stepApplied: 'Applied', stepOps: 'Operations approval', stepMgmt: 'Management sign-off', notYet: 'Not yet',
+      sameApprover: 'You approved this for Operations, so another person in Management must sign it off.',
+      noReviewAction: 'Nothing for your team to do on this application right now.', infoRequested: 'Request sent to the applicant', rejected: 'Application rejected',
+      source: 'Registered', hidden: 'Hidden for your team', docRejected: 'Renewal turned down', pricesRejected: 'Price change turned down',
+      backToAuto: 'Standing is automatic again', enforceTeam: 'Management decides on suspensions and warnings.', rating: 'Rating', newProvider: 'New, few ratings',
+      doc: { missing: 'Missing', uploaded: 'To check', verified: 'Checked' }
+    },
     overview: {
       sub: 'The platform at a glance.', gmvMonth: 'Value of work this month', gmvTotal: 'Value of work to date', revenue: 'Platform revenue this month',
       moneyHidden: 'Money figures are shown to the teams that handle billing.',
@@ -50,7 +61,18 @@ const ar: typeof en = {
     staffOnly: 'لوحة التحكم هذه لموظفي مستعلم. الجهات ومقدمو الخدمة يستخدمون تطبيق الموبايل.',
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
-    nav: { overview: 'نظرة عامة', access: 'الفرق والصلاحيات' },
+    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', access: 'الفرق والصلاحيات' },
+    providers: {
+      sub: 'طلبات الانضمام ومقدمو الخدمة النشطون وطلباتهم.', tab: { applications: 'طلبات الانضمام', live: 'مقدمو خدمة نشطون', requests: 'الطلبات' },
+      empty: { applications: 'لا توجد طلبات انضمام.', live: 'لا يوجد مقدمو خدمة نشطون.', requests: 'لا توجد تغييرات أسعار أو مستندات بالانتظار.' },
+      services: 'الخدمات', applied: 'تاريخ الطلب', waiting: 'بالانتظار', openCases: 'حالات مفتوحة', priceChange: 'تغيير أسعار', docsN: 'المستندات: {n}',
+      review: 'مراجعة الطلب', stepApplied: 'تم التقديم', stepOps: 'موافقة العمليات', stepMgmt: 'اعتماد الإدارة', notYet: 'لم يتم بعد',
+      sameApprover: 'وافقت على هذا الطلب عن فريق العمليات، لذا يجب أن يعتمده شخص آخر من الإدارة.',
+      noReviewAction: 'لا يوجد ما يقوم به فريقك في هذا الطلب الآن.', infoRequested: 'تم إرسال الطلب إلى مقدم الطلب', rejected: 'تم رفض الطلب',
+      source: 'التسجيل', hidden: 'مخفي لفريقك', docRejected: 'تم رفض التجديد', pricesRejected: 'تم رفض تغيير الأسعار',
+      backToAuto: 'عاد التصنيف تلقائيًا', enforceTeam: 'الإدارة هي التي تقرر الإيقاف والإنذارات.', rating: 'التقييم', newProvider: 'جديد، تقييمات قليلة',
+      doc: { missing: 'ناقص', uploaded: 'للمراجعة', verified: 'تمت المراجعة' }
+    },
     overview: {
       sub: 'المنصة في لمحة.', gmvMonth: 'قيمة الأعمال هذا الشهر', gmvTotal: 'قيمة الأعمال حتى الآن', revenue: 'إيراد المنصة هذا الشهر',
       moneyHidden: 'الأرقام المالية تظهر للفرق المسؤولة عن الفواتير.',

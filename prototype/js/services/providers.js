@@ -81,7 +81,7 @@
     if (!wf.pricingChanged(next, cleanPricing(p.pricing || {}, p.services))) throw new Err('errors.noPriceChange');
     p.priceRequest = { pricing: next, note: note ? String(note).trim() : '', at: E.now(), by: a.name, byUserId: a.userId };
     E.audit('provider.price_change_requested', 'provider', p.id, p.name, null, null, note || null, a);
-    E.notify(E.admins(), 'notif.price_change_requested', { name: p.name }, 'provider-admin:' + p.id);
+    E.notify(E.staffWith('providers.prices'), 'notif.price_change_requested', { name: p.name }, 'provider-admin:' + p.id);
     return p.priceRequest;
   }
 
@@ -100,6 +100,30 @@
       closedCollections: closedCol.length,
       actionsLogged: U.sum(cases, function (c) { return (c.actions || []).length; })
     };
+  }
+
+  /** Staff who review applications: Operations (first step) or Management (sign-off). */
+  function reviewer() {
+    var a = E.actor();
+    if (!wf.isPlatformRole(a.role) || !(wf.can(a.role, 'providers.approve') || wf.can(a.role, 'providers.signoff'))) throw new Err('errors.forbidden');
+    return a;
+  }
+
+  /**
+   * A provider as a staff member may see it. Document images and the owner's national ID
+   * are for the teams that check documents; others (Sales, Finance, Customer support) see
+   * which documents exist and their status, not the files.
+   */
+  function forStaff(p, a) {
+    if (wf.can(a.role, 'providers.approve') || wf.can(a.role, 'providers.documents')) return p;
+    var out = Object.assign({}, p, { nationalId: null, ownerNationalId: null, owner: p.owner ? Object.assign({}, p.owner, { nationalId: null }) : p.owner });
+    out.verification = Object.assign({}, p.verification, {
+      documents: (p.verification.documents || []).map(function (d) {
+        return Object.assign({}, d, { url: null, fileName: null, renewal: d.renewal ? Object.assign({}, d.renewal, { url: null, fileName: null }) : null });
+      })
+    });
+    if (out.registration && out.registration.values) out.registration = Object.assign({}, out.registration, { values: null });
+    return out;
   }
 
   S.providers = {
@@ -254,7 +278,7 @@
         if (d.status === 'verified') d.renewal = sent;
         else Object.assign(d, { status: 'uploaded', fileName: sent.fileName, url: sent.url, expiresAt: sent.expiresAt, uploadedAt: now });
         E.audit('provider.document_submitted', 'provider', p.id, p.name, null, { type: type }, null, x.a);
-        E.notify(E.admins(), 'notif.document_submitted', { name: p.name, doc: type }, 'provider-admin:' + p.id);
+        E.notify(E.staffWith('providers.documents'), 'notif.document_submitted', { name: p.name, doc: type }, 'provider-admin:' + p.id);
         return withScore(p);
       });
     },
@@ -262,7 +286,7 @@
     // ---- admin: Operations decisions on live providers
     decidePriceChange: function (id, approve, note) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.prices');
         var p = E.providerById(id);
         if (!p || !p.priceRequest) throw new Err('errors.notFound');
         if (!approve && !(note && String(note).trim())) throw new Err('wf.err.reasonRequired');
@@ -281,7 +305,7 @@
     /** Accept a document (or its pending renewal): the new expiry date applies and reminders restart. */
     verifyDocument: function (id, type) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.documents');
         var p = E.providerById(id);
         var d = p && p.verification.documents.filter(function (k) { return k.type === type; })[0];
         if (!d) throw new Err('errors.notFound');
@@ -300,7 +324,7 @@
     /** Turn down a pending renewal; the current document stays as it is. */
     rejectDocument: function (id, type, note) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.documents');
         if (!(note && String(note).trim())) throw new Err('wf.err.reasonRequired');
         var p = E.providerById(id);
         var d = p && p.verification.documents.filter(function (k) { return k.type === type; })[0];
@@ -350,16 +374,16 @@
     // ---- admin
     list: function () {
       return E.run(function () {
-        E.requireRole(['platform_admin', 'platform_qa']);
-        return E.db().providers.filter(function (p) { return p.verification.status === 'verified'; }).map(withScore);
+        var a = E.requirePermission('providers.view');
+        return E.db().providers.filter(function (p) { return p.verification.status === 'verified'; }).map(function (p) { return forStaff(withScore(p), a); });
       });
     },
     get: function (id) {
       return E.run(function () {
-        E.requireRole(['platform_admin', 'platform_qa']);
+        var a = E.requirePermission('providers.view');
         var db = E.db(), p = E.providerById(id);
         if (!p) throw new Err('errors.notFound');
-        var out = withScore(p);
+        var out = forStaff(withScore(p), a);
         out.agents = db.agents.filter(function (a) { return a.providerId === id; }).map(function (a) { return Object.assign({}, a, { stats: agentStats(a) }); });
         out.users = db.users.filter(function (u) { return u.providerId === id; });
         out.ratings = db.ratings.filter(function (r) { return r.providerId === id; }).sort(function (a, b) { return b.createdAt - a.createdAt; })
@@ -370,19 +394,19 @@
     },
     applications: function () {
       return E.run(function () {
-        E.requireRole(['platform_admin']);
-        return E.db().providers.filter(function (p) { return p.verification.status !== 'verified'; })
+        var a = reviewer();
+        return E.db().providers.filter(function (p) { return p.verification.status !== 'verified'; }).map(function (p) { return forStaff(p, a); })
           .sort(function (a, b) { return (b.verification.submittedAt || 0) - (a.verification.submittedAt || 0); });
       });
     },
     /**
      * Operations approves an application after checking the documents. It then waits for
-     * Management to sign it off (verify). Departments are not modelled yet, so any platform
-     * admin can do either step; each step records who did it.
+     * Management to sign it off (verify), and the sign-off must come from another person.
+     * Each step records who did it.
      */
     approve: function (id) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.approve');
         var p = E.providerById(id);
         if (!p) throw new Err('errors.notFound');
         if (p.verification.status !== 'pending') throw new Err('errors.notInReview');
@@ -392,7 +416,7 @@
         p.verification.opsApproval = { by: a.name, userId: a.userId, at: E.now() };
         p.verification.notes.push({ at: E.now(), by: a.name, text: '', kind: 'ops_approved' });
         E.audit('provider.ops_approved', 'provider', p.id, p.name, { status: 'pending' }, { status: 'awaiting_signoff' }, null, a);
-        E.notify(E.admins().filter(function (u) { return u.id !== a.userId; }), 'notif.application_signoff', { name: p.name }, 'admin:onboarding');
+        E.notify(E.staffWith('providers.signoff').filter(function (u) { return u.id !== a.userId; }), 'notif.application_signoff', { name: p.name }, 'admin:onboarding');
         E.notify(D.providerUsers(db, p.id, ['provider_admin', 'freelancer']), 'notif.application_ops_approved', {}, 'application:mine');
         return p;
       });
@@ -400,10 +424,12 @@
     /** Management sign-off: the provider goes live in the marketplace. */
     verify: function (id) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.signoff');
         var p = E.providerById(id);
         if (!p) throw new Err('errors.notFound');
         if (p.verification.status !== 'awaiting_signoff') throw new Err('errors.notAwaitingSignoff');
+        // Four eyes: whoever approved for Operations cannot also sign off.
+        if (p.verification.opsApproval && p.verification.opsApproval.userId === a.userId) throw new Err('errors.sameApprover');
         if (p.verification.documents.some(function (d) { return d.status === 'missing'; })) throw new Err('errors.documentsMissing');
         var before = p.verification.status;
         p.verification.status = 'verified';
@@ -431,7 +457,7 @@
     },
     reject: function (id, reason) {
       return E.mutate(function () {
-        var a = E.requireRole(['platform_admin']);
+        var a = reviewer();
         if (!reason) throw new Err('wf.err.reasonRequired');
         var p = E.providerById(id);
         if (!p) throw new Err('errors.notFound');
@@ -446,7 +472,7 @@
     },
     requestInfo: function (id, note) {
       return E.mutate(function () {
-        var a = E.requireRole(['platform_admin']);
+        var a = reviewer();
         if (!note) throw new Err('wf.err.reasonRequired');
         var p = E.providerById(id);
         if (!p) throw new Err('errors.notFound');
@@ -461,7 +487,7 @@
     },
     setCheck: function (id, field, value) {
       return E.mutate(function () {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.approve');
         if (['idVerified', 'certified'].indexOf(field) < 0) throw new Err('errors.forbidden');
         var p = E.providerById(id);
         p.verification[field] = !!value;
@@ -471,7 +497,7 @@
     },
     enforce: function (id, level, reason) {
       return E.mutate(function (db) {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.enforce');
         if (['none', 'warned', 'reduced', 'suspended'].indexOf(level) < 0) throw new Err('errors.forbidden');
         if (!reason) throw new Err('wf.err.reasonRequired');
         var p = E.providerById(id);
@@ -484,7 +510,7 @@
     },
     setAutomatic: function (id) {
       return E.mutate(function () {
-        var a = E.requireRole(['platform_admin']);
+        var a = E.requirePermission('providers.enforce');
         var p = E.providerById(id);
         var before = p.enforcement.level;
         p.enforcement = { level: before, source: 'auto', since: E.now() };
