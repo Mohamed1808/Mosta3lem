@@ -1079,6 +1079,28 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(filled.length > 0 && filled.every((n) => db.providers.some((p) => p.name === n)), 'USER_NAME holds the provider company');
   });
 
+  await scenario('27. The client Admin manages its users', async () => {
+    const C = ICM.config;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    await as('Tamer Lotfy');
+    ok(await errOf(S.entities.invite({ name: 'X', email: 'x@horus-auto.example', role: 'entity_credit' })) === 'errors.forbidden', 'only the Admin can invite');
+    await as('Nadia Samir');
+    const u = await S.entities.invite({ name: 'Laila Fathy', email: 'laila.fathy@horus-auto.example', role: 'entity_collections' });
+    ok(u.invited && u.active, 'the Admin invites a new user');
+    ok(await errOf(S.entities.invite({ name: 'Again', email: 'laila.fathy@horus-auto.example', role: 'entity_credit' })) === 'errors.emailTaken', 'an email can only be used once');
+    const signIn = await S.auth.checkPassword('laila.fathy@horus-auto.example', C.DEMO_PASSWORD);
+    ok(signIn.userId === u.id, 'the invited user can sign in with email and password');
+    await S.entities.setRole(u.id, 'entity_operations');
+    await S.auth.loginAs(u.id);
+    ok((await S.analytics.entityDashboard()).services.length === 2 && (await S.billing.invoices()).length === 0, 'as Operations they see both services but no invoices');
+    await as('Nadia Samir');
+    const me = ICM.store.db.users.find((x) => x.name === 'Nadia Samir');
+    ok(await errOf(S.entities.setRole(me.id, 'entity_credit')) === 'errors.lastAdmin', 'the last Admin cannot be demoted');
+    ok(await errOf(S.entities.setActive(me.id, false)) === 'errors.cannotDeactivateSelf', 'the Admin cannot deactivate themselves');
+    await S.entities.setActive(u.id, false);
+    ok(await errOf(S.auth.checkPassword('laila.fathy@horus-auto.example', C.DEMO_PASSWORD)) === 'errors.wrongPassword', 'a deactivated user can no longer sign in');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {
