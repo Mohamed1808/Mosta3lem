@@ -41,6 +41,12 @@
     if (!u) throw new ServiceError('errors.notSignedIn');
     return D.actorOf(u);
   };
+  /** The signed-in staff member, when their team may do this (see wf.PERMISSIONS). */
+  E.requirePermission = function (permission) {
+    var a = E.actor();
+    if (!wf.isPlatformRole(a.role) || !wf.can(a.role, permission)) throw new ServiceError('errors.forbidden');
+    return a;
+  };
   E.requireRole = function (roles) {
     var a = E.actor();
     if (roles.indexOf(a.role) < 0) throw new ServiceError('errors.forbidden');

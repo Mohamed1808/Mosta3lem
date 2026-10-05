@@ -17,7 +17,52 @@
     if (!actor) return false;
     return actor.role === 'agent' || actor.role === 'freelancer' || (actor.role === 'provider_admin' && !!actor.agentId);
   };
-  wf.PLATFORM_ROLES = ['platform_admin', 'platform_qa'];
+  /**
+   * Platform staff, one role per team. platform_admin is the Super admin and platform_qa
+   * the Quality team; the others were added with the internal console.
+   */
+  wf.PLATFORM_ROLES = ['platform_admin', 'platform_management', 'platform_ops', 'platform_finance', 'platform_qa',
+    'platform_legal', 'platform_support', 'platform_sales', 'platform_data'];
+
+  /**
+   * What each team may see and do (agreed with the business, 5 Oct 2026). Customer support
+   * and data see no personal data. Sensitive decisions need two teams (DUAL_APPROVAL).
+   */
+  wf.PERMISSIONS = {
+    platform_admin: ['*'],
+    platform_management: ['overview', 'cases.view', 'personalData', 'cases.manage', 'providers.view', 'providers.approve', 'providers.signoff',
+      'providers.prices', 'providers.documents', 'providers.enforce', 'qa.review', 'disputes.view', 'disputes.decide', 'billing.view',
+      'billing.issue', 'billing.pay', 'billing.adjust', 'fee.change', 'orgs.view', 'orgs.create', 'reports.view', 'audit.view'],
+    platform_ops: ['overview', 'cases.view', 'personalData', 'cases.manage', 'providers.view', 'providers.approve', 'providers.prices',
+      'providers.documents', 'orgs.view', 'disputes.view'],
+    platform_finance: ['overview', 'billing.view', 'billing.issue', 'billing.pay', 'billing.adjust', 'fee.change', 'orgs.view', 'providers.view'],
+    platform_qa: ['overview', 'cases.view', 'personalData', 'qa.review'],
+    platform_legal: ['overview', 'cases.view', 'personalData', 'disputes.view', 'disputes.decide', 'audit.view'],
+    platform_support: ['overview', 'cases.view', 'providers.view', 'orgs.view', 'accounts.resetLogin', 'disputes.view', 'disputes.openOnBehalf'],
+    platform_sales: ['overview', 'providers.view', 'orgs.view', 'orgs.create'],
+    platform_data: ['overview', 'reports.view']
+  };
+  /** Actions that need two teams: the first approval waits for the second. */
+  wf.DUAL_APPROVAL = {
+    'fee.change': ['platform_finance', 'platform_management'],
+    'disputes.decide': ['platform_legal', 'platform_management']
+  };
+  wf.isPlatformRole = function (role) { return wf.PLATFORM_ROLES.indexOf(role) >= 0; };
+  /** Can this staff role do this? The Super admin can do everything. */
+  wf.can = function (role, permission) {
+    var list = wf.PERMISSIONS[role];
+    return !!list && (list.indexOf('*') >= 0 || list.indexOf(permission) >= 0);
+  };
+  /** Staff who see customers' national ID, phones, addresses and report answers. */
+  wf.seesPersonalData = function (role) { return wf.can(role, 'personalData'); };
+  /** Every permission a role has, the Super admin's expanded. */
+  wf.permissionsOf = function (role) {
+    var list = wf.PERMISSIONS[role] || [];
+    if (list.indexOf('*') < 0) return list.slice();
+    var all = {};
+    Object.keys(wf.PERMISSIONS).forEach(function (r) { wf.PERMISSIONS[r].forEach(function (p) { if (p !== '*') all[p] = true; }); });
+    return Object.keys(all).concat(['staff.manage', 'settings.manage']);
+  };
   wf.PROVIDER_SIDE_ROLES = ['provider_admin', 'provider_supervisor', 'freelancer', 'agent'];
   wf.ALL_ROLES = wf.ENTITY_ROLES.concat(['provider_admin', 'provider_supervisor', 'agent', 'freelancer'], wf.PLATFORM_ROLES, ['system']);
   wf.PRE_ACCEPT = ['draft', 'submitted', 'awaiting_acceptance', 'declined', 'expired'];
@@ -41,8 +86,6 @@
   wf.relates = function (c, actor) {
     switch (actor.role) {
       case 'system':
-      case 'platform_admin':
-      case 'platform_qa':
         return true;
       case 'provider_admin':
       case 'provider_supervisor':
@@ -52,6 +95,7 @@
         return !!actor.agentId && actor.agentId === c.agentId;
       default:
         if (wf.isEntityRole(actor.role)) return actor.entityId === c.entityId && wf.entityServes(actor.role, c.service);
+        if (wf.isPlatformRole(actor.role)) return wf.can(actor.role, 'cases.view');
         return false;
     }
   };

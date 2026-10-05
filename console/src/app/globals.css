@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/* Mosta3lem tokens, the same as the mobile app: neutral surfaces with one accent. */
+:root {
+  color-scheme: light;
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface2: #f0f2f5;
+  --border: #e1e4ea;
+  --border-strong: #c9ced8;
+  --text: #18202b;
+  --text2: #4f5a6b;
+  --text3: #818b9b;
+  --accent: #1d5ba6;
+  --accent-soft: #e7eff9;
+  --ok: #1a7446;
+  --ok-bg: #e5f3eb;
+  --warn: #8f5b00;
+  --warn-bg: #fcf1d9;
+  --bad: #b42318;
+  --bad-bg: #fcebe9;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface2);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--text);
+  --color-ink2: var(--text2);
+  --color-ink3: var(--text3);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
+  --font-sans: var(--font-latin), var(--font-arabic), system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+/* Numbers and references keep left-to-right order inside Arabic text. */
+.ltr { direction: ltr; unicode-bidi: isolate; }

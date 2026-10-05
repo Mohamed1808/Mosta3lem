@@ -1,5 +1,5 @@
 /* Data masking. The service layer passes every case through maskCase() before a provider
-   user sees it. Before acceptance a provider sees only: service, inquiry type or
+   user or a platform team without access to personal data (customer support, data) sees it. Before acceptance a provider sees only: service, inquiry type or
    days-past-due bucket, governorate, amount range, deadline and price. Name, national ID,
    phone, address and contract number are released on acceptance, stay visible for 30 days
    after the case closes, then are masked again. */
@@ -17,7 +17,7 @@
   /** Can this viewer see the case at all? (Other providers never can.) */
   function canView(c, viewer) {
     if (!viewer) return false;
-    if (viewer.role === 'platform_admin' || viewer.role === 'platform_qa') return true;
+    if (wf.isPlatformRole(viewer.role)) return wf.can(viewer.role, 'cases.view');
     if (wf.isEntityRole(viewer.role)) return viewer.entityId === c.entityId && wf.entityServes(viewer.role, c.service);
     if (viewer.role === 'agent') return !!viewer.agentId && viewer.agentId === c.agentId;
     if (wf.isProviderSide(viewer.role)) return !!viewer.providerId && viewer.providerId === c.providerId;
@@ -27,6 +27,7 @@
   /** null when visible, otherwise the reason it is masked. */
   function maskReason(c, viewer, now) {
     if (!canView(c, viewer)) return 'no_access';
+    if (wf.isPlatformRole(viewer.role)) return wf.seesPersonalData(viewer.role) ? null : 'staff_no_personal_data';
     if (!wf.isProviderSide(viewer.role)) return null;
     if (!c.acceptedAt || wf.PRE_ACCEPT.indexOf(c.status) >= 0) return 'pre_acceptance';
     if (c.closedAt != null && now > c.closedAt + ICM.config.PII_RETENTION_DAYS * DAY) return 'retention_expired';
