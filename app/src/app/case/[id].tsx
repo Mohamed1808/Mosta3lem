@@ -1,13 +1,15 @@
 /**
- * One case. Shows what the viewer may see (customer details stay hidden until the offer
- * is accepted) and the actions their role allows: accept or decline an offer, assign,
- * review, open field work, and the collection actions.
+ * One case. Shows what the viewer may see (customer details stay hidden from providers
+ * until the offer is accepted) and the actions their role allows: for providers accept or
+ * decline an offer, assign, review, open field work and the collection actions; for the
+ * client the decisions in ClientActions.
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { ReactNode, useState } from 'react';
 
 import { icm, services } from '@/backend/engine';
 import { CheckInLine, PhotoGrid, priceText, ReportView, SlaBadge, Timeline } from '@/components/case';
+import { ClientActions } from '@/components/clientCase';
 import { useLocate } from '@/components/locate';
 import { AgentPicker, FormSheet } from '@/components/sheets';
 import { addressLine, bucket, dateTime, duration, money, types } from '@/lib/format';
@@ -21,13 +23,14 @@ const ALLOWED_BY: Record<string, string> = { call: 'calls', sms: 'messages', wha
 export default function CaseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useT();
+  const client = useApp().session?.portal === 'entity';
   const q = useQuery<any>(() => services().cases.get(id), [id]);
   if (!q.data) return <Screen title={t('nav.cases')} back>{q.error ? <Notice tone="danger" text={t(q.error.key || 'errors.generic')} /> : <Loading />}</Screen>;
   const c = q.data.case;
   return (
-    <Screen title={c.ref} sub={c.entityName || (q.data.entity && q.data.entity.name)} back>
+    <Screen title={c.ref} sub={client ? c.providerName || undefined : c.entityName || (q.data.entity && q.data.entity.name)} back>
       <Row wrap gap={6}><StatusBadge status={c.status} /><SlaBadge c={c} /><Badge label={t('service.' + c.service)} tone={c.service === 'investigation' ? 'accent' : 'pending'} />{c.disputed ? <Badge label={t('dispute.flag')} tone="danger" /> : null}</Row>
-      <Actions d={q.data} />
+      {client ? <ClientActions d={q.data} /> : <Actions d={q.data} />}
       <Card title={t('caseScreen.request')}><RequestDetails d={q.data} /></Card>
       {Object.keys(c.addresses || {}).length ? (
         <Card title={t('caseScreen.addresses')}>

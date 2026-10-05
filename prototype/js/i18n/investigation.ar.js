@@ -8,7 +8,7 @@
       RELATIVE: 'قريب', NEIGHBOUR: 'جار', DOORMAN: 'بواب', FRIEND: 'صديق', COLLEAGUE: 'زميل عمل', LANDLORD: 'مالك العقار', OTHER: 'أخرى'
     },
     decision: {
-      APPROVED: 'موافقة', REJECTED: 'رفض', PENDING: 'قيد الدراسة', title: 'قرارك الائتماني',
+      APPROVED: 'موافقة', REJECTED: 'رفض', PENDING: 'قيد الدراسة', title: 'قرارك بشأن العميل',
       hint: 'يُسجَّل لفريقك ويظهر في ملف Excel المُصدَّر.', setTitle: 'تسجيل القرار: {decision}',
       setBody: 'هذا قرارك أنت بشأن العميل بعد قراءة التقرير، ويمكنك تغييره لاحقًا.', saved: 'تم حفظ القرار'
     },

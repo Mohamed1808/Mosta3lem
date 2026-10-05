@@ -9,7 +9,7 @@
       RELATIVE: 'Relative', NEIGHBOUR: 'Neighbour', DOORMAN: 'Doorman', FRIEND: 'Friend', COLLEAGUE: 'Colleague', LANDLORD: 'Landlord', OTHER: 'Other'
     },
     decision: {
-      APPROVED: 'Approved', REJECTED: 'Rejected', PENDING: 'Pending', title: 'Your credit decision',
+      APPROVED: 'Approved', REJECTED: 'Rejected', PENDING: 'Pending', title: 'Your decision on the customer',
       hint: 'Recorded for your team and included in the Excel export.', setTitle: 'Set decision: {decision}',
       setBody: 'This is your own decision on the customer after reading the report. You can change it later.', saved: 'Decision saved'
     },
