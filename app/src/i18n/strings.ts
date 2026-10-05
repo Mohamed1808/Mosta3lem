@@ -4,16 +4,19 @@
  * No em dashes in copy.
  */
 const en = {
-  app: { name: 'Mosta3lem', tagline: 'Field investigations and collections for banks and finance companies.' },
+  app: { name: 'Mosta3lem', tagline: 'Field investigations and collections for companies and organisations.' },
   login: {
     title: 'Sign in', phoneLabel: 'Mobile number', phoneHint: 'The number registered with your company, or with your own provider account.',
     sendCode: 'Send code', notFound: 'No account uses this number. Check it, or pick a demo account below.',
-    codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code to {phone}.', demoCode: 'Demo: no SMS is sent. Your code is {code}.',
+    codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code to {phone}.', demoCode: 'Demo: no SMS is sent. Your code is {code}.', demoCodeEmail: 'Demo: no email is sent. Your code is {code}.',
     verify: 'Verify and sign in', wrongCode: 'The code is not correct.', changeNumber: 'Change number',
-    demoAccounts: 'Demo accounts', demoAccountsHint: 'Sign in as a demo user without a code.', providersOnly: 'The app currently covers service providers.'
+    demoAccounts: 'Demo accounts', demoAccountsHint: 'Sign in as a demo user without a code.', demoProviders: 'Service providers', demoClients: 'Organisations requesting work',
+    asProvider: 'Service provider', asClient: 'Organisation', clientIntro: 'For companies and organisations that request investigations or collections. Mosta3lem creates your account.',
+    emailLabel: 'Work email', passwordLabel: 'Password', show: 'Show', hide: 'Hide', continue: 'Continue',
+    forgot: 'Forgot your password?', forgotBody: 'Ask your organisation admin or Mosta3lem support to reset it. Passwords are never sent by email.',
+    codeSentEmail: 'We sent a 6-digit code to {email}.', demoPassword: 'Demo: every organisation account uses the password {pw}.', back: 'Back'
   },
   gate: {
-    requesterTitle: 'The requester side comes next', requesterBody: 'The screens for banks and finance companies are built after the service provider side. Sign out and use a provider account to try the app.',
     adminTitle: 'Use the internal console', adminBody: 'Platform staff work in the internal web console, not in the mobile app.'
   },
   signup: {
@@ -34,6 +37,11 @@ const en = {
     }
   },
   tabs: { home: 'Home', offers: 'Offers', cases: 'Cases', tasks: 'My tasks', team: 'Team', more: 'More' },
+  client: {
+    services: 'Your work covers', trend: 'Last 6 months', sent: 'Sent', closed: 'Closed', toRate: 'Providers to rate',
+    organisation: 'Organisation', type: 'Type', email: 'Email', waitingDecision: 'Reports waiting for your decision',
+    nextSteps: 'Sending requests and following cases arrive in the next updates of the app.'
+  },
   home: {
     hello: 'Hello, {name}', workspace: 'Workspace', toAssign: 'Cases waiting for an agent', toReview: 'Reports to review',
     overdue: 'Overdue', today: 'Due today', upcoming: 'Upcoming', waiting: 'Waiting for review', noTasks: 'No tasks right now',
@@ -54,7 +62,7 @@ const en = {
   more: {
     account: 'Account', language: 'Language', notifications: 'Notifications', demo: 'Demo', resetDemo: 'Reset demo data',
     resetBody: 'All demo data returns to its starting state.', resetDone: 'Demo data reset', signOut: 'Sign out', version: 'Version {v}',
-    company: 'Company', role: 'Role', phone: 'Mobile', noNotifications: 'No notifications yet', markAllRead: 'Mark all as read', simulated: 'Simulated backend: data lives on this device.'
+    company: 'Company', role: 'Role', phone: 'Mobile', email: 'Email', noNotifications: 'No notifications yet', markAllRead: 'Mark all as read', simulated: 'Simulated backend: data lives on this device.'
   },
   teamScreen: { moveTo: 'Move to supervisor', moved: 'Agent moved' },
   offline: {
@@ -87,7 +95,7 @@ const en = {
     completedCases: 'Completed cases', late: 'late', noneDone: 'No completed cases yet'
   },
   disputeApp: {
-    subtitle: 'Raised by banks about your cases, or by you about a rating. The platform decides.', openShort: 'Open disputes',
+    subtitle: 'Raised by clients about your cases, or by you about a rating. The platform decides.', openShort: 'Open disputes',
     youRaised: 'You raised it', raisedAgainst: 'Raised by the client', opened: 'Opened', statements: 'Statements',
     statementPlaceholder: 'Explain your side. Mention evidence such as photos, check-in times or messages.', yourStatement: 'Your statement',
     sendStatement: 'Add statement', statementSent: 'Statement added',
@@ -100,7 +108,7 @@ const en = {
     coverageAgents: 'Field agents only work inside your coverage. To drop a governorate, first change the agents who cover it.',
     capacity: 'Open cases you can take', capacityHint: 'Offers stop when this many cases are open in a governorate.',
     maxHours: 'Platform maximum: {n} h', hours: 'h',
-    responseIntro: 'How fast you promise to work. Banks see these when they choose a provider, and they apply to new offers straight away.',
+    responseIntro: 'How fast you promise to work. Clients see these when they choose a provider, and they apply to new offers straight away.',
     deliverWithin: 'Deliver the report within', firstContactTitle: 'First contact with the customer',
     priceSent: 'Sent to operations. Current prices apply until they approve.', nowIs: 'Now {v}',
     replaceRequest: 'Replace the request', sendPrices: 'Send for approval',
@@ -125,16 +133,19 @@ const en = {
 };
 
 const ar: typeof en = {
-  app: { name: 'مستعلم', tagline: 'الاستعلامات الميدانية والتحصيل للبنوك وشركات التمويل.' },
+  app: { name: 'مستعلم', tagline: 'الاستعلامات الميدانية والتحصيل للشركات والجهات.' },
   login: {
     title: 'تسجيل الدخول', phoneLabel: 'رقم الموبايل', phoneHint: 'الرقم المسجل لدى شركتك أو في حسابك كمقدم خدمة.',
     sendCode: 'إرسال الرمز', notFound: 'لا يوجد حساب بهذا الرقم. راجعه أو اختر حسابًا تجريبيًا بالأسفل.',
-    codeTitle: 'أدخل الرمز', codeSent: 'أرسلنا رمزًا من 6 أرقام إلى {phone}.', demoCode: 'نسخة تجريبية: لا تُرسل رسالة. الرمز هو {code}.',
+    codeTitle: 'أدخل الرمز', codeSent: 'أرسلنا رمزًا من 6 أرقام إلى {phone}.', demoCode: 'نسخة تجريبية: لا تُرسل رسالة. الرمز هو {code}.', demoCodeEmail: 'نسخة تجريبية: لا يُرسل بريد إلكتروني. الرمز هو {code}.',
     verify: 'تحقق وسجّل الدخول', wrongCode: 'الرمز غير صحيح.', changeNumber: 'تغيير الرقم',
-    demoAccounts: 'حسابات تجريبية', demoAccountsHint: 'سجّل الدخول كمستخدم تجريبي بدون رمز.', providersOnly: 'يغطي التطبيق حاليًا مقدمي الخدمة.'
+    demoAccounts: 'حسابات تجريبية', demoAccountsHint: 'سجّل الدخول كمستخدم تجريبي بدون رمز.', demoProviders: 'مقدمو الخدمة', demoClients: 'الجهات الطالبة',
+    asProvider: 'مقدم خدمة', asClient: 'جهة', clientIntro: 'للشركات والجهات التي تطلب الاستعلامات أو التحصيل. ينشئ مستعلم حسابك.',
+    emailLabel: 'البريد الإلكتروني للعمل', passwordLabel: 'كلمة المرور', show: 'إظهار', hide: 'إخفاء', continue: 'متابعة',
+    forgot: 'نسيت كلمة المرور؟', forgotBody: 'اطلب من مدير الحساب في جهتك أو من دعم مستعلم إعادة تعيينها. لا تُرسل كلمات المرور بالبريد الإلكتروني.',
+    codeSentEmail: 'أرسلنا رمزًا من 6 أرقام إلى {email}.', demoPassword: 'نسخة تجريبية: كل حسابات الجهات تستخدم كلمة المرور {pw}.', back: 'رجوع'
   },
   gate: {
-    requesterTitle: 'جانب الجهات الطالبة هو التالي', requesterBody: 'تُبنى شاشات البنوك وشركات التمويل بعد جانب مقدمي الخدمة. سجّل الخروج واستخدم حساب مقدم خدمة لتجربة التطبيق.',
     adminTitle: 'استخدم لوحة التحكم الداخلية', adminBody: 'يعمل فريق المنصة من لوحة التحكم الداخلية على الويب، وليس من تطبيق الموبايل.'
   },
   signup: {
@@ -155,6 +166,11 @@ const ar: typeof en = {
     }
   },
   tabs: { home: 'الرئيسية', offers: 'العروض', cases: 'الحالات', tasks: 'مهامي', team: 'الفريق', more: 'المزيد' },
+  client: {
+    services: 'يشمل عملك', trend: 'آخر 6 أشهر', sent: 'مُرسلة', closed: 'مغلقة', toRate: 'مقدمو خدمة بانتظار تقييمك',
+    organisation: 'الجهة', type: 'النوع', email: 'البريد الإلكتروني', waitingDecision: 'تقارير بانتظار قرارك',
+    nextSteps: 'إرسال الطلبات ومتابعة الحالات يصلان في التحديثات القادمة للتطبيق.'
+  },
   home: {
     hello: 'مرحبًا، {name}', workspace: 'مساحة العمل', toAssign: 'حالات تنتظر مندوبًا', toReview: 'تقارير للمراجعة',
     overdue: 'متأخرة', today: 'مستحقة اليوم', upcoming: 'قادمة', waiting: 'بانتظار المراجعة', noTasks: 'لا توجد مهام الآن',
@@ -175,7 +191,7 @@ const ar: typeof en = {
   more: {
     account: 'الحساب', language: 'اللغة', notifications: 'الإشعارات', demo: 'النسخة التجريبية', resetDemo: 'إعادة ضبط البيانات التجريبية',
     resetBody: 'تعود كل البيانات التجريبية إلى حالتها الأولى.', resetDone: 'تمت إعادة ضبط البيانات', signOut: 'تسجيل الخروج', version: 'الإصدار {v}',
-    company: 'الشركة', role: 'الدور', phone: 'الموبايل', noNotifications: 'لا توجد إشعارات بعد', markAllRead: 'تحديد الكل كمقروء', simulated: 'خادم تجريبي: البيانات محفوظة على هذا الجهاز.'
+    company: 'الشركة', role: 'الدور', phone: 'الموبايل', email: 'البريد الإلكتروني', noNotifications: 'لا توجد إشعارات بعد', markAllRead: 'تحديد الكل كمقروء', simulated: 'خادم تجريبي: البيانات محفوظة على هذا الجهاز.'
   },
   teamScreen: { moveTo: 'نقل إلى مشرف', moved: 'تم نقل المندوب' },
   offline: {
@@ -208,7 +224,7 @@ const ar: typeof en = {
     completedCases: 'الحالات المنجزة', late: 'متأخرة', noneDone: 'لا توجد حالات منجزة بعد'
   },
   disputeApp: {
-    subtitle: 'نزاعات فتحتها البنوك بخصوص حالاتك، أو فتحتها أنت بخصوص تقييم. المنصة هي التي تقرر.', openShort: 'نزاعات مفتوحة',
+    subtitle: 'نزاعات فتحها العملاء بخصوص حالاتك، أو فتحتها أنت بخصوص تقييم. المنصة هي التي تقرر.', openShort: 'نزاعات مفتوحة',
     youRaised: 'فتحته أنت', raisedAgainst: 'فتحه العميل', opened: 'تاريخ الفتح', statements: 'الإفادات',
     statementPlaceholder: 'اشرح موقفك، واذكر أي أدلة مثل الصور أو وقت تسجيل الوصول أو الرسائل.', yourStatement: 'إفادتك',
     sendStatement: 'إضافة إفادة', statementSent: 'تمت إضافة الإفادة',
@@ -221,7 +237,7 @@ const ar: typeof en = {
     coverageAgents: 'يعمل المندوبون داخل نطاق تغطيتك فقط. لحذف محافظة، عدّل أولًا المندوبين الذين يغطونها.',
     capacity: 'عدد الحالات المفتوحة التي يمكنك استقبالها', capacityHint: 'تتوقف العروض عند بلوغ هذا العدد من الحالات المفتوحة في المحافظة.',
     maxHours: 'الحد الأقصى للمنصة: {n} س', hours: 'س',
-    responseIntro: 'السرعة التي تلتزم بها في العمل. تراها البنوك عند اختيار مقدم الخدمة، وتُطبق على العروض الجديدة فورًا.',
+    responseIntro: 'السرعة التي تلتزم بها في العمل. يراها العملاء عند اختيار مقدم الخدمة، وتُطبق على العروض الجديدة فورًا.',
     deliverWithin: 'تسليم التقرير خلال', firstContactTitle: 'أول تواصل مع العميل',
     priceSent: 'أُرسل لفريق العمليات. تُطبق الأسعار الحالية حتى الاعتماد.', nowIs: 'الحالي {v}',
     replaceRequest: 'استبدال الطلب', sendPrices: 'إرسال للاعتماد',

@@ -4,7 +4,7 @@ import { SvgXml } from 'react-native-svg';
 
 import { icm } from '@/backend/engine';
 import { bucket, dateTime, money, placeText, slaInfo, types } from '@/lib/format';
-import { useT } from '@/state/app';
+import { useApp, useT } from '@/state/app';
 import { colors, radius, space } from '@/theme';
 import { Badge, Divider, Grow, Icon, ListItem, Row, Stack, StatusBadge, Txt } from '@/ui/core';
 
@@ -17,14 +17,17 @@ export function SlaBadge({ c }: { c: any }) {
 /** One case in a list. */
 export function CaseRow({ c, onPress, showAgent = true }: { c: any; onPress?: () => void; showAgent?: boolean }) {
   const t = useT();
+  const client = useApp().session?.portal === 'entity';
   const name = c.customer && c.customer.name;
+  // Clients see who does the work; providers see who it is for.
+  const org = client ? c.providerName : c.entityName;
   const what = c.service === 'investigation' ? types(c.inquiryTypes) : bucket(c.bucket);
   return (
     <ListItem onPress={onPress}
       title={<Row between><Txt mono b v="sm">{c.ref}</Txt><SlaBadge c={c} /></Row>}
       sub={<Stack gap={4} style={{ marginTop: 4 }}>
         <Txt numberOfLines={1}>{name || t('mask.hidden')}</Txt>
-        <Txt v="xs" c="muted" numberOfLines={1}>{placeText(c.place, c.governorate)} · {what}{c.entityName ? ' · ' + c.entityName : ''}</Txt>
+        <Txt v="xs" c="muted" numberOfLines={1}>{placeText(c.place, c.governorate)} · {what}{org ? ' · ' + org : ''}</Txt>
         <Row wrap gap={6}><StatusBadge status={c.status} />{showAgent && c.agentName ? <Txt v="xs" c="faint">{c.agentName}</Txt> : null}{c.disputed ? <Badge label={t('dispute.flag')} tone="danger" /> : null}</Row>
       </Stack>} />
   );

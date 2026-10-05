@@ -34,6 +34,17 @@
       agent: u.agentId ? E.agentById(u.agentId) : null
     };
   }
+  /** Simulated backend only: a salted FNV-1a hash, so no password is kept as typed. */
+  function passwordHash(userId, pw) {
+    var s = userId + ':' + pw, h = 0x811c9dc5;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16);
+  }
+  /** "n****@horus-auto.example" */
+  function maskEmail(email) {
+    var at = email.indexOf('@');
+    return at > 1 ? email.charAt(0) + '****' + email.slice(at) : email;
+  }
   function orgName(u) {
     if (u.entityId) return E.entityById(u.entityId).name;
     if (u.providerId) return E.providerById(u.providerId).name;
@@ -55,6 +66,38 @@
         if (!u || u.active === false) throw new Err('errors.notFound');
         E.setSession(u.id);
         return sessionUser(u);
+      });
+    },
+    /**
+     * First step of the organisation sign-in: work email and password. Organisation and
+     * platform staff only; service providers sign in with their mobile. After
+     * SIGN_IN_MAX_TRIES wrong passwords the account is locked for SIGN_IN_LOCK_MINUTES.
+     * Returns who is signing in and a masked email for the code step.
+     */
+    checkPassword: function (email, password) {
+      var C = ICM.config;
+      return E.mutate(function (db) {
+        var mail = String(email || '').trim().toLowerCase();
+        var u = db.users.filter(function (x) { return x.email && x.email.toLowerCase() === mail && x.active !== false; })[0];
+        if (!u || portalOf(u) !== 'entity' && portalOf(u) !== 'admin') return { error: 'errors.wrongPassword' };
+        var now = E.now();
+        if (u.lockedUntil && u.lockedUntil > now) return { error: 'errors.signInLocked', params: { min: Math.ceil((u.lockedUntil - now) / 60000) } };
+        var expected = u.passwordHash || passwordHash(u.id, C.DEMO_PASSWORD);
+        if (passwordHash(u.id, String(password || '')) !== expected) {
+          u.signInFails = (u.signInFails || 0) + 1;
+          if (u.signInFails >= C.SIGN_IN_MAX_TRIES) {
+            u.signInFails = 0;
+            u.lockedUntil = now + C.SIGN_IN_LOCK_MINUTES * 60000;
+            return { error: 'errors.signInLocked', params: { min: C.SIGN_IN_LOCK_MINUTES } };
+          }
+          return { error: 'errors.wrongPassword' };
+        }
+        u.signInFails = 0;
+        u.lockedUntil = null;
+        return { userId: u.id, name: u.name, maskedEmail: maskEmail(u.email) };
+      }).then(function (r) {
+        if (r.error) throw new Err(r.error, r.params);
+        return r;
       });
     },
     logout: function () { return E.run(function () { E.setSession(null); return null; }); },

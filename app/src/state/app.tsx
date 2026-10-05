@@ -13,6 +13,7 @@ export type Lang = 'en' | 'ar';
 export type Session = {
   user: any;
   portal: 'provider' | 'agent' | 'entity' | 'admin' | 'applicant';
+  entity: any | null;
   provider: any | null;
   agent: any | null;
 };

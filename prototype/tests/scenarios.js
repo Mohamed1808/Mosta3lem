@@ -919,6 +919,31 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(c.checkIn.at >= a1 && c.checkIn.source === 'simulated', 'a time before the case was assigned is not accepted');
   });
 
+  await scenario('21. Organisation sign-in with email and password', async () => {
+    const db = ICM.store.db, C = ICM.config;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const tamer = db.users.find((u) => u.name === 'Tamer Lotfy');
+    const r = await S.auth.checkPassword('  ' + tamer.email.toUpperCase() + ' ', C.DEMO_PASSWORD);
+    ok(r.userId === tamer.id && r.maskedEmail.indexOf('****@') === 1 && !('passwordHash' in r), 'the right email and password pass, with the email masked for the code step');
+    ok(await errOf(S.auth.checkPassword(tamer.email, 'wrong')) === 'errors.wrongPassword', 'a wrong password is refused');
+    ok(await errOf(S.auth.checkPassword('nobody@nowhere.example', C.DEMO_PASSWORD)) === 'errors.wrongPassword', 'an unknown email gets the same message, so emails cannot be guessed');
+    const hany = db.users.find((u) => u.name === 'Hany Wagdy');
+    hany.email = 'hany@sphinx.example';
+    ok(await errOf(S.auth.checkPassword(hany.email, C.DEMO_PASSWORD)) === 'errors.wrongPassword', 'service providers cannot use the email sign-in');
+    for (let i = 0; i < C.SIGN_IN_MAX_TRIES - 1; i++) await errOf(S.auth.checkPassword(tamer.email, 'wrong'));
+    ok(await errOf(S.auth.checkPassword(tamer.email, C.DEMO_PASSWORD)) === 'errors.signInLocked', 'after ' + C.SIGN_IN_MAX_TRIES + ' wrong tries even the right password is refused for a while');
+    await as('Laila Hosny');
+    await S.demo.advance((C.SIGN_IN_LOCK_MINUTES + 1) * 60000);
+    ok((await S.auth.checkPassword(tamer.email, C.DEMO_PASSWORD)).userId === tamer.id, 'the lock ends after ' + C.SIGN_IN_LOCK_MINUTES + ' minutes');
+
+    await as('Tamer Lotfy');
+    const s = await S.auth.currentUser();
+    const d = await S.analytics.entityDashboard();
+    ok(s.portal === 'entity' && s.entity.id === tamer.entityId && d.services.join() === 'investigation', 'the Investigations role sees only investigation work on its home');
+    await as('Nadia Samir');
+    ok((await S.analytics.entityDashboard()).services.join() === 'investigation,collection', 'the Admin sees both services');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

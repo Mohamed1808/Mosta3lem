@@ -1,5 +1,5 @@
 /* English strings for the investigation report forms built from the client's templates
-   (Residence and Business), document scanning, the bank's decision and the Excel export.
+   (Residence and Business), document scanning, the client's decision and the Excel export.
    Keep in sync with investigation.ar.js. Option labels use Title Case. */
 (function () {
   window.ICM.i18n.extend('en', {
