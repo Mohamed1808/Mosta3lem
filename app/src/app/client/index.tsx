@@ -1,7 +1,7 @@
 /**
  * Client home: the organisation's open work, what needs a decision and the last six
  * months. Each role sees only the services it covers (Investigations, Collections, or
- * both for Admin and Operations). Spending is shown to the Admin only.
+ * both for Admin and Operations). Spending and invoices are for the Admin only.
  */
 import { router } from 'expo-router';
 import { View } from 'react-native';
@@ -39,7 +39,7 @@ export default function ClientHome() {
             {inv ? <Kpi label={t('kpi.deliveredMonth')} value={num(d.deliveredThisMonth)} /> : null}
             {inv ? <Kpi label={t('kpi.turnaround')} value={d.avgTurnaroundHours != null ? t('time.hoursShort', { h: num(d.avgTurnaroundHours, 1) }) : '-'} sub={t('kpi.turnaroundSub')} /> : null}
             {col ? <Kpi label={t('kpi.recoveredMonth')} value={money(d.recoveredThisMonth)} tone="ok" /> : null}
-            {admin ? <Kpi label={t('kpi.spendMonth')} value={money(d.spendThisMonth)} /> : null}
+            {admin ? <Kpi label={t('kpi.spendMonth')} value={money(d.spendThisMonth)} onPress={() => router.push('/invoices')} /> : null}
             <Kpi label={t('kpi.ratingsPending')} value={num(d.pendingRatings)} tone={d.pendingRatings ? 'warn' : undefined} onPress={() => router.push('/client-ratings')} />
           </Row>
           <Stack gap={8}>

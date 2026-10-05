@@ -73,7 +73,7 @@
     title: function () { return t('nav.invoices'); },
     load: function () { return S.billing.invoices(); },
     render: function (list, ctx) {
-      var canPay = ['entity_admin', 'entity_operations'].indexOf(ctx.session.user.role) >= 0;
+      var canPay = ctx.session.user.role === 'entity_admin';
       var due = U.sum(list.filter(function (i) { return i.status === 'issued'; }), function (i) { return i.subtotal; });
       return h`${ui.pageHead(t('nav.invoices'), t('invoice.subtitle'))}
         <div class="kpis">${ui.kpi(t('invoice.outstanding'), U.money(due), null, due ? 'warn' : '')}${ui.kpi(t('invoice.accruing'), U.money(U.sum(list.filter(function (i) { return i.status === 'draft'; }), function (i) { return i.subtotal; })), t('invoice.accruingSub'))}${ui.kpi(t('invoice.paidTotal'), U.money(U.sum(list.filter(function (i) { return i.status === 'paid'; }), function (i) { return i.subtotal; })), null, 'ok')}</div>
@@ -108,6 +108,7 @@
     title: function () { return t('nav.reports'); },
     load: function () { return S.analytics.entityReports(); },
     render: function (d) {
+      var r0 = d.providers[0];  // spend is null for roles that do not see the client's billing
       return h`${ui.pageHead(t('nav.reports'), t('reports.subtitle'))}
         <div class="grid cols-2 mb-16">
           ${ui.card(t('reports.onTime'), h`<div class="chart-box"><canvas data-chart="ontime"></canvas></div>`)}
@@ -122,9 +123,9 @@
           { label: t('metric.recovery'), num: true, render: function (r) { return ui.pct(r.recoveryRate); } },
           { label: t('reports.avgRating'), num: true, render: function (r) { return r.avgRating == null ? '-' : U.num(r.avgRating, 1); } },
           { label: t('reports.breaches'), num: true, render: function (r) { return U.num(r.breaches); } },
-          { label: t('reports.spend'), num: true, render: function (r) { return U.money(r.spend); } },
+          r0 && r0.spend === null ? null : { label: t('reports.spend'), num: true, render: function (r) { return U.money(r.spend); } },
           { label: t('score.label'), num: true, render: function (r) { return ui.scoreBox(r.score); } }
-        ], d.providers), { flush: true })}`;
+        ].filter(Boolean), d.providers), { flush: true })}`;
     },
     after: function (root, d) {
       ui.charts.mount(root, {

@@ -16,9 +16,10 @@
         { href: '#/client/cases', icon: 'list', label: t('nav.cases'), count: c.entityAttention, warn: true },
         { href: '#/client/batches', icon: 'layers', label: t('nav.batches') },
         { href: '#/client/ratings', icon: 'star', label: t('nav.ratings'), count: c.pendingRatings },
-        { href: '#/client/invoices', icon: 'file', label: t('nav.invoices') },
         { href: '#/client/reports', icon: 'chart', label: t('nav.reports') }
       ];
+      // Invoices and spending are for the client's Admin only.
+      if (u.role === 'entity_admin') items.splice(6, 0, { href: '#/client/invoices', icon: 'file', label: t('nav.invoices') });
       if (u.role === 'entity_admin') items.push({ href: '#/client/users', icon: 'users', label: t('nav.users') });
       return [{ items: items }];
     }
