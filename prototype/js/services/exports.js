@@ -117,8 +117,22 @@
     return out;
   }
 
-  function rowFor(type, c, all) {
+  /**
+   * For a client's own copy: the provider's people are named by their company. Person ids
+   * of provider staff become the provider's id, and the user columns hold the company name.
+   */
+  function hideProviderStaff(out, c) {
+    var db = E.db(), prov = c.providerId ? E.providerById(c.providerId) : null;
+    if (!prov) return out;
+    var staff = function (id) { var u = id ? db.users.filter(function (x) { return x.id === id; })[0] : null; return !!(u && u.providerId); };
+    ['ASSIGNED_TO_ID', 'DATA_ENTRY_USER_ID', 'LAST_UPDATED_BY_ID', 'RETURNED_BY_ID', 'REVISION_REQUESTED_BY_ID'].forEach(function (k) { if (staff(out[k])) out[k] = prov.id; });
+    if (out.USER_NAME) { out.USER_NAME = prov.name; out.POSITION = ICM.t('dispute.party.provider'); }
+    return out;
+  }
+
+  function rowFor(type, c, all, viewer) {
     var sys = systemColumns(type, c, all);
+    if (viewer && wf.isEntityRole(viewer.role)) sys = hideProviderStaff(sys, c);
     var rep = reportColumns(type, (c.report || {})[type] || {});
     return C.EXPORT_SHEETS[type].headers.map(function (hd) {
       var v = rep[hd];
@@ -139,7 +153,7 @@
           var all = E.db().cases.filter(function (c) { return c.service === 'investigation' && c.entityId && (a.role === 'platform_admin' || c.entityId === a.entityId); });
           return ['residence', 'business'].map(function (type) {
             var mine = cases.filter(function (c) { return (c.inquiryTypes || []).indexOf(type) >= 0; });
-            return { type: type, sheet: C.EXPORT_SHEETS[type].sheet, headers: C.EXPORT_SHEETS[type].headers.slice(), rows: mine.map(function (c) { return rowFor(type, c, all); }) };
+            return { type: type, sheet: C.EXPORT_SHEETS[type].sheet, headers: C.EXPORT_SHEETS[type].headers.slice(), rows: mine.map(function (c) { return rowFor(type, c, all, a); }) };
           });
         });
       });

@@ -16,6 +16,11 @@
     });
   }
   var PAYOUT = { draft: 'accruing', issued: 'pending', paid: 'paid_out' };
+  /**
+   * The client's billing (invoices, spending totals, paying) is for its Admin only. Other
+   * roles still see each case's price, which they need to choose a provider.
+   */
+  function seesClientMoney(a) { return a && a.role === 'entity_admin'; }
 
   S.billing = {
     invoices: function () {
@@ -23,7 +28,7 @@
         var a = E.actor();
         return E.db().invoices.filter(function (i) {
           if (a.role === 'platform_admin') return true;
-          if (wf.isEntityRole(a.role)) return i.entityId === a.entityId;
+          if (wf.isEntityRole(a.role)) return seesClientMoney(a) && i.entityId === a.entityId;
           // Invoices show the whole company's billing: the owner or the individual provider only.
           if (a.providerId) return i.providerId === a.providerId && D.moneyScope(E.db(), a).all === true;
           return false;
@@ -33,7 +38,7 @@
     markPaid: function (id) {
       return E.mutate(function (db) {
         var a = E.actor();
-        if (['entity_admin', 'entity_operations'].indexOf(a.role) < 0) throw new Err('errors.forbidden');
+        if (!seesClientMoney(a)) throw new Err('errors.forbidden');
         var inv = E.invoiceById(id);
         if (!inv || inv.entityId !== a.entityId) throw new Err('errors.forbidden');
         if (inv.status !== 'issued') throw new Err('errors.invoiceNotIssued');
@@ -51,7 +56,7 @@
         if (!inv.lines.length) throw new Err('errors.invoiceEmpty');
         inv.status = 'issued'; inv.issuedAt = E.now();
         E.audit('invoice.issued', 'invoice', inv.id, inv.ref, { status: 'draft' }, { status: 'issued' }, null, a);
-        E.notify(db.users.filter(function (u) { return u.entityId === inv.entityId && (u.role === 'entity_admin' || u.role === 'entity_operations'); }), 'notif.invoice_issued', { ref: inv.ref }, 'entity:invoices');
+        E.notify(db.users.filter(function (u) { return u.entityId === inv.entityId && seesClientMoney(u); }), 'notif.invoice_issued', { ref: inv.ref }, 'entity:invoices');
         return withTotals(inv);
       });
     },
@@ -183,7 +188,7 @@
         });
         return {
           open: k.open, atRisk: k.atRisk, breached: k.breached, deliveredThisMonth: k.deliveredThisMonth,
-          recoveredThisMonth: k.recoveredThisMonth, avgTurnaroundHours: k.avgTurnaroundHours, spendThisMonth: spend,
+          recoveredThisMonth: k.recoveredThisMonth, avgTurnaroundHours: k.avgTurnaroundHours, spendThisMonth: seesClientMoney(a) ? spend : null,
           statusCounts: statusCounts, attention: attention, series: series,
           pendingRatings: cases.filter(function (c) { return c.status === 'closed' && !c.ratingId && !c.batchId && c.providerId; }).length,
           services: ['investigation', 'collection'].filter(function (s) { return wf.entityServes(a.role, s); })
@@ -212,7 +217,7 @@
             recoveryRate: closedCol.length ? U.sum(closedCol, function (c) { return wf.collection.recovered(c); }) / U.sum(closedCol, function (c) { return +c.overdueAmount; }) : null,
             avgRating: ratings.length ? U.round(U.avg(ratings, function (r) { return r.overall; }), 2) : null,
             breaches: cs.filter(function (c) { return wf.sla.state(c, now) === 'breached' || c.onTime === false; }).length,
-            spend: spend,
+            spend: seesClientMoney(a) ? spend : null,
             score: db.scores[pid] ? db.scores[pid].overall : null
           };
         }).sort(function (x, y) { return y.cases - x.cases; });

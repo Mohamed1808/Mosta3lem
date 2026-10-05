@@ -1053,6 +1053,32 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(!!after.closedAt && after.ratings.length === ratings.length && after.caseFlags.length === 1, 'the batch closes with its ratings and a case flag');
   });
 
+  await scenario('26. Client billing is for its Admin; the export names the provider, not its staff', async () => {
+    const db = ICM.store.db;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    await as('Nadia Samir');
+    const mine = await S.billing.invoices();
+    ok(mine.length > 0 && (await S.analytics.entityDashboard()).spendThisMonth !== null, 'the Admin sees invoices and spending');
+    ok((await S.analytics.entityReports()).providers.every((r) => r.spend !== null), 'the Admin sees spend per provider');
+    for (const who of ['Heba Mansour', 'Tamer Lotfy', 'Youssef Kamel']) {
+      await as(who);
+      ok((await S.billing.invoices()).length === 0 && (await S.analytics.entityDashboard()).spendThisMonth === null && (await S.analytics.entityReports()).providers.every((r) => r.spend === null), who + ' sees no invoices or spending');
+    }
+    await as('Heba Mansour');
+    const issued = db.invoices.find((i) => i.entityId === db.users.find((u) => u.name === 'Heba Mansour').entityId && i.status === 'issued');
+    if (issued) ok(await errOf(S.billing.markPaid(issued.id)) === 'errors.forbidden', 'Operations can no longer mark an invoice paid');
+
+    await as('Nadia Samir');
+    const sheets = await S.exports.investigations({});
+    const staff = db.users.filter((u) => u.providerId && u.role !== 'freelancer').map((u) => u.name.toLowerCase());
+    const staffIds = db.users.filter((u) => u.providerId).map((u) => u.id);
+    const cells = [].concat(...sheets.map((s) => [].concat(...s.rows))).map((v) => String(v).toLowerCase());
+    ok(sheets.some((s) => s.rows.length) && !cells.some((v) => staff.indexOf(v) >= 0 || staffIds.indexOf(v) >= 0), 'the client\'s Excel export holds no provider staff names or ids');
+    const userCol = sheets[0].headers.indexOf('USER_NAME');
+    const filled = sheets[0].rows.map((r) => r[userCol]).filter(Boolean);
+    ok(filled.length > 0 && filled.every((n) => db.providers.some((p) => p.name === n)), 'USER_NAME holds the provider company');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {
