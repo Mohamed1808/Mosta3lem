@@ -13,7 +13,7 @@ const en = {
     staffOnly: 'This console is for Mosta3lem staff. Organisations and service providers use the mobile app.',
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
-    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
+    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', reports: 'Reports', activity: 'Activity log', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
     orgs: {
       sub: 'Client organisations, their work with providers and how providers rate them as clients.', new: 'New organisation', none: 'No organisations yet.',
       col: { name: 'Organisation', users: 'Users', open: 'Open cases', volume: 'All cases', spend: 'Spend to date', rating: 'Rated by providers' },
@@ -32,6 +32,16 @@ const en = {
       added: '{name} added', inviteNote: 'Demo: no email is sent. They sign in to this console with their email and the password {pw}.',
       changeTeam: 'Change team', changeTeamBody: '{name} moves to {team} and gets the access of that team straight away.', teamChanged: 'Team changed',
       deactivateBody: '{name} can no longer sign in. Their past actions stay in the history.', deactivated: 'Staff member deactivated', reactivated: 'Staff member reactivated'
+    },
+    reports: {
+      sub: 'Totals for the whole platform, without customer details.', monthly: 'Cases per month (sent / closed)', created: 'Sent', closed: 'Closed',
+      onTimeShort: 'on time {pct}', byService: 'By service', byGov: 'By governorate', byProvider: 'By provider', byClient: 'By client',
+      col: { name: 'Name', cases: 'Cases', open: 'Open', onTime: 'On time', score: 'Score' }
+    },
+    activity: {
+      sub: 'Who did what and when on the platform, newest first.', search: 'Search by action, reference, person or reason', kind: 'Kind',
+      allKinds: 'Everything', who: 'Team', everyone: 'Everyone', none: 'Nothing matches.',
+      type: { case: 'Cases', provider: 'Providers', dispute: 'Disputes', invoice: 'Invoices', entity: 'Organisations', user: 'Accounts', config: 'Settings', rating: 'Ratings', batch: 'Batches' }
     },
     settings: {
       sub: 'Provider scoring and the marketplace rules.', scoring: 'Provider scoring and automatic enforcement', marketplace: 'Marketplace rules',
@@ -123,7 +133,7 @@ const ar: typeof en = {
     staffOnly: 'لوحة التحكم هذه لموظفي مستعلم. الجهات ومقدمو الخدمة يستخدمون تطبيق الموبايل.',
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
-    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },
+    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', reports: 'التقارير', activity: 'سجل النشاط', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },
     orgs: {
       sub: 'الجهات العميلة وأعمالها مع مقدمي الخدمة وتقييم مقدمي الخدمة لها كعملاء.', new: 'جهة جديدة', none: 'لا توجد جهات بعد.',
       col: { name: 'الجهة', users: 'المستخدمون', open: 'حالات مفتوحة', volume: 'كل الحالات', spend: 'الإنفاق حتى الآن', rating: 'تقييم مقدمي الخدمة' },
@@ -142,6 +152,16 @@ const ar: typeof en = {
       added: 'تمت إضافة {name}', inviteNote: 'نسخة تجريبية: لا يُرسل بريد. يسجّل الدخول إلى لوحة التحكم ببريده وكلمة المرور {pw}.',
       changeTeam: 'تغيير الفريق', changeTeamBody: 'ينتقل {name} إلى {team} ويحصل على صلاحيات هذا الفريق فورًا.', teamChanged: 'تم تغيير الفريق',
       deactivateBody: 'لن يتمكن {name} من تسجيل الدخول. تبقى إجراءاته السابقة في السجل.', deactivated: 'تم إيقاف الموظف', reactivated: 'تمت إعادة تفعيل الموظف'
+    },
+    reports: {
+      sub: 'إجماليات المنصة كلها، بدون بيانات العملاء.', monthly: 'الحالات شهريًا (مُرسلة / مغلقة)', created: 'مُرسلة', closed: 'مغلقة',
+      onTimeShort: 'في الموعد {pct}', byService: 'حسب الخدمة', byGov: 'حسب المحافظة', byProvider: 'حسب مقدم الخدمة', byClient: 'حسب العميل',
+      col: { name: 'الاسم', cases: 'الحالات', open: 'مفتوحة', onTime: 'في الموعد', score: 'الدرجة' }
+    },
+    activity: {
+      sub: 'من فعل ماذا ومتى على المنصة، الأحدث أولًا.', search: 'ابحث بالإجراء أو المرجع أو الشخص أو السبب', kind: 'النوع',
+      allKinds: 'الكل', who: 'الفريق', everyone: 'الجميع', none: 'لا توجد نتائج.',
+      type: { case: 'الحالات', provider: 'مقدمو الخدمة', dispute: 'النزاعات', invoice: 'الفواتير', entity: 'الجهات', user: 'الحسابات', config: 'الإعدادات', rating: 'التقييمات', batch: 'الدفعات' }
     },
     settings: {
       sub: 'تقييم مقدمي الخدمة وقواعد السوق.', scoring: 'تقييم مقدمي الخدمة والإجراءات التلقائية', marketplace: 'قواعد السوق',

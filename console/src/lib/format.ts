@@ -71,3 +71,10 @@ export function priceChanges(cur: Any, next: Any): { label: string; from: string
   }
   return out;
 }
+
+/** An organisation's place in the current language (older records keep the English city name). */
+export function orgPlace(e: Any): string {
+  const govs: Any[] = icm().store.db.config.lists.governorates || [];
+  const g = e.governorate ? govs.find((x) => x.id === e.governorate) : govs.find((x) => x.en === e.city || x.ar === e.city);
+  return g ? U().label(g) : e.city || "-";
+}

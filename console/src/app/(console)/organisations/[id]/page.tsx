@@ -11,7 +11,7 @@ import { useParams } from "next/navigation";
 import { icm, services } from "@/backend/engine";
 import { useAction, useDialog } from "@/components/dialog";
 import { Badge, Button, Card, Kpi, Loading, Notice, PageHead } from "@/components/ui";
-import { date, dateTime, money, num } from "@/lib/format";
+import { date, dateTime, money, num, orgPlace } from "@/lib/format";
 import { useApp, useQuery, useT } from "@/lib/app";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +43,7 @@ export default function OrganisationPage() {
   return (
     <>
       <div className="mb-2 text-sm"><Link href="/organisations" className="text-accent hover:underline">{t("console.nav.organisations")}</Link></div>
-      <PageHead title={e.name} sub={t("entityType." + e.type) + " · " + e.city + " · " + t("console.orgs.since", { date: date(e.createdAt) })} />
+      <PageHead title={e.name} sub={t("entityType." + e.type) + " · " + orgPlace(e) + " · " + t("console.orgs.since", { date: date(e.createdAt) })} />
       {created ? <div className="mb-4"><Notice tone="success">{t("console.orgs.createdNote", { pw: icm().config.DEMO_PASSWORD })}</Notice></div> : null}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label={t("console.orgs.col.open")} value={num(e.open)} />
@@ -77,7 +77,7 @@ export default function OrganisationPage() {
       {e.audit && e.audit.length ? (
         <Card title={t("admin.history")} className="mt-4">
           <ul className="space-y-1.5 text-sm">
-            {e.audit.map((a: Any) => <li key={a.id}><span className="font-mono text-xs text-ink3"><bdi dir="ltr">{dateTime(a.at)}</bdi></span> · {a.actorName}: {auditLabel(a.action)} · {a.targetLabel}</li>)}
+            {e.audit.map((a: Any) => <li key={a.id}><span className="font-mono text-xs text-ink3"><bdi dir="ltr">{dateTime(a.at)}</bdi></span> · {a.actorName}: {auditLabel(a.action)} · {a.targetRef}</li>)}
           </ul>
         </Card>
       ) : null}

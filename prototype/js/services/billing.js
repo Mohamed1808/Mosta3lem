@@ -390,6 +390,37 @@
         }).sort(function (x, y) { return y.overdue - x.overdue; });
       });
     },
+    /**
+     * Platform report for Management and Data: totals only, never customer details.
+     * Six months of volume and timeliness, and figures per service, provider, client and
+     * governorate. Money only for teams that see billing.
+     */
+    platformReport: function () {
+      return E.run(function () {
+        var a = E.requirePermission('reports.view'), db = E.db(), now = E.now();
+        var money = wf.can(a.role, 'billing.view');
+        var cases = db.cases.filter(function (c) { return c.status !== 'draft'; });
+        var rate = function (cs) { var d = cs.filter(function (c) { return c.onTime != null; }); return d.length ? d.filter(function (c) { return c.onTime; }).length / d.length : null; };
+        var months = monthsBack(6, now).map(function (m) {
+          var made = cases.filter(function (c) { return inMonth(c.createdAt, m); });
+          var closed = cases.filter(function (c) { return c.status === 'closed' && inMonth(c.closedAt, m); });
+          return { month: m, created: made.length, closed: closed.length, onTime: rate(closed),
+            gmv: money ? U.sum(db.invoices.filter(function (i) { return i.month === m; }), function (i) { return U.sum(i.lines, lineAmount); }) : null };
+        });
+        var by = function (key, label) {
+          var g = U.groupBy(cases.filter(function (c) { return key(c); }), key);
+          return Object.keys(g).map(function (k) { var cs = g[k]; return { id: k, name: label(k), cases: cs.length, open: cs.filter(function (c) { return !wf.isTerminal(c.status); }).length, onTime: rate(cs) }; })
+            .sort(function (x, y) { return y.cases - x.cases; });
+        };
+        return {
+          months: months,
+          services: ['investigation', 'collection'].map(function (s) { var cs = cases.filter(function (c) { return c.service === s; }); return { id: s, cases: cs.length, open: cs.filter(function (c) { return !wf.isTerminal(c.status); }).length, onTime: rate(cs) }; }),
+          providers: by(function (c) { return c.providerId; }, function (k) { var p = E.providerById(k); return p ? p.name : k; }).map(function (r) { r.score = db.scores[r.id] ? db.scores[r.id].overall : null; return r; }),
+          clients: by(function (c) { return c.entityId; }, function (k) { var e = E.entityById(k); return e ? e.name : k; }),
+          governorates: by(function (c) { return D.caseGov(c); }, function (k) { return k; })
+        };
+      });
+    },
     /** The platform at a glance for staff. Money figures only for teams that see billing. */
     adminOverview: function () {
       return E.run(function () {

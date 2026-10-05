@@ -414,7 +414,7 @@
   S.audit = {
     list: function (f) {
       return E.run(function () {
-        E.requireRole(['platform_admin']);
+        E.requirePermission('audit.view');
         f = f || {};
         var q = (f.q || '').toLowerCase();
         return E.db().audit.filter(function (a) {
