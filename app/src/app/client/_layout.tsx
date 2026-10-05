@@ -1,6 +1,6 @@
 /**
- * Client app tabs, for organisations that request investigations and collections.
- * The Cases badge counts what needs the client's decision. New request comes next.
+ * Client app tabs, for organisations that request investigations and collections:
+ * Home, Cases (badge: what needs the client), New request and More.
  */
 import { Tabs } from 'expo-router';
 
@@ -13,6 +13,7 @@ export default function ClientTabs() {
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <ClientTabBar {...props} />}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="cases" />
+      <Tabs.Screen name="new" />
       <Tabs.Screen name="more" />
     </Tabs>
   );
@@ -25,6 +26,7 @@ function ClientTabBar({ state, navigation }: any) {
     <TabBar state={state} navigation={navigation} tabs={[
       { name: 'index', label: t('tabs.home'), icon: 'home' },
       { name: 'cases', label: t('tabs.cases'), icon: 'columns', count: counts.entityAttention },
+      { name: 'new', label: t('tabs.newRequest'), icon: 'plus' },
       { name: 'more', label: t('tabs.more'), icon: 'moreH' },
     ]} />
   );

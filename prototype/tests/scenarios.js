@@ -944,6 +944,45 @@ async function runInvestigation(caseId, providerId, opts) {
     ok((await S.analytics.entityDashboard()).services.join() === 'investigation,collection', 'the Admin sees both services');
   });
 
+  await scenario('22. Clients see the provider, not the names of its staff', async () => {
+    const db = ICM.store.db;
+    await as('Nadia Samir');
+    const ent = db.users.find((u) => u.name === 'Nadia Samir').entityId;
+    const worked = db.cases.filter((c) => c.entityId === ent && c.agentId && (c.timeline || []).some((e) => e.actorRole === 'agent'));
+    ok(worked.length > 0, 'the client has cases worked by field agents');
+    const staff = db.users.filter((u) => u.providerId).map((u) => u.name);
+    for (const c of worked) {
+      const d = await S.cases.get(c.id);
+      const text = JSON.stringify(d.case) + JSON.stringify(d.agent);
+      const leaked = staff.filter((n) => text.indexOf(n) >= 0 && n !== d.case.providerName);
+      if (leaked.length) throw new Error(c.ref + ' shows ' + leaked.join(', '));
+    }
+    ok(true, 'no field agent, supervisor or owner name appears in ' + worked.length + ' case details');
+    const list = await S.cases.list({});
+    ok(list.every((c) => !c.agentName && !c.agentId), 'the case list leaves the agent out');
+    const d = await S.cases.get(worked[0].id);
+    ok(d.case.timeline.some((e) => e.actorRole === 'agent' && e.actorName === d.case.providerName), 'field steps in the timeline show the provider company');
+    await as('Hany Wagdy');
+    const own = db.cases.find((c) => c.providerId === 'prv_sphinx' && c.agentId);
+    ok(!!(await S.cases.get(own.id)).case.agentName, 'the provider still sees its own agent');
+  });
+
+  await scenario('23. A request with the city picked from the list', async () => {
+    await as('Tamer Lotfy');
+    const v = invValues('giza');
+    v.home = Object.assign({}, v.home, { city: 'dokki' });
+    const c = await S.cases.createDraft('investigation', v);
+    const d = await S.cases.get(c.id);
+    ok(d.case.place.gov === 'giza' && d.case.place.city === 'dokki', 'the city id from the list is the case\'s place');
+    const m = await S.marketplace.eligible({ service: 'investigation', demand: { giza: 1 }, inquiryTypes: ['residence'], caseId: c.id });
+    ok(m.providers.length > 0 && m.providers.every((p) => ICM.wf.coversPlace(ICM.wf.coverageOf(ICM.store.db.providers.find((x) => x.id === p.id)), 'giza', 'dokki')), 'only providers covering Dokki are offered');
+    const sent = await S.cases.sendOffer(c.id, m.providers[0].id);
+    ok(sent.status === 'awaiting_acceptance', 'the offer goes to the chosen provider');
+    const other = Object.assign({}, invValues('giza'), { home: Object.assign({}, v.home, { city: 'Kafr Ghatati' }) });
+    const c2 = await S.cases.createDraft('investigation', other);
+    ok((await S.cases.get(c2.id)).case.place.city === null, 'a place typed under Other falls back to the governorate');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

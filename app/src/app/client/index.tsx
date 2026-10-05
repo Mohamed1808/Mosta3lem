@@ -11,7 +11,7 @@ import { CaseList } from '@/components/case';
 import { money, num } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { colors, radius } from '@/theme';
-import { Badge, Card, Kpi, Loading, Notice, Row, Stack, Txt, useDir } from '@/ui/core';
+import { Badge, Card, Kpi, Loading, Row, Stack, Txt, useDir } from '@/ui/core';
 import { Screen } from '@/ui/screen';
 
 export default function ClientHome() {
@@ -48,7 +48,6 @@ export default function ClientHome() {
               onOpen={(c) => router.push({ pathname: '/case/[id]', params: { id: c.id } })} />
           </Stack>
           <Trend series={d.series} />
-          <Notice tone="info" text={t('client.nextSteps')} />
         </>
       )}
     </Screen>
