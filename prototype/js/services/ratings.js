@@ -40,7 +40,11 @@
   function withNames(r) {
     var p = E.providerById(r.providerId), e = E.entityById(r.entityId);
     var dispute = E.db().disputes.filter(function (d) { return d.ratingId === r.id; }).sort(function (a, b) { return b.createdAt - a.createdAt; })[0];
-    return Object.assign({}, r, { providerName: p ? p.name : '', entityName: e ? e.name : '', dispute: dispute ? { id: dispute.id, status: dispute.status, outcome: dispute.outcome } : null });
+    var out = Object.assign({}, r, { providerName: p ? p.name : '', entityName: e ? e.name : '', dispute: dispute ? { id: dispute.id, status: dispute.status, outcome: dispute.outcome } : null });
+    // Clients see the provider company, not the person who replied.
+    var a = E.currentUser();
+    if (a && wf.isEntityRole(a.role) && out.reply) out.reply = Object.assign({}, out.reply, { by: null, byName: out.providerName });
+    return out;
   }
 
   S.ratings = {
@@ -208,16 +212,22 @@
     if (a.providerId) return d.providerId === a.providerId;
     return false;
   }
-  function decorateDispute(d) {
+  function decorateDispute(d, viewer) {
     var p = E.providerById(d.providerId), e = E.entityById(d.entityId);
-    return Object.assign({}, d, { providerName: p ? p.name : '', entityName: e ? e.name : '' });
+    var out = Object.assign({}, d, { providerName: p ? p.name : '', entityName: e ? e.name : '' });
+    // Clients see the provider company, never the names of its people.
+    if (viewer && wf.isEntityRole(viewer.role)) {
+      if (out.raisedByParty === 'provider') out = Object.assign(out, { raisedBy: null, raisedByName: out.providerName });
+      out.responses = (out.responses || []).map(function (r) { return r.party === 'provider' ? Object.assign({}, r, { by: null, byName: out.providerName }) : r; });
+    }
+    return out;
   }
 
   S.disputes = {
     list: function () {
       return E.run(function () {
         var a = E.actor();
-        return E.db().disputes.filter(function (d) { return canSeeDispute(d, a); }).map(decorateDispute)
+        return E.db().disputes.filter(function (d) { return canSeeDispute(d, a); }).map(function (d) { return decorateDispute(d, a); })
           .sort(function (x, y) { return (x.status === 'open' ? 0 : 1) - (y.status === 'open' ? 0 : 1) || y.createdAt - x.createdAt; });
       });
     },
@@ -226,7 +236,7 @@
         var a = E.actor(), d = E.disputeById(id);
         if (!d || !canSeeDispute(d, a)) throw new Err('errors.notFound');
         var c = d.caseId ? E.caseById(d.caseId) : null;
-        return Object.assign(decorateDispute(d), {
+        return Object.assign(decorateDispute(d, a), {
           case: c ? S.cases._decorate(c, a.role === 'platform_admin' ? a : a, E.now()) : null,
           rating: d.ratingId ? withNames(E.ratingById(d.ratingId)) : null
         });

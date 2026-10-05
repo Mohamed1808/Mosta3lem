@@ -2,10 +2,10 @@
  * What the client can do on one of its cases: finish a draft and choose a provider (again
  * after a decline or expiry), accept a delivered report or ask for rework, approve or
  * reject a settlement, record its own decision on the customer, recall or cancel.
- * Rating the provider and raising disputes come with step 5.
+ * Also rating the provider once the case is closed, and raising or following a dispute.
  */
 import { router } from 'expo-router';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Pressable } from 'react-native';
 
 import { icm, services } from '@/backend/engine';
@@ -14,7 +14,9 @@ import { useT } from '@/state/app';
 import { colors, radius } from '@/theme';
 import { Button, Card, Notice, Row, Stack, Txt } from '@/ui/core';
 import { useAction, useDialog } from '@/ui/dialogs';
+import { RateCaseSheet } from './rateForm';
 
+const CASE_REASONS = ['report_inaccurate', 'evidence_missing', 'sla_missed', 'conduct', 'billing', 'other'];
 const DECISION_TONE: Record<string, string> = { APPROVED: colors.ok, REJECTED: colors.bad, PENDING: colors.warn };
 
 export function ClientActions({ d }: { d: any }) {
@@ -23,6 +25,8 @@ export function ClientActions({ d }: { d: any }) {
   const run = useAction();
   const c = d.case, a: string[] = d.actions || [];
   const go = (action: string, payload: any, success: string) => run(() => services().cases.transition(c.id, action, payload), success);
+  const [rating, setRating] = useState(false);
+  const providerName = d.provider ? d.provider.name : c.providerName || '';
   const out: ReactNode[] = [];
 
   if (c.status === 'draft' || a.indexOf('send_offer') >= 0) {
@@ -84,8 +88,30 @@ export function ClientActions({ d }: { d: any }) {
       if (v) await go('cancel', { reason: v.note }, t('case.cancelled'));
     }} />);
   }
+  if (d.canRate) out.push(<Button key="rate" kind="primary" icon="star" block label={t('rating.rateProvider', { name: providerName })} onPress={() => setRating(true)} />);
+  if (c.status === 'closed' && c.batchId && !c.ratingId) {
+    out.push(<Notice key="viaBatch" tone="info" text={t('case.rateViaBatch') + ' ' + (c.batchRef || '')} />);
+    out.push(<Button key="batch" icon="layers" block label={t('client.openBatch')} onPress={() => router.push({ pathname: '/batch/[id]', params: { id: c.batchId } })} />);
+  }
+  if (d.canDispute) {
+    out.push(<Button key="dispute" kind="ghost" icon="scale" block label={t('dispute.raise')} onPress={async () => {
+      const v = await ask({
+        title: t('dispute.raiseCase', { ref: c.ref }), message: t('dispute.caseIntro'),
+        options: CASE_REASONS.map((r) => ({ value: r, label: t('dispute.reason.' + r) })), optionLabel: t('dispute.reasonLabel'),
+        note: 'required', noteLabel: t('dispute.details'), confirmLabel: t('dispute.submit'),
+      });
+      if (v && v.option) await run(() => services().disputes.open({ kind: 'case', caseId: c.id, reason: v.option, details: v.note }), t('dispute.opened'));
+    }} />);
+  }
+  const openDispute = (d.disputes || []).find((x: any) => x.kind === 'case' && x.status === 'open');
+  if (openDispute) out.push(<Button key="seeDispute" icon="scale" block label={t('client.seeDispute', { ref: openDispute.ref })} onPress={() => router.push({ pathname: '/dispute/[id]', params: { id: openDispute.id } })} />);
   if (!out.length) return null;
-  return <Card title={t('caseScreen.actions')}><Stack gap={10}>{out}</Stack></Card>;
+  return (
+    <Card title={t('caseScreen.actions')}>
+      <Stack gap={10}>{out}</Stack>
+      {rating ? <RateCaseSheet c={c} providerName={providerName} onClose={() => setRating(false)} /> : null}
+    </Card>
+  );
 }
 
 /** The client's own decision on the customer after reading the report (kept for its team and the Excel export). */
