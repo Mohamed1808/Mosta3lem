@@ -528,7 +528,7 @@
       unknownGovernorate: 'Unknown governorate', unknownInquiryType: 'Unknown inquiry type', unknownProduct: 'Unknown product type',
       deadlinePast: 'Must be in the future', overdueAboveOriginal: 'Overdue amount cannot exceed the original amount', fixHighlighted: 'Fix the highlighted fields',
       formInvalid: 'Some fields need attention', notSignedIn: 'Sign in first', forbidden: 'You do not have access to this', forbiddenService: 'Your role does not cover this service',
-      notFound: 'Not found', notEditable: 'This can no longer be edited', providerNotEligible: 'This provider is not eligible for this case',
+      sameApprover: 'Another person must sign this off: you approved it for Operations.', notFound: 'Not found', notEditable: 'This can no longer be edited', providerNotEligible: 'This provider is not eligible for this case',
       useDedicatedAction: 'Use the dedicated screen for this action', agentInactive: 'This agent is inactive', agentWrongService: 'This agent does not work on this service',
       checkInFirst: 'Check in at the address first', offerNotPending: 'This offer is no longer open', offerExpired: 'This offer has expired',
       providerSuspended: 'Your account is suspended', ratingRequired: 'Choose a rating from 1 to 5', criteriaRequired: 'Rate every criterion',
