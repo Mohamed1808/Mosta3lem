@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 
 import { services } from '@/backend/engine';
+import { num } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { Avatar, Badge, Button, Card, Divider, Grow, Icon, KeyValue, ListItem, Row, Segmented, Stack, Txt } from '@/ui/core';
 import { useAction, useDialog } from '@/ui/dialogs';
@@ -14,6 +15,7 @@ export default function ClientMore() {
   const { ask } = useDialog();
   const run = useAction();
   const unread = useQuery<number>(() => services().notifications.unreadCount()).data || 0;
+  const counts = useQuery<any>(async () => ({ nav: await services().analytics.navCounts(null), disputes: (await services().disputes.list()).filter((x: any) => x.status === 'open').length })).data;
   const u = session?.user || {};
   const ent = session?.entity || {};
   return (
@@ -37,6 +39,12 @@ export default function ClientMore() {
       </Card>
       <Card pad={false}>
         <ListItem left={<Icon name="bell" />} title={t('more.notifications')} right={unread ? <Badge label={String(unread)} tone="danger" /> : undefined} onPress={() => router.push('/notifications')} />
+        <Divider />
+        <ListItem left={<Icon name="star" />} title={t('nav.ratings')} right={counts?.nav?.pendingRatings ? <Badge label={num(counts.nav.pendingRatings)} tone="pending" /> : undefined} onPress={() => router.push('/client-ratings')} />
+        <Divider />
+        <ListItem left={<Icon name="scale" />} title={t('dispute.title')} right={counts?.disputes ? <Badge label={num(counts.disputes)} tone="warning" /> : undefined} onPress={() => router.push('/disputes')} />
+        <Divider />
+        <ListItem left={<Icon name="layers" />} title={t('nav.batches')} onPress={() => router.push('/batches')} />
       </Card>
       <Card title={t('more.language')}>
         <Segmented items={[{ id: 'en', label: 'English' }, { id: 'ar', label: 'العربية' }]} value={lang} onChange={(l) => setLang(l as 'en' | 'ar')} />

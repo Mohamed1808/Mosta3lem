@@ -1012,6 +1012,47 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(empty === 'errors.fileEmpty', 'a file with no filled rows is refused');
   });
 
+  await scenario('25. The client rates, closes a batch and disputes, without seeing provider staff', async () => {
+    const db = ICM.store.db;
+    await as('Nadia Samir');
+    const ent = db.users.find((u) => u.name === 'Nadia Samir').entityId;
+    const pending = await S.ratings.pending();
+    const c = pending.cases[0];
+    ok(!!c, 'a closed case is waiting for a rating');
+    const crit = {};
+    ICM.config.RATING_CRITERIA[c.service].forEach((k) => { crit[k] = 4; });
+    await S.ratings.rateCase(c.id, { overall: 4, criteria: crit, tags: ['accurate_report'], feedback: 'Clear report.' });
+    ok((await S.ratings.pending()).cases.every((x) => x.id !== c.id), 'once rated it leaves the list');
+
+    const target = db.cases.find((x) => x.entityId === ent && x.providerId && x.acceptedAt && x.status === 'in_field' && !x.disputed)
+      || db.cases.find((x) => x.entityId === ent && x.providerId && x.acceptedAt && !x.disputed && ['cancelled', 'awaiting_acceptance'].indexOf(x.status) < 0);
+    const dsp = await S.disputes.open({ kind: 'case', caseId: target.id, reason: 'sla_missed', details: 'The visit was late.' });
+    const prov = db.providers.find((p) => p.id === target.providerId);
+    const owner = db.users.find((u) => u.providerId === prov.id && u.role === 'provider_admin') || db.users.find((u) => u.providerId === prov.id);
+    await S.auth.loginAs(owner.id);
+    await S.disputes.respond(dsp.id, 'The customer asked us to come later.');
+    await as('Nadia Samir');
+    let seen = await S.disputes.get(dsp.id);
+    ok(seen.responses[0].byName === prov.name && seen.responses[0].by === null, 'the provider\'s statement shows the company, not the person');
+    await S.disputes.respond(dsp.id, 'Noted, thank you.');
+    await S.demo.resolveMyDispute(dsp.id, 'partial', 'Both sides had a point.');
+    seen = await S.disputes.get(dsp.id);
+    ok(seen.status === 'resolved' && seen.outcome === 'partial' && seen.responses.length === 2, 'the client adds a statement and can play the decision in the demo');
+
+    // A batch where every case is finished needs one rating per provider to close.
+    const b = db.batches.find((x) => x.entityId === ent && !x.closedAt && x.caseIds.length);
+    b.caseIds.forEach((id) => { const k = db.cases.find((x) => x.id === id); if (!ICM.wf.isTerminal(k.status)) { k.status = 'closed'; k.closedAt = ICM.clock.now(); if (!k.providerId) k.providerId = prov.id; } });
+    const got = await S.batches.get(b.id);
+    ok(got.needsRating && got.rateProviders.length > 0, 'the finished batch asks for ' + got.rateProviders.length + ' provider rating(s)');
+    const ratings = got.rateProviders.map((p) => {
+      const cr = {}; ICM.config.RATING_CRITERIA[b.service].forEach((k) => { cr[k] = 5; });
+      return { providerId: p.id, overall: 5, criteria: cr, tags: [], feedback: '' };
+    });
+    await S.batches.close(b.id, ratings, [{ caseId: b.caseIds[0], note: 'Check the address' }]);
+    const after = await S.batches.get(b.id);
+    ok(!!after.closedAt && after.ratings.length === ratings.length && after.caseFlags.length === 1, 'the batch closes with its ratings and a case flag');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

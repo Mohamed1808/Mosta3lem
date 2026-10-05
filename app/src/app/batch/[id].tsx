@@ -1,7 +1,6 @@
 /**
  * One batch: progress, choosing providers for its open cases, the offers sent, accepting
- * all delivered reports at once, and its cases. Closing a batch with ratings comes with
- * the ratings step.
+ * all delivered reports at once, closing it with a rating per provider, and its cases.
  */
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -41,7 +40,8 @@ export default function BatchScreen() {
           <Row wrap gap={6}>{Object.keys(b.counts).map((s) => <Badge key={s} label={t('status.' + s) + ' · ' + num(b.counts[s].length)} tone="muted" />)}</Row>
         </Stack>
       </Card>
-      {b.needsRating ? <Notice tone="warning" icon="star" text={t('batch.needsRatingNotice') + ' ' + t('client.rateBatchNext')} /> : null}
+      {b.needsRating ? <Notice tone="warning" icon="star" text={t('batch.needsRatingNotice')} /> : null}
+      {b.needsRating ? <Button kind="primary" icon="star" block label={t('batch.closeAndRate')} onPress={() => router.push({ pathname: '/rate-batch/[id]', params: { id: b.id } })} /> : null}
       {b.delivered ? (
         <Button kind="primary" icon="check" block label={t('batch.acceptAll', { n: num(b.delivered) })} onPress={async () => {
           if (await ask({ title: t('batch.acceptAllTitle'), message: t('batch.acceptAllBody'), confirmLabel: t('action.accept_report') })) {

@@ -44,7 +44,9 @@ const en = {
     pickFile: 'Choose Excel or CSV file', tryDemo: 'Try with the demo file (30 rows, 3 with errors)', demoFileName: 'Demo file',
     fixHint: 'Tap a row to fix it or leave it out.', leftOut: 'Left out', fix: 'Fix', recheck: 'Check again', upload: 'Upload',
     modeSingle: 'One provider', modeSplit: 'By governorate', pickBest: 'Pick the best match', casesN: '{n} cases',
-    rateBatchNext: 'Rating and closing batches comes with the ratings update.', reportsAccepted: 'Delivered reports accepted',
+    reportsAccepted: 'Delivered reports accepted', openBatch: 'Open the batch', seeDispute: 'See dispute {ref}',
+    flagsHint: 'Optional: a short note on any case that needs attention.',
+    disputesSub: 'Disputes you raised about cases, and the ones providers raised about your ratings. The platform decides.',
     allServices: 'All', toProvider: 'Choose provider', sendBest: 'Send to best match: {name}', rating: 'Rating', newProvider: 'New',
     group: { needs: 'Needs you', waiting: 'Waiting for provider', progress: 'In progress', drafts: 'Drafts', done: 'Done', stopped: 'Cancelled' },
     groupEmpty: {
@@ -184,7 +186,9 @@ const ar: typeof en = {
     pickFile: 'اختر ملف Excel أو CSV', tryDemo: 'جرّب بالملف التجريبي (30 صفًا، 3 بها أخطاء)', demoFileName: 'ملف تجريبي',
     fixHint: 'اضغط على أي صف لتصحيحه أو استبعاده.', leftOut: 'مستبعد', fix: 'يحتاج تصحيح', recheck: 'تحقق مرة أخرى', upload: 'رفع ملف',
     modeSingle: 'مقدم خدمة واحد', modeSplit: 'حسب المحافظة', pickBest: 'اختر الأنسب', casesN: '{n} حالة',
-    rateBatchNext: 'تقييم الدفعات وإغلاقها يأتي مع تحديث التقييمات.', reportsAccepted: 'تم قبول التقارير المسلّمة',
+    reportsAccepted: 'تم قبول التقارير المسلّمة', openBatch: 'فتح الدفعة', seeDispute: 'عرض النزاع {ref}',
+    flagsHint: 'اختياري: ملاحظة قصيرة على أي حالة تحتاج انتباهًا.',
+    disputesSub: 'نزاعات فتحتها بخصوص حالات، ونزاعات فتحها مقدمو الخدمة بخصوص تقييماتك. المنصة هي التي تقرر.',
     allServices: 'الكل', toProvider: 'اختيار مقدم الخدمة', sendBest: 'إرسال للأنسب: {name}', rating: 'التقييم', newProvider: 'جديد',
     group: { needs: 'تحتاجك', waiting: 'بانتظار مقدم الخدمة', progress: 'قيد التنفيذ', drafts: 'مسودات', done: 'منتهية', stopped: 'ملغاة' },
     groupEmpty: {

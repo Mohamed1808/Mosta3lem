@@ -216,7 +216,8 @@
       var me = E.currentUser();
       var admin = E.admins()[0];
       var d = E.disputeById(disputeId);
-      if (!me || !admin || !d || d.providerId !== me.providerId) return Promise.reject(new Err('errors.forbidden'));
+      // The provider or the client on the dispute can play the platform's decision in the demo.
+      if (!me || !admin || !d || !((me.providerId && d.providerId === me.providerId) || (me.entityId && d.entityId === me.entityId))) return Promise.reject(new Err('errors.forbidden'));
       E.setSession(admin.id);
       var out;
       try { out = S.disputes.resolve(disputeId, outcome, note); } finally { E.setSession(me.id); }

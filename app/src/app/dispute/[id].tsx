@@ -1,6 +1,6 @@
 /**
  * One dispute: what it is about, what each side said, and the platform's decision. While it
- * is open the provider adds statements. A demo panel plays the platform's decision.
+ * is open either side adds statements. A demo panel plays the platform's decision.
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -30,7 +30,9 @@ function Body({ d }: { d: any }) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const open = d.status === 'open';
-  const canSpeak = ['provider_admin', 'provider_supervisor', 'freelancer'].indexOf(session?.user?.role) >= 0;
+  const client = session?.portal === 'entity';
+  const me = client ? 'entity' : 'provider';
+  const canSpeak = client || ['provider_admin', 'provider_supervisor', 'freelancer'].indexOf(session?.user?.role) >= 0;
   const send = async () => {
     if (!text.trim()) return;
     setBusy(true);
@@ -38,7 +40,7 @@ function Body({ d }: { d: any }) {
     setBusy(false);
   };
   return (
-    <Screen title={d.ref} sub={t('dispute.kindLabel.' + d.kind) + ' · ' + d.entityName} back>
+    <Screen title={d.ref} sub={t('dispute.kindLabel.' + d.kind) + ' · ' + (client ? d.providerName : d.entityName)} back>
       <Row gap={8} wrap>
         <StatusBadge status={d.status} />
         {d.outcome ? <Badge label={t('dispute.outcome.' + d.outcome)} tone={d.outcome === 'rejected' ? 'muted' : 'info'} /> : null}
@@ -63,7 +65,7 @@ function Body({ d }: { d: any }) {
       <Card title={t('disputeApp.statements')}>
         <Stack gap={space.md}>
           {(d.responses || []).length ? d.responses.map((r: any, i: number) => (
-            <View key={i} style={{ borderRadius: radius.md, padding: space.md, backgroundColor: r.party === 'provider' ? colors.accentSoft : colors.surface2 }}>
+            <View key={i} style={{ borderRadius: radius.md, padding: space.md, backgroundColor: r.party === me ? colors.accentSoft : colors.surface2 }}>
               <Txt v="xs" b c="muted">{r.byName} · {t('dispute.party.' + r.party)} · {dateTime(r.at)}</Txt>
               <Txt v="sm">{r.text}</Txt>
             </View>

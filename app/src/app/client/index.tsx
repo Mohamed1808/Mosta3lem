@@ -32,7 +32,7 @@ export default function ClientHome() {
             {d.services.map((s: string) => <Badge key={s} label={t('service.' + s)} tone="info" />)}
           </Row>
           <Row wrap gap={10}>
-            <Kpi label={t('kpi.openCases')} value={num(d.open)} />
+            <Kpi label={t('kpi.openCases')} value={num(d.open)} onPress={() => router.navigate('/client/cases')} />
             <Kpi label={t('client.waitingDecision')} value={num(waiting)} tone={waiting ? 'warn' : undefined} />
             <Kpi label={t('kpi.slaAtRisk')} value={num(d.atRisk)} tone={d.atRisk ? 'warn' : undefined} sub={t('kpi.slaAtRiskSub')} />
             <Kpi label={t('kpi.slaBreached')} value={num(d.breached)} tone={d.breached ? 'bad' : undefined} />
@@ -40,7 +40,7 @@ export default function ClientHome() {
             {inv ? <Kpi label={t('kpi.turnaround')} value={d.avgTurnaroundHours != null ? t('time.hoursShort', { h: num(d.avgTurnaroundHours, 1) }) : '-'} sub={t('kpi.turnaroundSub')} /> : null}
             {col ? <Kpi label={t('kpi.recoveredMonth')} value={money(d.recoveredThisMonth)} tone="ok" /> : null}
             {admin ? <Kpi label={t('kpi.spendMonth')} value={money(d.spendThisMonth)} /> : null}
-            <Kpi label={t('kpi.ratingsPending')} value={num(d.pendingRatings)} tone={d.pendingRatings ? 'warn' : undefined} />
+            <Kpi label={t('kpi.ratingsPending')} value={num(d.pendingRatings)} tone={d.pendingRatings ? 'warn' : undefined} onPress={() => router.push('/client-ratings')} />
           </Row>
           <Stack gap={8}>
             <Txt v="h3">{t('entity.dashboard.attention')}</Txt>
