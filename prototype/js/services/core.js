@@ -223,9 +223,15 @@
       var d = E.disputeById(disputeId);
       // The provider or the client on the dispute can play the platform's decision in the demo.
       if (!me || !admin || !d || !((me.providerId && d.providerId === me.providerId) || (me.entityId && d.entityId === me.entityId))) return Promise.reject(new Err('errors.forbidden'));
-      E.setSession(admin.id);
+      // Legal proposes and Management confirms, as on the platform (the engine runs each step at once).
+      var legal = E.staffWith('disputes.decide').filter(function (u) { return u.role === 'platform_legal'; })[0] || admin;
+      var mgmt = E.staffWith('disputes.decide').filter(function (u) { return u.role === 'platform_management'; })[0] || admin;
       var out;
-      try { out = S.disputes.resolve(disputeId, outcome, note); } finally { E.setSession(me.id); }
+      try {
+        E.setSession(legal.id);
+        out = S.disputes.propose(disputeId, outcome, note);
+        if (E.disputeById(disputeId).proposal) { E.setSession(mgmt.id); out = S.disputes.confirm(disputeId); }
+      } finally { E.setSession(me.id); }
       return out;
     },
     /**

@@ -20,6 +20,7 @@ export const NAV: { href: string; key: string; perm: string | null; count?: stri
   { href: "/providers", key: "console.nav.providers", perm: "providers.view", count: "onboarding" },
   { href: "/cases", key: "console.nav.cases", perm: "cases.view", count: "late" },
   { href: "/quality", key: "console.nav.quality", perm: "qa.review", count: "qa" },
+  { href: "/disputes", key: "console.nav.disputes", perm: "disputes.view", count: "disputes" },
   { href: "/access", key: "console.nav.access", perm: null },
 ];
 
