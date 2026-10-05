@@ -1,6 +1,6 @@
 # Mosta3lem app
 
-React Native app built with Expo (SDK 57) and Expo Router. Service providers use it today: company owners, supervisors, field agents and individual providers. The requester (bank) side is next.
+React Native app built with Expo (SDK 57) and Expo Router. One app for both sides: service providers (company owners, supervisors, field agents and individual providers) sign in with their mobile, and organisations that request investigations or collections (Admin, Operations, Investigations, Collections) sign in with their work email. The sign-in decides which part of the app opens.
 
 ## Run it
 

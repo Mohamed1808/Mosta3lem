@@ -1,4 +1,4 @@
-/** Notifications for the signed-in person. Tapping one marks it read and opens the related case. */
+/** Notifications for the signed-in person. Tapping one marks it read and opens what it is about. */
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -21,6 +21,8 @@ export default function Notifications() {
     else if (n.link === 'provider:ratings') router.push('/ratings');
     else if (n.link === 'provider:earnings') router.push('/earnings');
     else if (/^dispute:/.test(n.link || '')) router.push({ pathname: '/dispute/[id]', params: { id: n.link.slice(8) } });
+    else if (/^batch:/.test(n.link || '')) router.push({ pathname: '/batch/[id]', params: { id: n.link.slice(6) } });
+    else if (n.link === 'entity:invoices') router.push('/invoices');
   };
   const text = (n: any) => {
     const p = Object.assign({}, n.params);

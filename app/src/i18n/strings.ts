@@ -44,7 +44,13 @@ const en = {
     pickFile: 'Choose Excel or CSV file', tryDemo: 'Try with the demo file (30 rows, 3 with errors)', demoFileName: 'Demo file',
     fixHint: 'Tap a row to fix it or leave it out.', leftOut: 'Left out', fix: 'Fix', recheck: 'Check again', upload: 'Upload',
     modeSingle: 'One provider', modeSplit: 'By governorate', pickBest: 'Pick the best match', casesN: 'Cases: {n}',
-    reportsAccepted: 'Delivered reports accepted', adminOnly: 'Invoices and spending are shown to the Admin of your organisation only.',
+    reportsAccepted: 'Delivered reports accepted', usersAdminOnly: 'Users are managed by the Admin of your organisation.', you: 'You',
+    reactivated: 'User reactivated', deactivated: 'User deactivated', saveRole: 'Save role',
+    inviteNote: 'Demo: no email is sent. The new user signs in with their email and the password {pw}.',
+    roleAccess: {
+      entity_admin: 'Everything: both services, users, invoices and spending.', entity_operations: 'Investigations and collections, without invoices or users.',
+      entity_credit: 'Investigations only.', entity_collections: 'Collections only.'
+    }, adminOnly: 'Invoices and spending are shown to the Admin of your organisation only.',
     linesN: 'Cases: {n}', etaNote: 'Electronic invoices with the Egyptian Tax Authority (ETA) are added with the real backend.',
     exportExcel: 'Export investigations to Excel', exportHint: 'Residence and Business sheets with the exact columns of your template, for all your investigations.',
     exported: '{n} investigations exported', noReports: 'No provider has worked on your cases yet.', monthly: 'Cases sent per month', openBatch: 'Open the batch', seeDispute: 'See dispute {ref}',
@@ -189,7 +195,13 @@ const ar: typeof en = {
     pickFile: 'اختر ملف Excel أو CSV', tryDemo: 'جرّب بالملف التجريبي (30 صفًا، 3 بها أخطاء)', demoFileName: 'ملف تجريبي',
     fixHint: 'اضغط على أي صف لتصحيحه أو استبعاده.', leftOut: 'مستبعد', fix: 'يحتاج تصحيح', recheck: 'تحقق مرة أخرى', upload: 'رفع ملف',
     modeSingle: 'مقدم خدمة واحد', modeSplit: 'حسب المحافظة', pickBest: 'اختر الأنسب', casesN: 'الحالات: {n}',
-    reportsAccepted: 'تم قبول التقارير المسلّمة', adminOnly: 'الفواتير والإنفاق تظهر لمدير الحساب في جهتك فقط.',
+    reportsAccepted: 'تم قبول التقارير المسلّمة', usersAdminOnly: 'يدير المستخدمين مدير الحساب في جهتك.', you: 'أنت',
+    reactivated: 'تمت إعادة تفعيل المستخدم', deactivated: 'تم إيقاف المستخدم', saveRole: 'حفظ الدور',
+    inviteNote: 'نسخة تجريبية: لا يُرسل بريد. يسجّل المستخدم الجديد الدخول ببريده وكلمة المرور {pw}.',
+    roleAccess: {
+      entity_admin: 'كل شيء: الخدمتان والمستخدمون والفواتير والإنفاق.', entity_operations: 'الاستعلامات والتحصيل، بدون الفواتير أو المستخدمين.',
+      entity_credit: 'الاستعلامات فقط.', entity_collections: 'التحصيل فقط.'
+    }, adminOnly: 'الفواتير والإنفاق تظهر لمدير الحساب في جهتك فقط.',
     linesN: 'الحالات: {n}', etaNote: 'الفواتير الإلكترونية مع مصلحة الضرائب المصرية تُضاف مع الخادم الفعلي.',
     exportExcel: 'تصدير الاستعلامات إلى Excel', exportHint: 'ورقتا السكن والنشاط التجاري بنفس أعمدة نموذجك، لكل استعلاماتك.',
     exported: 'تم تصدير {n} استعلام', noReports: 'لم يعمل أي مقدم خدمة على حالاتك بعد.', monthly: 'الحالات المُرسلة شهريًا', openBatch: 'فتح الدفعة', seeDispute: 'عرض النزاع {ref}',
