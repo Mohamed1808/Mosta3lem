@@ -1,4 +1,5 @@
 /** New request tab: pick the service (when the role covers both), then fill in the request. */
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -6,7 +7,7 @@ import { icm } from '@/backend/engine';
 import { RequestForm } from '@/components/requestForm';
 import { useApp, useT } from '@/state/app';
 import { colors, radius, space } from '@/theme';
-import { Button, Grow, Icon, Row, Stack, Txt } from '@/ui/core';
+import { Button, Card, Grow, Icon, ListItem, Row, Stack, Txt } from '@/ui/core';
 import { Screen } from '@/ui/screen';
 
 export default function NewRequest() {
@@ -21,6 +22,7 @@ export default function NewRequest() {
     return (
       <Screen title={t('nav.newRequest')} sub={t('request.subtitle')}>
         <Stack>
+          <BulkLink />
           {covered.map((s) => (
             <Pressable key={s} onPress={() => setPicked(s)} accessibilityRole="button" accessibilityLabel={t('service.' + s)}
               style={({ pressed }) => ({ borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, backgroundColor: pressed ? colors.surface2 : colors.surface })}>
@@ -43,7 +45,18 @@ export default function NewRequest() {
   return (
     <Screen title={t('request.newTitle', { service: t('service.' + service) })} sub={t('request.formSubtitle')}
       right={covered.length > 1 ? <Button small kind="ghost" label={t('request.changeService')} onPress={() => setPicked(null)} /> : undefined}>
+      {covered.length === 1 ? <BulkLink /> : null}
       <RequestForm key={service} service={service} />
     </Screen>
+  );
+}
+
+/** Many cases at once: the Excel bulk upload. */
+function BulkLink() {
+  const t = useT();
+  return (
+    <Card pad={false}>
+      <ListItem left={<Icon name="upload" />} title={t('client.bulkTitle')} sub={t('client.bulkBody')} onPress={() => router.push('/bulk')} />
+    </Card>
   );
 }

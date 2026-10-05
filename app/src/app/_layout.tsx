@@ -49,6 +49,9 @@ function Navigator() {
         <Stack.Screen name="client" />
         <Stack.Screen name="request/[id]" />
         <Stack.Screen name="select/[id]" />
+        <Stack.Screen name="bulk" />
+        <Stack.Screen name="batches" />
+        <Stack.Screen name="batch/[id]" />
         <Stack.Screen name="gate" />
         <Stack.Screen name="case/[id]" />
         <Stack.Screen name="field/[id]" />
