@@ -303,9 +303,11 @@
         }).sort(function (x, y) { return y.overdue - x.overdue; });
       });
     },
+    /** The platform at a glance for staff. Money figures only for teams that see billing. */
     adminOverview: function () {
       return E.run(function () {
-        E.requireRole(['platform_admin', 'platform_qa']);
+        var staff = E.requirePermission('overview');
+        var money = wf.can(staff.role, 'billing.view');
         var db = E.db(), now = E.now(), month = U.monthKey(now);
         var gmvMonth = U.sum(db.invoices.filter(function (i) { return i.month === month; }), function (i) { return U.sum(i.lines, lineAmount); });
         var gmvTotal = U.sum(db.invoices, function (i) { return U.sum(i.lines, lineAmount); });
@@ -316,8 +318,8 @@
           .filter(function (p) { return p.score != null; }).sort(function (a, b) { return b.score - a.score; });
         var months = monthsBack(3, now);
         return {
-          gmvMonth: gmvMonth, gmvTotal: gmvTotal,
-          platformRevenueMonth: U.sum(db.invoices.filter(function (i) { return i.month === month; }), function (i) { return U.sum(i.lines, lineAmount) * i.platformFeePct / 100; }),
+          gmvMonth: money ? gmvMonth : null, gmvTotal: money ? gmvTotal : null,
+          platformRevenueMonth: money ? U.sum(db.invoices.filter(function (i) { return i.month === month; }), function (i) { return U.sum(i.lines, lineAmount) * i.platformFeePct / 100; }) : null,
           byStatus: byStatus,
           breachedNow: db.cases.filter(function (c) { return wf.sla.state(c, now) === 'breached'; }).length,
           atRiskNow: db.cases.filter(function (c) { return wf.sla.state(c, now) === 'at_risk'; }).length,
@@ -331,7 +333,7 @@
           qaQueue: db.cases.filter(function (c) { return c.status === 'submitted_for_review' && wf.reviewedByQa(c, { provider: E.providerById(c.providerId) }); }).length,
           flaggedRatings: db.ratings.filter(function (r) { return r.flagged; }).length,
           top: ranked.slice(0, 3), bottom: ranked.slice(-3).reverse(),
-          gmvSeries: months.map(function (m) { return { month: m, gmv: U.sum(db.invoices.filter(function (i) { return i.month === m; }), function (i) { return U.sum(i.lines, lineAmount); }) }; })
+          gmvSeries: money ? months.map(function (m) { return { month: m, gmv: U.sum(db.invoices.filter(function (i) { return i.month === m; }), function (i) { return U.sum(i.lines, lineAmount); }) }; }) : null
         };
       });
     },

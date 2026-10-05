@@ -18,12 +18,16 @@
     role: {
       entity_admin: 'مدير', entity_credit: 'الاستعلامات', entity_operations: 'العمليات', entity_collections: 'التحصيل',
       provider_admin: 'المالك', provider_supervisor: 'مشرف', agent: 'مندوب ميداني', freelancer: 'مقدم خدمة فرد',
-      platform_admin: 'مدير المنصة', platform_qa: 'مراجع الجودة', system: 'النظام'
+      platform_admin: 'المدير العام للنظام', platform_qa: 'الجودة', platform_management: 'الإدارة العليا', platform_ops: 'فريق العمليات',
+      platform_finance: 'المالية', platform_legal: 'الشؤون القانونية', platform_support: 'خدمة العملاء', platform_sales: 'المبيعات', platform_data: 'البيانات', system: 'النظام'
     },
     roleHint: {
       entity_admin: 'كل الأعمال والمستخدمين', entity_credit: 'التحريات', entity_operations: 'التحريات والتحصيل',
       entity_collections: 'التحصيل', provider_admin: 'يدير الحساب والفريق', provider_supervisor: 'التكليف والمراجعة',
-      agent: 'التطبيق الميداني', freelancer: 'عروضه وعمله الميداني', platform_admin: 'تحكم كامل', platform_qa: 'مراجعة تقارير الأفراد'
+      agent: 'التطبيق الميداني', freelancer: 'عروضه وعمله الميداني', platform_admin: 'تحكم كامل والموظفون والإعدادات', platform_qa: 'مراجعة تقارير الأفراد والملاك',
+      platform_management: 'كل شيء والاعتماد النهائي', platform_ops: 'مقدمو الخدمة والحالات والمستندات', platform_finance: 'الفواتير والمدفوعات والعمولات',
+      platform_legal: 'النزاعات وسجل التدقيق', platform_support: 'الحالات والحسابات بدون بيانات شخصية', platform_sales: 'الجهات ومقدمو الخدمة',
+      platform_data: 'التقارير بدون بيانات شخصية'
     },
     nav: {
       main: 'التنقل الرئيسي', menu: 'القائمة', dashboard: 'لوحة التحكم', newRequest: 'طلب جديد', bulkUpload: 'رفع مجمّع',

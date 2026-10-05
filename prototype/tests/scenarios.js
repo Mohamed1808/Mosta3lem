@@ -953,7 +953,8 @@ async function runInvestigation(caseId, providerId, opts) {
     const staff = db.users.filter((u) => u.providerId).map((u) => u.name);
     for (const c of worked) {
       const d = await S.cases.get(c.id);
-      const text = JSON.stringify(d.case) + JSON.stringify(d.agent);
+      // Customer details are left out: a customer can share a name with someone on the provider's team.
+      const text = JSON.stringify(Object.assign({}, d.case, { customer: null, guarantor: null, report: null })) + JSON.stringify(d.agent);
       const leaked = staff.filter((n) => text.indexOf(n) >= 0 && n !== d.case.providerName);
       if (leaked.length) throw new Error(c.ref + ' shows ' + leaked.join(', '));
     }
@@ -1099,6 +1100,33 @@ async function runInvestigation(caseId, providerId, opts) {
     ok(await errOf(S.entities.setActive(me.id, false)) === 'errors.cannotDeactivateSelf', 'the Admin cannot deactivate themselves');
     await S.entities.setActive(u.id, false);
     ok(await errOf(S.auth.checkPassword('laila.fathy@horus-auto.example', C.DEMO_PASSWORD)) === 'errors.wrongPassword', 'a deactivated user can no longer sign in');
+  });
+
+  await scenario('28. Platform staff see and do what their team allows', async () => {
+    const db = ICM.store.db, wf = ICM.wf, C = ICM.config;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const staff = wf.PLATFORM_ROLES.map((r) => db.users.find((u) => u.role === r));
+    ok(staff.every(Boolean), 'there is one staff member per team (' + staff.length + ')');
+    for (const u of staff) {
+      const r = await S.auth.checkPassword(u.email, C.DEMO_PASSWORD);
+      if (r.userId !== u.id) throw new Error(u.name + ' cannot sign in');
+    }
+    ok(true, 'every staff member signs in with email and password');
+    const withCustomer = db.cases.find((c) => c.acceptedAt && c.customer && c.customer.nationalId);
+    await as('Amira Galal');
+    const sup = await S.cases.get(withCustomer.id);
+    ok(sup.case.masked && !sup.case.customer.nationalId && !sup.case.customer.name && Object.keys(sup.case.report || {}).length === 0, 'Customer support sees cases without personal data');
+    ok((await S.analytics.adminOverview()).gmvMonth === null, 'Customer support sees no money on the overview');
+    await as('Mai Adel');
+    const ops = await S.cases.get(withCustomer.id);
+    ok(!ops.case.masked && ops.case.customer.nationalId === withCustomer.customer.nationalId, 'Operations sees the customer details');
+    await as('Yara Nabil');
+    ok(await errOf(S.cases.get(withCustomer.id)) !== null && (await S.cases.list({})).length === 0, 'Data does not open individual cases');
+    await as('Hossam Tawfik');
+    ok((await S.analytics.adminOverview()).gmvMonth !== null, 'Finance sees money on the overview');
+    ok(wf.can('platform_management', 'disputes.decide') && wf.can('platform_legal', 'disputes.decide') && !wf.can('platform_ops', 'disputes.decide'), 'disputes are decided by Legal and Management');
+    ok(wf.DUAL_APPROVAL['fee.change'].join() === 'platform_finance,platform_management' && wf.DUAL_APPROVAL['disputes.decide'].join() === 'platform_legal,platform_management', 'fee changes and dispute decisions need two teams');
+    ok(wf.can('platform_admin', 'anything.at.all') && wf.permissionsOf('platform_admin').indexOf('staff.manage') >= 0, 'the Super admin can do everything, including staff and settings');
   });
 
   // ---------------------------------------------------------------- report

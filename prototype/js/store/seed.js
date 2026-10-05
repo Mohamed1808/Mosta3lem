@@ -232,6 +232,10 @@
 
     addUser('Laila Hosny', 'platform_admin', { email: 'laila.hosny@platform.example' });
     addUser('Ziad Ezzat', 'platform_qa', { email: 'ziad.ezzat@platform.example' });
+    // One person per team, for the internal console.
+    [['Karim Fawzy', 'platform_management'], ['Mai Adel', 'platform_ops'], ['Hossam Tawfik', 'platform_finance'],
+      ['Nermine Saad', 'platform_legal'], ['Amira Galal', 'platform_support'], ['Sherif Lotfy', 'platform_sales'], ['Yara Nabil', 'platform_data']]
+      .forEach(function (s) { addUser(s[0], s[1], { email: slug(s[0]).replace(/_/g, '.') + '@platform.example' }); });
 
     // ---------- registration details and team hierarchy
     // A separate generator, so adding registration data never shifts the case history below.

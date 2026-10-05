@@ -19,12 +19,16 @@
     role: {
       entity_admin: 'Admin', entity_credit: 'Investigations', entity_operations: 'Operations', entity_collections: 'Collections',
       provider_admin: 'Owner', provider_supervisor: 'Supervisor', agent: 'Field agent', freelancer: 'Individual provider',
-      platform_admin: 'Platform admin', platform_qa: 'QA reviewer', system: 'System'
+      platform_admin: 'Super admin', platform_qa: 'Quality', platform_management: 'Management', platform_ops: 'Operations team',
+      platform_finance: 'Finance', platform_legal: 'Legal', platform_support: 'Customer support', platform_sales: 'Sales', platform_data: 'Data', system: 'System'
     },
     roleHint: {
       entity_admin: 'all work and users', entity_credit: 'investigations', entity_operations: 'investigations and collections',
       entity_collections: 'collections', provider_admin: 'manages the account and team', provider_supervisor: 'assigns and reviews',
-      agent: 'field app', freelancer: 'own offers and field work', platform_admin: 'full control', platform_qa: 'reviews reports from individuals'
+      agent: 'field app', freelancer: 'own offers and field work', platform_admin: 'full control, staff and settings', platform_qa: 'reviews reports from individuals and owners',
+      platform_management: 'everything; final sign-offs', platform_ops: 'providers, cases and documents', platform_finance: 'invoices, payments and fees',
+      platform_legal: 'disputes and the audit log', platform_support: 'cases and accounts, without personal data', platform_sales: 'organisations and providers',
+      platform_data: 'reports, without personal data'
     },
     nav: {
       main: 'Main navigation', menu: 'Menu', dashboard: 'Dashboard', newRequest: 'New request', bulkUpload: 'Bulk upload',

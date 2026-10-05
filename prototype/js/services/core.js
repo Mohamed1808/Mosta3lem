@@ -7,7 +7,7 @@
 
   function portalOf(u) {
     if (wf.isEntityRole(u.role)) return 'entity';
-    if (u.role === 'platform_admin' || u.role === 'platform_qa') return 'admin';
+    if (wf.isPlatformRole(u.role)) return 'admin';
     var prov = u.providerId ? E.providerById(u.providerId) : null;
     // Until the platform verifies the provider, its people only see their application.
     if (prov && prov.verification.status !== 'verified') return 'applicant';
