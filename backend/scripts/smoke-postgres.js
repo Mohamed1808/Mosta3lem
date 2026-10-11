@@ -129,6 +129,44 @@ async function step(name, fn) {
     assert.deepEqual(auditAfter, auditBefore);
   });
 
+  await step('two copies of the API at once: nothing lost, nothing repeated, sent once', async () => {
+    const other = await buildServer(config());
+    const B = client(other);
+    try {
+      const people = Array.from({ length: 12 }, (_, i) => ({ name: 'Two Copies ' + i, email: `two.copies.${i}@platform.example`, role: 'platform_support' }));
+      const results = await Promise.all(people.map((p, i) => (i % 2 ? call : B.call)('staff.invite', [p], token)));
+      assert.ok(results.every((r) => r.status === 200), JSON.stringify(results.map((r) => r.status)));
+      for (const c of [call, B.call]) {
+        const list = (await c('staff.list', [], token)).body.result;
+        for (const p of people) assert.ok(list.some((x) => x.email === p.email), p.email);
+      }
+      const apply = (i) => ({
+        kind: 'individual', services: ['investigation'], fullName: 'Copy Applicant ' + ['One', 'Two', 'Three', 'Four'][i],
+        nationalId: '2950315211239' + i, phone: '0155544339' + i, addrGov: 'giza', addrCity: 'faisal', addrStreet: i + ' St', coverage: { giza: ['faisal'] }, terms: true
+      });
+      const regs = await Promise.all([0, 1, 2, 3].map((i) => (i % 2 ? call : B.call)('registration.submit', [apply(i)])));
+      assert.ok(regs.every((r) => r.status === 200), JSON.stringify(regs.map((r) => r.body.error)));
+      assert.equal(new Set(regs.map((r) => r.body.result.ref)).size, 4, 'different references');
+      const users = (await call('auth.listDemoUsers')).body.result;
+      const fin = (await call('auth.loginAs', [users.find((u) => u.role === 'platform_finance').id])).body.session.token;
+      const mg = (await call('auth.loginAs', [users.find((u) => u.role === 'platform_management').id])).body.session.token;
+      await B.call('billing.sendBackFee', ['again'], mg);
+      // Let what that sent finish, then count only what the new proposal sends.
+      await Promise.all([app.notifyNow(), other.notifyNow()]);
+      const before = Number((await app.db.query("SELECT coalesce(max(id), 0) AS id FROM outbox")).rows[0].id);
+      assert.equal((await B.call('billing.proposeFee', [14, 'Two copies'], fin)).status, 200);
+      await Promise.all([app.notifyNow(), other.notifyNow(), app.notifyNow(), other.notifyNow()]);
+      const sent = (await app.db.query("SELECT destination, body FROM outbox WHERE template = 'notice' AND id > $1", [before])).rows;
+      const deliveries = (await app.db.query(
+        "SELECT count(*)::int AS n FROM notification_deliveries d JOIN notifications n ON n.id = d.notification_id WHERE d.channel = 'email' AND n.doc->'params'->>'pct' = '14'")).rows[0].n;
+      assert.ok(sent.length > 0);
+      assert.equal(new Set(sent.map((m) => m.destination + '|' + m.body)).size, sent.length, 'nobody got the same email twice');
+      assert.equal(sent.length, deliveries, 'each planned email sent once');
+    } finally {
+      await other.close();
+    }
+  });
+
   await app.close();
   console.log('\nPostgreSQL smoke test passed');
   process.exit(0);
