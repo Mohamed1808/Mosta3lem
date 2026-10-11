@@ -102,6 +102,17 @@ await ICM.remote.connect({ baseUrl, storage, onSignedOut });
 
 From then on every `ICM.services` method is a request to this API, so pages do not change. It keeps the sign-in token in the given storage, sends the page language, turns errors into the same `{ key, params }` the pages already show, keeps `ICM.store.db.config` and the clock in step with the server, and tells pages to refresh only when a call changed data (`meta.changed` in every answer). `ICM.remote.session` has the real sign-in steps and phone registration for push.
 
+## The database
+
+Built by the API itself: on every start it applies the files in `migrations/` that are not applied yet (recorded in `schema_migrations`). A change to the database is a new numbered file.
+
+- **One table per kind of record** (`users`, `entities` = organisations, `providers`, `agents`, `cases`, `offers`, `batches`, `ratings`, `client_ratings`, `disputes`, `invoices`, `notifications`, `audit`). Each row keeps the whole record in `doc`, exactly as the engine uses it, and PostgreSQL derives **typed columns** from it on every write (`006_columns.sql`): links (`entity_id`, `provider_id`, `agent_id`, `case_id`...), `status`, `service`, dates as `timestamptz` (`created_at`, `due_at`, `closed_at`...), amounts as `numeric`. Customers' personal data gets no columns.
+- **Rules the database enforces**: links between tables (a case cannot point to an organisation that does not exist; checked when a save commits), one account per email, known services, sensible amounts and fees, and each row's id matching its record.
+- **Report views** for the Data team or a reporting tool, without customers' personal data: `report_cases` (with organisation and provider names, hours to deliver), `report_invoices`, `report_providers` (cases, on-time %, average rating).
+- Other tables: `platform_state` (settings, scores, counters), `sessions`, `credentials`, `sign_in_codes`, `password_tokens`, `outbox`, `files`, `devices`, `notification_deliveries`, `security_events`.
+
+Example: `SELECT provider, count(*), round(avg(hours_to_deliver), 1) FROM report_cases WHERE delivered_at > now() - interval '30 days' GROUP BY provider;`
+
 ## How it works
 
 | Piece | File |
@@ -127,7 +138,6 @@ From then on every `ICM.services` method is a request to this API, so pages do n
 ## Limits for now
 
 - **No real SMS or email provider** yet (your decision); the `dev` driver stands in.
-- **Records are stored as JSON** in one table per kind (`cases`, `users`, ...). Fields move into proper columns area by area later.
-- **One server at a time.** Data is held in memory and saved on every change, so two copies of the server would not see each other's changes. Fine for staging and a pilot; scaling out comes with the columns work.
+- **One server at a time.** Data is held in memory and saved on every change, so two copies of the server would not see each other's changes. Fine for staging and a pilot; running several copies is the next step.
 - Files are stored on the server's own disk until a cloud provider in Egypt is chosen.
 - The app and the console still use their simulated backend; connecting them to this API is a later step (including a "choose your password" page for the links).

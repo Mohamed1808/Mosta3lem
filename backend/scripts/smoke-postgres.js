@@ -54,6 +54,16 @@ async function step(name, fn) {
     assert.ok((await app.db.query('SELECT count(*)::int AS n FROM cases')).rows[0].n > 20);
   });
 
+  await step('columns, links and report views', async () => {
+    const c = (await app.db.query('SELECT count(*)::int AS n, count(status)::int AS s, count(created_at)::int AS t FROM cases')).rows[0];
+    assert.equal(c.s, c.n);
+    assert.equal(c.t, c.n);
+    assert.ok((await app.db.query('SELECT count(*)::int AS n FROM report_cases')).rows[0].n === c.n);
+    assert.ok((await app.db.query('SELECT count(*)::int AS n FROM report_providers WHERE cases > 0')).rows[0].n > 0);
+    await assert.rejects(app.db.transaction((tx) => tx.query(
+      "INSERT INTO cases (id, doc) SELECT 'case_x', jsonb_set(jsonb_set(doc, '{id}', '\"case_x\"'), '{entityId}', '\"ent_missing\"') FROM cases LIMIT 1")), /cases_entity_fk/);
+  });
+
   await step('real sign-in: password, emailed code, session', async () => {
     laila = (await call('auth.listDemoUsers')).body.result.find((u) => u.role === 'platform_admin');
     const start = await post('password', { email: laila.email, password: 'Mosta3lem@2026' });
