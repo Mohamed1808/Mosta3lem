@@ -23,7 +23,7 @@ Tell the Mosta3lem team directly (not in a public GitHub issue): what you found,
   - A sign-in expires after 7 days.
   - It ends sooner if unused: after **8 hours for platform staff**, whose accounts reach everyone's data, and after 3 days for everyone else.
   - Deactivating a person or resetting their sign-in ends all their sign-ins and stops push to their phones.
-- **Rate limits.** Each address gets at most 300 requests a minute, and 10 a minute on the sign-in routes. Behind a proxy, only the configured proxy (`TRUST_PROXY`) is believed about the caller's address, so a forged address cannot get around the limits.
+- **Rate limits.** Each address gets at most 300 requests a minute, and 10 a minute on the sign-in routes. The counts are kept in the database, so all copies of the API count together. Behind a proxy, only the configured proxy (`TRUST_PROXY`) is believed about the caller's address, so a forged address cannot get around the limits.
 
 ### Data
 - **Files** (ID cards, documents, visit photos):
@@ -91,4 +91,3 @@ For whoever deploys the live platform.
 - **Choice of providers:** SMS, email, OCR, maps and cloud, each checked for keeping data in Egypt.
 - **Staff second factor:** staff already need an email code. Consider a phone authenticator app for the Super admin and Finance.
 - **Rotating `FILES_KEY`:** the procedure (re-encrypting the files) is not written yet.
-- **Shared rate limits:** with several copies, each copy counts its own sign-in limits. Move the counts into the database or a shared store before relying on them at scale.

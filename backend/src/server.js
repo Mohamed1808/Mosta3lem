@@ -26,6 +26,7 @@ const { createFiles } = require('./files');
 const { createNotifications } = require('./notifications');
 const { Refusal } = require('./refusal');
 const { createSecurityLog, registerSecurityLog } = require('./security');
+const rateLimitStore = require('./ratelimit');
 
 /** Demo helpers that must never be reachable on a live platform: "sign in as" anyone,
     the demo password check, and the demo clock and shortcuts. */
@@ -156,9 +157,11 @@ async function buildServer(config) {
   }
 
   // Requests per minute from one address; sign-in routes have a tighter limit of their own.
+  // Counted in the database by default, so every copy of the API counts together.
   await app.register(require('@fastify/rate-limit'), {
     max: config.requestsPerMinute,
     timeWindow: '1 minute',
+    ...(config.rateLimitStore === 'memory' ? {} : { store: rateLimitStore.databaseStore(db) }),
     errorResponseBuilder: (req, ctx) => ({ statusCode: ctx.statusCode, ok: false, error: { key: 'errors.tooManyRequests', params: null } })
   });
 
@@ -269,6 +272,7 @@ async function buildServer(config) {
   const ticker = config.tickSeconds > 0 ? setInterval(() => {
     inEngine(null, 'en', () => ICM.services.demo.tick()).catch((e) => app.log.error({ err: e }, 'tick failed'));
     sessions.purgeExpired().catch(() => undefined);
+    rateLimitStore.sweep(db).catch(() => undefined);
     notifications.run();
     // About once an hour, remove files nothing points to any more.
     if (++ticks % Math.max(1, Math.round(3600 / config.tickSeconds)) === 0) {

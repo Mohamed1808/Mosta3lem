@@ -46,6 +46,8 @@ function readConfig(env = process.env) {
     bodyLimitMb: Number(env.BODY_LIMIT_MB || 15),
     requestsPerMinute: Number(env.REQUESTS_PER_MINUTE || 300),
     signInPerMinute: Number(env.SIGN_IN_PER_MINUTE || 10),
+    // database: every copy of the API counts together. memory: each copy on its own.
+    rateLimitStore: env.RATE_LIMIT_STORE === 'memory' ? 'memory' : 'database',
     logLevel: env.LOG_LEVEL || 'info'
   };
 }
