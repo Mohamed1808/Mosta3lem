@@ -7,7 +7,7 @@
 
 import { FormEvent, useState } from "react";
 
-import { icm, services } from "@/backend/engine";
+import { icm, remoteMode, services } from "@/backend/engine";
 import { useAction, useDialog } from "@/components/dialog";
 import { Badge, Button, Card, Field, inputClass, Loading, Notice, PageHead } from "@/components/ui";
 import { errorText } from "@/lib/format";
@@ -75,7 +75,7 @@ export default function Staff() {
               <Button onClick={() => setAdding(false)}>{t("common.cancel")}</Button>
             </div>
           </form>
-          <p className="mt-3 text-xs text-ink2">{t("console.staff.inviteNote", { pw: icm().config.DEMO_PASSWORD })}</p>
+          <p className="mt-3 text-xs text-ink2">{(remoteMode() ? t("console.linkNote") : t("console.staff.inviteNote", { pw: icm().config.DEMO_PASSWORD }))}</p>
         </Card>
       ) : null}
       <Card>

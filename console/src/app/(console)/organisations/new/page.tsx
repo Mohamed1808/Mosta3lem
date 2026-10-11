@@ -7,7 +7,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-import { icm, services } from "@/backend/engine";
+import { icm, remoteMode, services } from "@/backend/engine";
 import { useDialog } from "@/components/dialog";
 import { Button, Card, Field, inputClass, Notice, PageHead } from "@/components/ui";
 import { errorText } from "@/lib/format";
@@ -64,7 +64,7 @@ export default function NewOrganisation() {
             <Field label={t("common.name")}><input className={inputClass} value={v.adminName} onChange={(e) => set("adminName", e.target.value)} />{err("adminName")}</Field>
             <Field label={t("common.email")}><input className={`${inputClass} ltr`} type="email" value={v.adminEmail} onChange={(e) => set("adminEmail", e.target.value)} placeholder="name@company.com" />{err("adminEmail")}</Field>
           </div>
-          <p className="mt-3 text-xs text-ink2">{t("console.orgs.adminNote", { pw: icm().config.DEMO_PASSWORD })}</p>
+          <p className="mt-3 text-xs text-ink2">{(remoteMode() ? t("console.linkNote") : t("console.orgs.adminNote", { pw: icm().config.DEMO_PASSWORD }))}</p>
         </Card>
         <div className="flex justify-end gap-2">
           <Button onClick={() => router.back()}>{t("common.cancel")}</Button>
