@@ -56,7 +56,7 @@ Live mode refuses to start with the development messenger (codes would only be i
 - **5 wrong passwords** lock the account for 15 minutes; the console shows the lock, and Customer support's "Reset sign-in" lifts it and emails a link to choose a new password.
 - **Invitations**: anyone added with an email (staff, an organisation's first Admin, organisation users) gets a link valid 72 hours. Reset links are valid 24 hours. A link works once.
 - **No account fishing**: an unknown email or mobile gets exactly the same answer as a known one (no code is sent).
-- **Rate limits** per address: 300 requests a minute, 10 a minute on the sign-in routes.
+- **Rate limits** per address: 300 requests a minute, 10 a minute on the sign-in routes, counted in the database across all copies.
 - Choosing a password signs the person out on every other device.
 
 ## Files
@@ -141,7 +141,7 @@ Example: `SELECT provider, count(*), round(avg(hours_to_deliver), 1) FROM report
 - Point every copy at the same `DATABASE_URL`, with the same `FILES_KEY` and settings.
 - Files must be on storage every copy reaches: a shared volume mounted at `FILES_DIR` (Docker volume or network disk), or the cloud's object storage once that driver exists.
 - Copies take turns to change data, so adding copies helps with availability (one can stop or be updated while others answer) and with work outside the engine (files, sign-in checks, notifications), not with how many changes a second the platform makes. That ceiling is far above a pilot's needs.
-- Rate limits are counted by each copy separately for now: with 3 copies, one address can make up to 3 times the limit.
+- Rate limits are counted in the database (`rate_limits`), so all copies count together: 3 copies do not give one address 3 times the tries. `RATE_LIMIT_STORE=memory` counts per copy instead.
 - Update copies one at a time; a new version applies its database changes once, whichever copy starts first.
 
 ## Limits for now

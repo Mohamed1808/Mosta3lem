@@ -167,6 +167,21 @@ async function step(name, fn) {
     }
   });
 
+  await step('two copies share one sign-in limit', async () => {
+    await app.close();
+    const tight = () => Object.assign(config(), { signInPerMinute: 3 });
+    app = await buildServer(tight());
+    const other = await buildServer(tight());
+    try {
+      const forgot = (s) => s.inject({ method: 'POST', url: '/api/v1/session/forgot', payload: { email: 'limit@nowhere.example' } });
+      const first = await Promise.all([forgot(app), forgot(other), forgot(app)]);
+      assert.deepEqual(first.map((r) => r.statusCode), [200, 200, 200]);
+      assert.equal((await forgot(other)).statusCode, 429, 'the other copy refuses the fourth');
+    } finally {
+      await other.close();
+    }
+  });
+
   await app.close();
   console.log('\nPostgreSQL smoke test passed');
   process.exit(0);
