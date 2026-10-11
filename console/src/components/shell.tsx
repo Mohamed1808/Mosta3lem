@@ -25,6 +25,7 @@ export const NAV: { href: string; key: string; perm: string | null; count?: stri
   { href: "/organisations", key: "console.nav.organisations", perm: "orgs.view" },
   { href: "/reports", key: "console.nav.reports", perm: "reports.view" },
   { href: "/activity", key: "console.nav.activity", perm: "audit.view" },
+  { href: "/security", key: "console.nav.security", perm: "security.view" },
   { href: "/staff", key: "console.nav.staff", perm: "staff.manage" },
   { href: "/settings", key: "console.nav.settings", perm: "settings.manage" },
   { href: "/access", key: "console.nav.access", perm: null },

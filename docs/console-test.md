@@ -100,4 +100,5 @@ This runs the console on the real API instead of its own demo data.
 - [ ] As Laila, **Staff**: add a person. In the API window, find "Choose your password here:" and open that link. A weak password is refused; a good one (10 characters, letters and numbers) is saved.
 - [ ] Sign out, then sign in as that person with their new password and the code.
 - [ ] **Forgot your password?** on the sign-in page: a link appears in the API window.
+- [ ] Try a wrong password a few times on any account. Then sign in as Nermine (Legal): **Security log** shows the failed attempts, the lockout after 5, the address and the device, and the last 24 hours at the top. Clicking an address shows only its failed attempts. Mai (Operations) has no Security log in her menu.
 - [ ] Changes made here (a new staff member, an extended deadline) are still there after you stop and start the API.

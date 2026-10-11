@@ -25,7 +25,7 @@ const { registerSignIn } = require('./signin');
 const { createFiles } = require('./files');
 const { createNotifications } = require('./notifications');
 const { Refusal } = require('./refusal');
-const { createSecurityLog } = require('./security');
+const { createSecurityLog, registerSecurityLog } = require('./security');
 
 /** Demo helpers that must never be reachable on a live platform: "sign in as" anyone,
     the demo password check, and the demo clock and shortcuts. */
@@ -165,6 +165,7 @@ async function buildServer(config) {
   const messenger = createMessenger({ driver: config.messagingDriver, db, log: app.log });
   const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security });
   app.decorate('adminTools', { createSuperAdmin: signIn.createSuperAdmin });
+  registerSecurityLog(app, { db, sessions, ICM, security });
 
   const files = createFiles({ db, config, log: app.log });
   files.routes(app);

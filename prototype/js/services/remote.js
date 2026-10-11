@@ -133,6 +133,11 @@
         signedIn: function () { return !!token; }
       };
 
+      /** The security log (Legal and the Super admin): { group, days, q, userId, before } -> { events, summary, next }. */
+      ICM.remote.security = {
+        events: async function (filters) { return (await post('/api/v1/security/events', filters || {})).result; }
+      };
+
       await refreshConfig();
       ICM.remote.connected = true;
       ICM.remote.baseUrl = base;
