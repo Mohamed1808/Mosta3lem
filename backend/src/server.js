@@ -23,6 +23,7 @@ const { createSessions } = require('./sessions');
 const { createMessenger } = require('./messaging');
 const { registerSignIn } = require('./signin');
 const { createFiles } = require('./files');
+const { createNotifications } = require('./notifications');
 const { Refusal } = require('./refusal');
 
 /** Demo helpers that must never be reachable on a live platform: "sign in as" anyone,
@@ -119,6 +120,12 @@ async function buildServer(config) {
   await inEngine(null, 'en', async () => { ICM.store.db = await files.ingest(ICM.store.db, null); });
   /** Where signed file links point: this API as the caller reached it, unless set. */
   app.decorate('filesSweep', () => files.sweep(ICM.store.db));
+
+  /** A notification's text in a language (the engine's translations). */
+  const translate = (lang, key, params) => queue(() => { engine.as(null, lang); return ICM.t(key, params); });
+  const notifications = createNotifications({ app, ICM, db, sessions, messenger, translate, config });
+  await notifications.skipExisting();
+  app.decorate('notifyNow', () => notifications.run());
   const apiBase = (req) => config.publicApiUrl || `${req.protocol}://${req.host}`;
 
   app.addHook('onSend', async (req, reply) => {
@@ -168,7 +175,9 @@ async function buildServer(config) {
     if (change) body.session = await sessions.create(change, req.headers['user-agent']);
     if (change === null) await sessions.remove(token);
     const signOut = SIGN_OUT_AFTER[name] && SIGN_OUT_AFTER[name](args);
-    if (signOut) await sessions.removeUser(signOut);
+    if (signOut) { await sessions.removeUser(signOut); await notifications.removeDevices(signOut); }
+    // Send any notifications this call created, without making the caller wait.
+    notifications.run();
     return body;
   });
 
@@ -177,6 +186,7 @@ async function buildServer(config) {
   const ticker = config.tickSeconds > 0 ? setInterval(() => {
     inEngine(null, 'en', () => ICM.services.demo.tick()).catch((e) => app.log.error({ err: e }, 'tick failed'));
     sessions.purgeExpired().catch(() => undefined);
+    notifications.run();
     // About once an hour, remove files nothing points to any more.
     if (++ticks % Math.max(1, Math.round(3600 / config.tickSeconds)) === 0) {
       files.sweep(ICM.store.db).then((n) => n && app.log.info({ removed: n }, 'unused files removed'))
@@ -187,6 +197,7 @@ async function buildServer(config) {
 
   app.addHook('onClose', async () => {
     if (ticker) clearInterval(ticker);
+    await notifications.stop();
     await queue(() => undefined);
     await db.close();
   });

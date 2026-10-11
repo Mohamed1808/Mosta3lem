@@ -25,6 +25,8 @@ function readConfig(env = process.env) {
       .split(',').map((s) => s.trim()).filter(Boolean),
     publicUrl: env.PUBLIC_URL || 'http://localhost:3600',
     messagingDriver,
+    pushDriver: env.PUSH_DRIVER || 'dev',
+    expoAccessToken: env.EXPO_ACCESS_TOKEN || null,
     publicApiUrl: env.PUBLIC_API_URL || null,
     filesDriver: env.FILES_DRIVER || 'local',
     filesDir: env.FILES_DIR || '.data/files',

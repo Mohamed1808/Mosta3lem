@@ -69,6 +69,21 @@ Case photos, provider documents and renewals. The app and the console keep sendi
 
 **Live mode needs `FILES_KEY`.** Keep it secret and backed up with the database: without it the files cannot be read.
 
+## Notifications
+
+The engine records who should hear about what (59 kinds: a new offer, a deadline at risk, a delivered report, a fee waiting for confirmation...). The server delivers each new one:
+
+| Channel | Who | When |
+|---|---|---|
+| Push | anyone who registered a phone | every notification |
+| Email | organisation users and staff | the kinds they must not miss (`EMAIL_KEYS` in `src/notifications.js`) |
+| SMS | providers and field agents | urgent kinds (`SMS_KEYS`), only when they have no phone with push |
+
+- Phones register with `POST /api/v1/devices/register { token, platform, lang }` (an Expo push token, signed in) and leave with `/unregister`. A phone belongs to the sign-in it registered with: signing out, being signed out everywhere or being deactivated stops its pushes.
+- **No names in pushes.** Push services run outside Egypt, so a push carries only reference numbers and counts; a notification that would include a name becomes a general line ("There is an update on INV-0042"). Email and SMS carry the full text.
+- Each send is a row in `notification_deliveries`: sent, or retried with growing waits (2, 4, 8, 16 minutes) and marked failed after 5 tries. Nothing is sent twice. Notifications that existed before delivery was switched on are not sent.
+- Push is a driver (`PUSH_DRIVER`): `dev` (log and outbox) or `expo` (the Expo push service, with `EXPO_ACCESS_TOKEN`).
+
 ## Messages
 
 `src/messaging.js` sends every SMS and email. The `dev` driver prints them in the log and keeps their text in the `outbox` table, so codes and links can be read while testing; nothing leaves the server. Real SMS and email providers plug in there once chosen.
@@ -84,6 +99,7 @@ Case photos, provider documents and renewals. The app and the console keep sendi
 | Sign-in, codes, password links | `src/signin.js`, `src/passwords.js` |
 | SMS and email | `src/messaging.js` |
 | Files: checks, encryption, signed links, clean-up | `src/files.js` |
+| Notifications: push, email, SMS, retries | `src/notifications.js` |
 | The API | `src/server.js` |
 
 - **One endpoint per service method**: `POST /api/v1/<service>/<method>` with `{ "args": [...] }`. The methods are exactly those in `prototype/js/services/contracts.js`, the contract the app and console already use; anything else is refused.
