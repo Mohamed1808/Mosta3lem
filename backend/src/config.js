@@ -26,8 +26,12 @@ function readConfig(env = process.env) {
     host: env.HOST || '0.0.0.0',
     databaseUrl: env.DATABASE_URL || null,
     dataDir: env.PGLITE_DIR || HERE('.data/pglite'),
-    corsOrigins: (env.CORS_ORIGINS || 'http://localhost:3600,http://localhost:8081')
+    // Web pages allowed to call the API. Live mode allows none until they are listed.
+    corsOrigins: (env.CORS_ORIGINS != null ? env.CORS_ORIGINS : mode === 'demo' ? 'http://localhost:3600,http://localhost:8081' : '')
       .split(',').map((s) => s.trim()).filter(Boolean),
+    trustProxy: trustProxy(env.TRUST_PROXY),
+    idleHours: Number(env.SESSION_IDLE_HOURS || 72),
+    staffIdleHours: Number(env.STAFF_IDLE_HOURS || 8),
     publicUrl: env.PUBLIC_URL || 'http://localhost:3600',
     messagingDriver,
     pushDriver: env.PUSH_DRIVER || 'dev',
@@ -44,6 +48,18 @@ function readConfig(env = process.env) {
     signInPerMinute: Number(env.SIGN_IN_PER_MINUTE || 10),
     logLevel: env.LOG_LEVEL || 'info'
   };
+}
+
+/**
+ * TRUST_PROXY: empty when the API faces the internet directly; otherwise the address (or
+ * addresses / ranges, comma separated) of the proxy in front of it, whose X-Forwarded-For
+ * and X-Forwarded-Proto are then believed. "true" believes anyone: only when the API cannot
+ * be reached except through the proxy.
+ */
+function trustProxy(v) {
+  if (!v || v === 'false') return false;
+  if (v === 'true') return true;
+  return v.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
 module.exports = { readConfig };
