@@ -12,6 +12,9 @@ function readConfig(env = process.env) {
     // acceptable on a closed staging server, and must be switched on deliberately.
     throw new Error('Live mode needs a real SMS and email provider (MESSAGING_DRIVER). For a closed staging server set ALLOW_DEV_MESSAGING=true.');
   }
+  if (mode === 'live' && !env.FILES_KEY) {
+    throw new Error('Live mode needs FILES_KEY (32 random bytes, base64) to encrypt files.');
+  }
   return {
     mode,
     port: Number(env.PORT || 4000),
@@ -22,6 +25,11 @@ function readConfig(env = process.env) {
       .split(',').map((s) => s.trim()).filter(Boolean),
     publicUrl: env.PUBLIC_URL || 'http://localhost:3600',
     messagingDriver,
+    publicApiUrl: env.PUBLIC_API_URL || null,
+    filesDriver: env.FILES_DRIVER || 'local',
+    filesDir: env.FILES_DIR || '.data/files',
+    filesKey: env.FILES_KEY || null,
+    fileMaxMb: Number(env.FILE_MAX_MB || 8),
     sessionHours: Number(env.SESSION_HOURS || 168),
     tickSeconds: Number(env.TICK_SECONDS || 30),
     bodyLimitMb: Number(env.BODY_LIMIT_MB || 15),

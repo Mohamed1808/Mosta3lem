@@ -22,6 +22,8 @@ const { createState } = require('./state');
 const { createSessions } = require('./sessions');
 const { createMessenger } = require('./messaging');
 const { registerSignIn } = require('./signin');
+const { createFiles } = require('./files');
+const { Refusal } = require('./refusal');
 
 /** Demo helpers that must never be reachable on a live platform: "sign in as" anyone,
     the demo password check, and the demo clock and shortcuts. */
@@ -111,6 +113,14 @@ async function buildServer(config) {
   const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config });
   app.decorate('adminTools', { createSuperAdmin: signIn.createSuperAdmin });
 
+  const files = createFiles({ db, config, log: app.log });
+  files.routes(app);
+  // Data saved before file storage existed may still hold files inline: store them properly.
+  await inEngine(null, 'en', async () => { ICM.store.db = await files.ingest(ICM.store.db, null); });
+  /** Where signed file links point: this API as the caller reached it, unless set. */
+  app.decorate('filesSweep', () => files.sweep(ICM.store.db));
+  const apiBase = (req) => config.publicApiUrl || `${req.protocol}://${req.host}`;
+
   app.addHook('onSend', async (req, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'no-referrer');
@@ -126,7 +136,7 @@ async function buildServer(config) {
 
     if (!Object.hasOwn(contracts, service) || !Object.hasOwn(contracts[service], method)) return fail(404, 'errors.notFound');
     if (config.mode !== 'demo' && isDemoOnly(name)) return fail(404, 'errors.notFound');
-    const args = req.body && req.body.args !== undefined ? req.body.args : [];
+    let args = req.body && req.body.args !== undefined ? req.body.args : [];
     if (!Array.isArray(args) || args.length > 10) return fail(400, 'errors.badRequest');
 
     const token = bearer(req);
@@ -137,6 +147,8 @@ async function buildServer(config) {
     let result, change, usersBefore, proofId;
     try {
       proofId = await signIn.before(name, args, req);
+      // Files are only taken from signed-in people, and from a new provider's sign-up.
+      if (userId || name === 'registration.submit') args = await files.ingest(args, userId);
       result = await inEngine(userId, lang, async () => {
         usersBefore = new Set(ICM.store.db.users.map((u) => u.id));
         const r = await ICM.services[service][method](...args);
@@ -144,7 +156,7 @@ async function buildServer(config) {
         return r;
       });
     } catch (e) {
-      if (e instanceof signIn.Refusal) return fail(e.status, e.key, e.params);
+      if (e instanceof Refusal) return fail(e.status, e.key, e.params);
       // Errors from the engine carry a translation key; anything else is a bug.
       if (e && typeof e.key === 'string' && e.name === 'ServiceError') return fail(STATUS[e.key] || 400, e.key, e.params);
       req.log.error({ err: e, call: name }, 'service call failed');
@@ -152,7 +164,7 @@ async function buildServer(config) {
     }
 
     await signIn.after(name, args, req, { usersBefore, proofId });
-    const body = { ok: true, result: result === undefined ? null : result };
+    const body = { ok: true, result: result === undefined ? null : files.present(result, apiBase(req)) };
     if (change) body.session = await sessions.create(change, req.headers['user-agent']);
     if (change === null) await sessions.remove(token);
     const signOut = SIGN_OUT_AFTER[name] && SIGN_OUT_AFTER[name](args);
@@ -161,9 +173,15 @@ async function buildServer(config) {
   });
 
   // Deadlines, offer expiry and document reminders move on with time, not with requests.
+  let ticks = 0;
   const ticker = config.tickSeconds > 0 ? setInterval(() => {
     inEngine(null, 'en', () => ICM.services.demo.tick()).catch((e) => app.log.error({ err: e }, 'tick failed'));
     sessions.purgeExpired().catch(() => undefined);
+    // About once an hour, remove files nothing points to any more.
+    if (++ticks % Math.max(1, Math.round(3600 / config.tickSeconds)) === 0) {
+      files.sweep(ICM.store.db).then((n) => n && app.log.info({ removed: n }, 'unused files removed'))
+        .catch((e) => app.log.error({ err: e }, 'file sweep failed'));
+    }
   }, config.tickSeconds * 1000) : null;
   if (ticker) ticker.unref();
 

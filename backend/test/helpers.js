@@ -7,7 +7,7 @@ const { buildServer } = require('../src/server');
 
 const config = (over, env) => Object.assign(readConfig(Object.assign({ MOSTA3LEM_MODE: 'demo' }, env || {})), {
   dataDir: 'memory', corsOrigins: [], sessionHours: 1, tickSeconds: 0, logger: false,
-  requestsPerMinute: 10000, signInPerMinute: 10000
+  requestsPerMinute: 10000, signInPerMinute: 10000, filesDriver: 'memory'
 }, over || {});
 
 const start = (over, env) => buildServer(config(over, env));

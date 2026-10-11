@@ -10,6 +10,9 @@ COPY prototype/js /srv/prototype/js
 COPY backend/src ./src
 COPY backend/migrations ./migrations
 
+# Files are kept here (FILES_DRIVER=local); mount a volume on it.
+RUN mkdir -p /srv/backend/.data/files && chown -R node:node /srv/backend/.data
+
 ENV NODE_ENV=production PORT=4000
 EXPOSE 4000
 USER node

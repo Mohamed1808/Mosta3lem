@@ -534,6 +534,7 @@
       passwordShort: 'Use at least 10 characters', passwordLong: 'The password is too long', passwordMix: 'Use both letters and numbers', passwordPersonal: 'Do not use your email name in the password',
       codeWrong: 'Wrong code', codeExpired: 'This code has expired. Ask for a new one.', tooManyRequests: 'Too many tries. Wait a few minutes and try again.',
       linkInvalid: 'This link is no longer valid. Ask for a new one.', phoneNotVerified: 'Confirm your mobile number with the code first.', badRequest: 'The request is not valid',
+      fileType: 'Send a photo (JPEG, PNG or WebP) or a PDF', fileTooBig: 'The file is too large (up to {mb} MB)',
       generic: 'Something went wrong', required: 'Required', number: 'Enter a number', min: 'Value too low', max: 'Value too high', date: 'Enter a valid date',
       nationalIdFormat: 'National ID must be 14 digits starting with 2 or 3', nationalIdDate: 'National ID has an invalid birth date',
       nationalIdGov: 'National ID has an unknown governorate code', mobileFormat: 'Mobile must be 11 digits starting with 010, 011, 012 or 015',

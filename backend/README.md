@@ -55,6 +55,20 @@ Live mode refuses to start with the development messenger (codes would only be i
 - **Rate limits** per address: 300 requests a minute, 10 a minute on the sign-in routes.
 - Choosing a password signs the person out on every other device.
 
+## Files
+
+Case photos, provider documents and renewals. The app and the console keep sending a file inside the request as a data URL, as they do today.
+
+- **Checked**: only JPEG, PNG, WebP and PDF are accepted, judged by the file's own first bytes, not its name or label (so no SVG or disguised programs). Up to 8 MB (`FILE_MAX_MB`).
+- **Encrypted at rest** with AES-256-GCM, a key derived from `FILES_KEY`. The database keeps only a description (type, size, SHA-256) and the engine only a reference, `file:<id>`.
+- **Signed links**: every reference in an answer becomes a link to `GET /files/<id>` that works for 15 minutes; a changed link does not open. The engine still decides who sees which file: when it hides documents from a team (Sales, for example), there is nothing to sign.
+- **Served safely**: the stored type, `nosniff`, and a sandbox policy, so a file can never run as a page.
+- Only signed-in people (and a new provider's sign-up) can send files.
+- About once an hour, files nothing points to any more (a removed photo, a replaced document) are deleted once they are a day old.
+- Storage is a driver (`FILES_DRIVER`): `local` disk now; the chosen Egyptian cloud's object storage plugs in later.
+
+**Live mode needs `FILES_KEY`.** Keep it secret and backed up with the database: without it the files cannot be read.
+
 ## Messages
 
 `src/messaging.js` sends every SMS and email. The `dev` driver prints them in the log and keeps their text in the `outbox` table, so codes and links can be read while testing; nothing leaves the server. Real SMS and email providers plug in there once chosen.
@@ -69,10 +83,11 @@ Live mode refuses to start with the development messenger (codes would only be i
 | Session tokens (only a SHA-256 hash is stored) | `src/sessions.js` |
 | Sign-in, codes, password links | `src/signin.js`, `src/passwords.js` |
 | SMS and email | `src/messaging.js` |
+| Files: checks, encryption, signed links, clean-up | `src/files.js` |
 | The API | `src/server.js` |
 
 - **One endpoint per service method**: `POST /api/v1/<service>/<method>` with `{ "args": [...] }`. The methods are exactly those in `prototype/js/services/contracts.js`, the contract the app and console already use; anything else is refused.
-- **Answers**: `{ ok: true, result }` or `{ ok: false, error: { key, params } }` (key is a translation key). HTTP 401 not signed in, 403 not allowed, 404 not found, 429 too many tries, 400 other refusals.
+- **Answers**: `{ ok: true, result }` or `{ ok: false, error: { key, params } }` (key is a translation key). HTTP 401 not signed in, 403 not allowed, 404 not found, 413 file too large, 415 not a photo or PDF, 429 too many tries, 400 other refusals.
 - Send the session token as `Authorization: Bearer <token>`. Signing out deletes it. Deactivating a person or resetting their sign-in signs them out on every device.
 - **Language**: send `X-Lang: ar` for Arabic (messages are sent in that language too).
 - **Permissions and data hiding** are the engine's, unchanged: the server tells the engine who is calling and the engine decides.
@@ -84,5 +99,5 @@ Live mode refuses to start with the development messenger (codes would only be i
 - **No real SMS or email provider** yet (your decision); the `dev` driver stands in.
 - **Records are stored as JSON** in one table per kind (`cases`, `users`, ...). Fields move into proper columns area by area later.
 - **One server at a time.** Data is held in memory and saved on every change, so two copies of the server would not see each other's changes. Fine for staging and a pilot; scaling out comes with the columns work.
-- Photos still travel inside requests as data until file storage arrives.
+- Files are stored on the server's own disk until a cloud provider in Egypt is chosen.
 - The app and the console still use their simulated backend; connecting them to this API is a later step (including a "choose your password" page for the links).

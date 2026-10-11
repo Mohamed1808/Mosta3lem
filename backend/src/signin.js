@@ -16,6 +16,7 @@
 
 const crypto = require('crypto');
 const { hashPassword, verifyPassword, burn, passwordProblem } = require('./passwords');
+const { Refusal } = require('./refusal');
 
 const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
@@ -53,9 +54,6 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config })
   const byPhone = (phone) => users().find((u) => u.active !== false && !usesEmail(u) && normalizePhone(u.phone) === phone) || null;
   const langOf = (req) => (req.headers['x-lang'] === 'ar' ? 'ar' : 'en');
 
-  class Refusal extends Error {
-    constructor(key, params, status) { super(key); this.key = key; this.params = params || null; this.status = status || 400; }
-  }
   const limits = { config: { rateLimit: { max: config.signInPerMinute, timeWindow: '1 minute' } } };
   const route = (url, handler) => app.post('/api/v1/session/' + url, limits, async (req, reply) => {
     try {
@@ -245,8 +243,7 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config })
       });
       await issuePasswordLink(u, 'invite', 'en');
       return { userId: u.id };
-    },
-    Refusal
+    }
   };
 }
 
