@@ -11,6 +11,16 @@ const en = {
     verify: 'Verify and sign in', wrongCode: 'The code is not correct.', back: 'Back',
     demoPassword: 'Demo: every staff account uses the password {pw}.',
     staffOnly: 'This console is for Mosta3lem staff. Organisations and service providers use the mobile app.',
+    forgot: 'Forgot your password?', forgotBody: 'Enter your work email. If it has an account, we send a link to choose a new password.',
+    forgotSend: 'Send the link', forgotSent: 'If this email has an account, a link is on its way. It works for 24 hours.',
+    codeSentServer: 'We sent a 6-digit code to {email}. It works for 10 minutes.', testServerCode: 'Test server: no email is really sent. The code is in the server log.',
+    linkNote: 'An email with a link to choose a password goes to this address.',
+    linkNoteCreated: 'Account opened. The Admin gets an email with a link to choose a password, then signs in to the app and adds their team.',
+    setPw: {
+      title: 'Choose your password', body: 'At least 10 characters, with letters and numbers, and not your email name.', password: 'New password', confirm: 'Repeat the password',
+      mismatch: 'The two passwords are not the same.', save: 'Save password', done: 'Your password is saved. You can sign in now.', toLogin: 'Go to sign-in',
+      noToken: 'This link is not complete. Open it again from the email.', needsServer: 'Choosing a password needs the real server.'
+    },
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
     nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', reports: 'Reports', activity: 'Activity log', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
@@ -131,6 +141,16 @@ const ar: typeof en = {
     verify: 'تحقق وسجّل الدخول', wrongCode: 'الرمز غير صحيح.', back: 'رجوع',
     demoPassword: 'نسخة تجريبية: كل حسابات الموظفين تستخدم كلمة المرور {pw}.',
     staffOnly: 'لوحة التحكم هذه لموظفي مستعلم. الجهات ومقدمو الخدمة يستخدمون تطبيق الموبايل.',
+    forgot: 'نسيت كلمة المرور؟', forgotBody: 'أدخل بريد العمل. إذا كان له حساب نرسل رابطًا لاختيار كلمة مرور جديدة.',
+    forgotSend: 'أرسل الرابط', forgotSent: 'إذا كان لهذا البريد حساب فالرابط في الطريق إليك. يعمل لمدة 24 ساعة.',
+    codeSentServer: 'أرسلنا رمزًا من 6 أرقام إلى {email}. يعمل لمدة 10 دقائق.', testServerCode: 'خادم تجريبي: لا يُرسل بريد فعلًا. الرمز في سجل الخادم.',
+    linkNote: 'يُرسل إلى هذا العنوان بريد فيه رابط لاختيار كلمة المرور.',
+    linkNoteCreated: 'تم فتح الحساب. يصل إلى المدير بريد فيه رابط لاختيار كلمة المرور، ثم يسجّل الدخول إلى التطبيق ويضيف فريقه.',
+    setPw: {
+      title: 'اختر كلمة المرور', body: '10 أحرف على الأقل، فيها حروف وأرقام، وليست اسم بريدك.', password: 'كلمة المرور الجديدة', confirm: 'أعد كتابة كلمة المرور',
+      mismatch: 'كلمتا المرور غير متطابقتين.', save: 'احفظ كلمة المرور', done: 'تم حفظ كلمة المرور. يمكنك تسجيل الدخول الآن.', toLogin: 'إلى تسجيل الدخول',
+      noToken: 'هذا الرابط غير مكتمل. افتحه مرة أخرى من البريد.', needsServer: 'اختيار كلمة المرور يحتاج إلى الخادم الحقيقي.'
+    },
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
     nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', reports: 'التقارير', activity: 'سجل النشاط', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },

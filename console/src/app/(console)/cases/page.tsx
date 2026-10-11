@@ -28,9 +28,8 @@ export default function Cases() {
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
   const data = useQuery<Any>(async () => ({
-    cases: await services().cases.list({ service: service || undefined, entityId: entityId || undefined, providerId: providerId || undefined, q: q || undefined }),
-    db: icm().store.db,
-  }), [service, entityId, providerId, q]);
+    cases: await services().cases.list({ service: service || undefined, q: q || undefined }),
+  }), [service, q]);
   if (!data.data) return <Loading label={t("console.loading")} />;
   const wf = icm().wf;
   const all: Any[] = data.data.cases;
@@ -41,9 +40,16 @@ export default function Cases() {
     closed: (c) => wf.isTerminal(c.status),
     all: () => true,
   };
-  const rows = all.filter(pick[scope]);
-  const entities: Any[] = data.data.db.entities;
-  const providers: Any[] = data.data.db.providers.filter((p: Any) => p.verification.status === "verified");
+  const rows = all
+    .filter((c) => (!entityId || c.entityId === entityId) && (!providerId || c.providerId === providerId))
+    .filter(pick[scope]);
+  // Clients and providers come from the loaded cases: every team that sees cases can filter,
+  // including those not allowed to list organisations or providers.
+  const optionsOf = (idKey: string, nameKey: string): Any[] =>
+    Array.from(new Map(all.filter((c) => c[idKey] && c[nameKey]).map((c) => [c[idKey], { id: c[idKey], name: c[nameKey] }])).values())
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const entities = optionsOf("entityId", "entityName");
+  const providers = optionsOf("providerId", "providerName");
   const counts: Record<string, number> = {};
   SCOPES.forEach((s) => { counts[s] = all.filter(pick[s]).length; });
 

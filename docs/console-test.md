@@ -82,3 +82,22 @@ The console keeps its own demo data in this browser, separate from the phone. To
 ## Report
 
 For each problem: which person, which page, what you did, what you expected, and a screenshot. Send them in one message.
+
+## 9. With the real server (optional)
+
+This runs the console on the real API instead of its own demo data.
+
+1. In a second PowerShell window, start the API:
+   ```
+   cd "C:\Users\mmohe\OneDrive\Desktop\Silital Website Claude Code\ICM-Marketplace\backend"
+   $env:Path = "C:\Program Files\nodejs;$env:Path"
+   npm install
+   npm start
+   ```
+2. In the `console` folder, copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_URL=http://localhost:4000`. Restart `npm run dev -- -p 3600`.
+
+- [ ] Sign in as Laila with the demo password: a code is asked for. No email is really sent: the code is in the API window, in a line with "Your Mosta3lem code is".
+- [ ] As Laila, **Staff**: add a person. In the API window, find "Choose your password here:" and open that link. A weak password is refused; a good one (10 characters, letters and numbers) is saved.
+- [ ] Sign out, then sign in as that person with their new password and the code.
+- [ ] **Forgot your password?** on the sign-in page: a link appears in the API window.
+- [ ] Changes made here (a new staff member, an extended deadline) are still there after you stop and start the API.

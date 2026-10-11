@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import { icm, services } from "@/backend/engine";
+import { icm, remoteMode, services } from "@/backend/engine";
 import { useAction, useDialog } from "@/components/dialog";
 import { Badge, Button, Card, Kpi, Loading, Notice, PageHead } from "@/components/ui";
 import { date, dateTime, money, num, orgPlace } from "@/lib/format";
@@ -44,7 +44,7 @@ export default function OrganisationPage() {
     <>
       <div className="mb-2 text-sm"><Link href="/organisations" className="text-accent hover:underline">{t("console.nav.organisations")}</Link></div>
       <PageHead title={e.name} sub={t("entityType." + e.type) + " · " + orgPlace(e) + " · " + t("console.orgs.since", { date: date(e.createdAt) })} />
-      {created ? <div className="mb-4"><Notice tone="success">{t("console.orgs.createdNote", { pw: icm().config.DEMO_PASSWORD })}</Notice></div> : null}
+      {created ? <div className="mb-4"><Notice tone="success">{(remoteMode() ? t("console.linkNoteCreated") : t("console.orgs.createdNote", { pw: icm().config.DEMO_PASSWORD }))}</Notice></div> : null}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label={t("console.orgs.col.open")} value={num(e.open)} />
         <Kpi label={t("console.orgs.col.volume")} value={num(e.volume)} />

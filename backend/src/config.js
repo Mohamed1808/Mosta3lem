@@ -3,6 +3,11 @@
  */
 'use strict';
 
+const path = require('path');
+
+// Local data sits in backend/.data whichever folder the server is started from.
+const HERE = (p) => path.resolve(__dirname, '..', p);
+
 function readConfig(env = process.env) {
   const mode = env.MOSTA3LEM_MODE || 'demo';
   if (mode !== 'demo' && mode !== 'live') throw new Error('MOSTA3LEM_MODE must be "demo" or "live".');
@@ -20,7 +25,7 @@ function readConfig(env = process.env) {
     port: Number(env.PORT || 4000),
     host: env.HOST || '0.0.0.0',
     databaseUrl: env.DATABASE_URL || null,
-    dataDir: env.PGLITE_DIR || '.data/pglite',
+    dataDir: env.PGLITE_DIR || HERE('.data/pglite'),
     corsOrigins: (env.CORS_ORIGINS || 'http://localhost:3600,http://localhost:8081')
       .split(',').map((s) => s.trim()).filter(Boolean),
     publicUrl: env.PUBLIC_URL || 'http://localhost:3600',
@@ -29,7 +34,7 @@ function readConfig(env = process.env) {
     expoAccessToken: env.EXPO_ACCESS_TOKEN || null,
     publicApiUrl: env.PUBLIC_API_URL || null,
     filesDriver: env.FILES_DRIVER || 'local',
-    filesDir: env.FILES_DIR || '.data/files',
+    filesDir: env.FILES_DIR || HERE('.data/files'),
     filesKey: env.FILES_KEY || null,
     fileMaxMb: Number(env.FILE_MAX_MB || 8),
     sessionHours: Number(env.SESSION_HOURS || 168),

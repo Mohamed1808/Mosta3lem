@@ -43,5 +43,6 @@ export const SCRIPTS = [
   () => import("../../../prototype/js/services/registration.js"),
   () => import("../../../prototype/js/services/exports.js"),
   () => import("../../../prototype/js/services/index.js"),
+  () => import("../../../prototype/js/services/remote.js"),
   () => import("../../../prototype/js/ui/icons.js"),
 ];

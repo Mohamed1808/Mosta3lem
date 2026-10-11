@@ -6,7 +6,7 @@
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { icm, services, startBackend } from "@/backend/engine";
+import { icm, onSignedOut, remoteMode, services, startBackend } from "@/backend/engine";
 import { installStrings } from "@/i18n/strings";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +21,10 @@ type State = {
   lang: Lang;
   rev: number;
   setLang: (l: Lang) => void;
+  /** Demo: sign in as this person. */
   signIn: (userId: string) => Promise<void>;
+  /** After the code step with the real API: the signed-in person. False when not staff. */
+  completeSignIn: (s: Session) => Promise<boolean>;
   signOut: () => Promise<void>;
   can: (permission: string) => boolean;
 };
@@ -41,6 +44,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let unsub: (() => void) | null = null;
     let tick: ReturnType<typeof setInterval> | null = null;
+    onSignedOut(() => { setSession(null); setRev((r) => r + 1); });
     startBackend()
       .then(async (ICM) => {
         installStrings(ICM);
@@ -49,15 +53,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         document.documentElement.lang = l;
         document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
         unsub = services().subscribe(() => setRev((r) => r + 1));
-        const s = staffOnly(await services().auth.currentUser());
-        if (!s) await services().auth.logout();
+        let s: Session = null;
+        try { s = staffOnly(await services().auth.currentUser()); } catch { s = null; }
+        if (!s) await services().auth.logout().catch(() => undefined);
         setSession(s);
         setReady(true);
+        // With the real API the server moves deadlines on by itself.
+        if (remoteMode()) return;
         // The demo clock moves deadlines, offer expiry and SLA flags forward.
         try { await services().demo.tick(); } catch { /* ignore */ }
         tick = setInterval(() => { services().demo.tick().catch(() => undefined); }, 30000);
       })
-      .catch((e) => setError(String(e && e.message ? e.message : e)));
+      // A translated message when the engine knows it (for example: no connection to the server).
+      .catch((e) => setError(e && e.key && icm() ? (icm().t(e.key) as string) : String(e && e.message ? e.message : e)));
     return () => { if (unsub) unsub(); if (tick) clearInterval(tick); };
   }, []);
 
@@ -74,16 +82,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRev((r) => r + 1);
   }, []);
 
+  const completeSignIn = useCallback(async (s: Session) => {
+    const staff = staffOnly(s);
+    if (!staff) await services().auth.logout().catch(() => undefined);
+    setSession(staff);
+    setRev((r) => r + 1);
+    return !!staff;
+  }, []);
+
   const signOut = useCallback(async () => {
-    await services().auth.logout();
+    await services().auth.logout().catch(() => undefined);
     setSession(null);
     setRev((r) => r + 1);
   }, []);
 
   const value = useMemo<State>(() => ({
-    ready, error, session, lang, rev, setLang, signIn, signOut,
+    ready, error, session, lang, rev, setLang, signIn, completeSignIn, signOut,
     can: (p: string) => !!session && icm().wf.can(session.user.role, p),
-  }), [ready, error, session, lang, rev, setLang, signIn, signOut]);
+  }), [ready, error, session, lang, rev, setLang, signIn, completeSignIn, signOut]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
