@@ -44,6 +44,8 @@ Tell the Mosta3lem team directly (not in a public GitHub issue): what you found,
 ### Records
 - **The activity log** (business actions) is in the engine and visible to Legal, Management and the Super admin.
 - **The security log** (`security_events` table) records sign-ins, failed passwords and codes, lockouts, password requests and changes, and sign-outs everywhere. Each entry has the address and device it came from, and never a password, code or token.
+  - Legal and the Super admin read it on the console's **Security log** page (permission `security.view`), with a summary of the last 24 hours and the addresses with the most failed attempts.
+  - Opening the log is recorded in the log itself.
 - **The server log** never contains sign-in tokens, mobile proofs or the signatures of file links.
 
 ### Checks on every pull request
@@ -90,4 +92,3 @@ For whoever deploys the live platform.
 - **Staff second factor:** staff already need an email code. Consider a phone authenticator app for the Super admin and Finance.
 - **Rotating `FILES_KEY`:** the procedure (re-encrypting the files) is not written yet.
 - **Shared rate limits:** with several copies, each copy counts its own sign-in limits. Move the counts into the database or a shared store before relying on them at scale.
-- **Screens for the security log in the console,** for Legal and the Super admin.

@@ -37,7 +37,7 @@
       'providers.documents', 'orgs.view', 'disputes.view'],
     platform_finance: ['overview', 'billing.view', 'billing.issue', 'billing.pay', 'billing.adjust', 'fee.change', 'orgs.view', 'providers.view'],
     platform_qa: ['overview', 'cases.view', 'personalData', 'qa.review'],
-    platform_legal: ['overview', 'cases.view', 'personalData', 'disputes.view', 'disputes.decide', 'audit.view'],
+    platform_legal: ['overview', 'cases.view', 'personalData', 'disputes.view', 'disputes.decide', 'audit.view', 'security.view'],
     platform_support: ['overview', 'cases.view', 'providers.view', 'orgs.view', 'accounts.resetLogin', 'disputes.view', 'disputes.openOnBehalf'],
     platform_sales: ['overview', 'providers.view', 'orgs.view', 'orgs.create'],
     platform_data: ['overview', 'reports.view']

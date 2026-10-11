@@ -5,6 +5,26 @@
  */
 const en = {
   console: {
+    security: {
+      sub: 'Sign-ins, failed attempts, lockouts and password changes, with the address and device they came from.',
+      needsServer: 'The security log is kept by the server. Connect the console to the API to see it.',
+      last24: 'Last 24 hours', topFailing: 'Addresses with the most failed attempts (24 hours)', failuresN: '{n} failed',
+      kpi: { signins: 'Sign-ins', failures: 'Failed attempts', lockouts: 'Accounts locked', addresses: 'Addresses with failures' },
+      search: 'Search by name, email, mobile or address', kind: 'Kind of event', period: 'Period', allEvents: 'All events',
+      group: { signin: 'Sign-ins', failed: 'Failed attempts', locked: 'Lockouts', password: 'Passwords', signout: 'Signed out everywhere', log: 'Security log opened' },
+      days: { 1: 'Last 24 hours', 7: 'Last 7 days', 30: 'Last 30 days', 90: 'Last 90 days' },
+      col: { when: 'When', event: 'Event', who: 'Person', address: 'Address', device: 'Device', details: 'Details' },
+      event: {
+        signin_ok: 'Signed in', signin_demo: 'Signed in (demo)', signin_password_failed: 'Wrong password', signin_code_failed: 'Wrong code',
+        signin_unknown_email: 'Unknown email', signin_while_locked: 'Tried while locked', signin_locked: 'Account locked',
+        password_reset_requested: 'Asked for a password link', password_set: 'Chose a password', signout_everywhere: 'Signed out everywhere',
+        security_log_viewed: 'Opened the security log'
+      },
+      channel: { email: 'Code by email', sms: 'Code by SMS', undefined: '' },
+      from: { invite: 'From an invitation', reset: 'From a reset link', undefined: '' },
+      attempt: 'Attempt {n}', lockedAfter: 'After {n} wrong passwords', codeAttempt: '{channel}, attempt {n}', afterDeactivate: 'Account deactivated', afterReset: 'Sign-in reset',
+      noAccount: 'No account', removedUser: 'Removed account', none: 'Nothing in this period.', older: 'Show older events'
+    },
     name: 'Mosta3lem Console', tagline: 'Internal console for the Mosta3lem team.',
     signIn: 'Sign in', email: 'Work email', password: 'Password', show: 'Show', hide: 'Hide', continue: 'Continue',
     codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code to {email}.', demoCode: 'Demo: no email is sent. Your code is {code}.',
@@ -23,7 +43,7 @@ const en = {
     },
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
-    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', reports: 'Reports', activity: 'Activity log', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
+    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', reports: 'Reports', activity: 'Activity log', security: 'Security log', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
     orgs: {
       sub: 'Client organisations, their work with providers and how providers rate them as clients.', new: 'New organisation', none: 'No organisations yet.',
       col: { name: 'Organisation', users: 'Users', open: 'Open cases', volume: 'All cases', spend: 'Spend to date', rating: 'Rated by providers' },
@@ -128,13 +148,33 @@ const en = {
       qa_review: 'Review reports (Quality)', disputes_view: 'See disputes', disputes_decide: 'Decide disputes', disputes_openOnBehalf: 'Open a dispute on behalf of a client',
       billing_view: 'See invoices and payments', billing_issue: 'Issue invoices', billing_pay: 'Record payments', billing_adjust: 'Adjust invoices after disputes',
       fee_change: 'Change the platform fee', orgs_view: 'See organisations', orgs_create: 'Create organisation accounts', accounts_resetLogin: 'Reset logins',
-      reports_view: 'Platform reports', audit_view: 'Audit log', staff_manage: 'Manage staff accounts', settings_manage: 'Platform settings'
+      reports_view: 'Platform reports', audit_view: 'Audit log', security_view: 'Security log', staff_manage: 'Manage staff accounts', settings_manage: 'Platform settings'
     }
   }
 };
 
 const ar: typeof en = {
   console: {
+    security: {
+      sub: 'تسجيلات الدخول والمحاولات الفاشلة وقفل الحسابات وتغيير كلمات المرور، مع العنوان والجهاز.',
+      needsServer: 'سجل الأمان يحفظه الخادم. اربط لوحة التحكم بالخادم لعرضه.',
+      last24: 'آخر 24 ساعة', topFailing: 'العناوين الأكثر محاولات فاشلة (24 ساعة)', failuresN: '{n} محاولة فاشلة',
+      kpi: { signins: 'تسجيلات الدخول', failures: 'محاولات فاشلة', lockouts: 'حسابات مقفلة', addresses: 'عناوين بها محاولات فاشلة' },
+      search: 'ابحث بالاسم أو البريد أو الموبايل أو العنوان', kind: 'نوع الحدث', period: 'المدة', allEvents: 'كل الأحداث',
+      group: { signin: 'تسجيلات الدخول', failed: 'محاولات فاشلة', locked: 'قفل الحسابات', password: 'كلمات المرور', signout: 'خروج من كل الأجهزة', log: 'فتح سجل الأمان' },
+      days: { 1: 'آخر 24 ساعة', 7: 'آخر 7 أيام', 30: 'آخر 30 يومًا', 90: 'آخر 90 يومًا' },
+      col: { when: 'الوقت', event: 'الحدث', who: 'الشخص', address: 'العنوان', device: 'الجهاز', details: 'التفاصيل' },
+      event: {
+        signin_ok: 'سجّل الدخول', signin_demo: 'سجّل الدخول (تجريبي)', signin_password_failed: 'كلمة مرور خاطئة', signin_code_failed: 'رمز خاطئ',
+        signin_unknown_email: 'بريد غير معروف', signin_while_locked: 'محاولة أثناء القفل', signin_locked: 'تم قفل الحساب',
+        password_reset_requested: 'طلب رابط كلمة مرور', password_set: 'اختار كلمة مرور', signout_everywhere: 'خروج من كل الأجهزة',
+        security_log_viewed: 'فتح سجل الأمان'
+      },
+      channel: { email: 'رمز بالبريد', sms: 'رمز برسالة', undefined: '' },
+      from: { invite: 'من دعوة', reset: 'من رابط إعادة التعيين', undefined: '' },
+      attempt: 'المحاولة {n}', lockedAfter: 'بعد {n} كلمات مرور خاطئة', codeAttempt: '{channel}، المحاولة {n}', afterDeactivate: 'تم إيقاف الحساب', afterReset: 'إعادة تعيين الدخول',
+      noAccount: 'لا يوجد حساب', removedUser: 'حساب محذوف', none: 'لا شيء في هذه المدة.', older: 'عرض الأحداث الأقدم'
+    },
     name: 'لوحة تحكم مستعلم', tagline: 'لوحة التحكم الداخلية لفريق مستعلم.',
     signIn: 'تسجيل الدخول', email: 'البريد الإلكتروني للعمل', password: 'كلمة المرور', show: 'إظهار', hide: 'إخفاء', continue: 'متابعة',
     codeTitle: 'أدخل الرمز', codeSent: 'أرسلنا رمزًا من 6 أرقام إلى {email}.', demoCode: 'نسخة تجريبية: لا يُرسل بريد. الرمز هو {code}.',
@@ -153,7 +193,7 @@ const ar: typeof en = {
     },
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
-    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', reports: 'التقارير', activity: 'سجل النشاط', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },
+    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', reports: 'التقارير', activity: 'سجل النشاط', security: 'سجل الأمان', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },
     orgs: {
       sub: 'الجهات العميلة وأعمالها مع مقدمي الخدمة وتقييم مقدمي الخدمة لها كعملاء.', new: 'جهة جديدة', none: 'لا توجد جهات بعد.',
       col: { name: 'الجهة', users: 'المستخدمون', open: 'حالات مفتوحة', volume: 'كل الحالات', spend: 'الإنفاق حتى الآن', rating: 'تقييم مقدمي الخدمة' },
@@ -258,7 +298,7 @@ const ar: typeof en = {
       qa_review: 'مراجعة التقارير (الجودة)', disputes_view: 'عرض النزاعات', disputes_decide: 'الفصل في النزاعات', disputes_openOnBehalf: 'فتح نزاع نيابة عن جهة',
       billing_view: 'عرض الفواتير والمدفوعات', billing_issue: 'إصدار الفواتير', billing_pay: 'تسجيل المدفوعات', billing_adjust: 'تعديل الفواتير بعد النزاعات',
       fee_change: 'تغيير عمولة المنصة', orgs_view: 'عرض الجهات', orgs_create: 'إنشاء حسابات الجهات', accounts_resetLogin: 'إعادة تعيين الدخول',
-      reports_view: 'تقارير المنصة', audit_view: 'سجل التدقيق', staff_manage: 'إدارة حسابات الموظفين', settings_manage: 'إعدادات المنصة'
+      reports_view: 'تقارير المنصة', audit_view: 'سجل التدقيق', security_view: 'سجل الأمان', staff_manage: 'إدارة حسابات الموظفين', settings_manage: 'إعدادات المنصة'
     }
   }
 };
