@@ -10,11 +10,13 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env src/index.js",
     "dev": "node --env-file-if-exists=.env --watch src/index.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "create-admin": "node --env-file-if-exists=.env src/create-admin.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@fastify/cors": "^11.3.1",
+    "@fastify/rate-limit": "^10.3.0",
     "fastify": "^5.12.5",
     "pg": "^8.23.1"
   }
