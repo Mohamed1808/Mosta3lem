@@ -22,6 +22,10 @@ const TEMPLATES = {
     en: (p) => `Hello ${p.name}, an account was opened for you on Mosta3lem. Choose your password here: ${p.link} (valid ${p.hours} hours).`,
     ar: (p) => `مرحبا ${p.name}، تم فتح حساب لك على مستعلم. اختر كلمة المرور من هنا: ${p.link} (صالح ${p.hours} ساعة).`
   },
+  notice: {
+    en: (p) => `Mosta3lem: ${p.text}`,
+    ar: (p) => `مستعلم: ${p.text}`
+  },
   reset: {
     en: (p) => `Hello ${p.name}, choose a new Mosta3lem password here: ${p.link} (valid ${p.hours} hours). If you did not ask for this, ignore this message.`,
     ar: (p) => `مرحبا ${p.name}، اختر كلمة مرور جديدة لمستعلم من هنا: ${p.link} (صالح ${p.hours} ساعة). إذا لم تطلب ذلك فتجاهل هذه الرسالة.`
