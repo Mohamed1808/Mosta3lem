@@ -9,8 +9,8 @@
  * backend to this server without changing any screen.
  *
  * Every answer is { ok: true, result } or { ok: false, error: { key, params } }, where key
- * is a translation key. Signing in also returns { session: { token, expiresAt } }; the
- * device sends the token back as "Authorization: Bearer <token>".
+ * is a translation key. Signing in (see signin.js) also returns { session: { token,
+ * expiresAt } }; the device sends the token back as "Authorization: Bearer <token>".
  */
 'use strict';
 
@@ -20,9 +20,12 @@ const { loadEngine } = require('./engine');
 const { openDb, migrate } = require('./db');
 const { createState } = require('./state');
 const { createSessions } = require('./sessions');
+const { createMessenger } = require('./messaging');
+const { registerSignIn } = require('./signin');
 
-/** Demo helpers that must never be reachable on a live platform. */
-const DEMO_ONLY = new Set(['auth.loginAs', 'auth.listDemoUsers']);
+/** Demo helpers that must never be reachable on a live platform: "sign in as" anyone,
+    the demo password check, and the demo clock and shortcuts. */
+const DEMO_ONLY = new Set(['auth.loginAs', 'auth.listDemoUsers', 'auth.checkPassword']);
 const isDemoOnly = (name) => DEMO_ONLY.has(name) || name.startsWith('demo.') && name !== 'demo.tick' && name !== 'demo.clock';
 
 /** Methods after which the person concerned is signed out on every device. */
@@ -57,7 +60,7 @@ async function buildServer(config) {
   const engine = loadEngine();
   const { ICM } = engine;
   const state = createState(db, ICM);
-  const how = await state.load({ seedDemo: config.mode === 'demo' });
+  const how = await state.load({ start: config.mode === 'demo' ? 'demo' : 'empty' });
   app.log.info({ data: how, database: db.kind, mode: config.mode }, 'data ready');
 
   app.decorate('db', db);
@@ -93,9 +96,20 @@ async function buildServer(config) {
     await app.register(require('@fastify/cors'), {
       origin: config.corsOrigins,
       methods: ['GET', 'POST'],
-      allowedHeaders: ['Authorization', 'Content-Type', 'X-Lang']
+      allowedHeaders: ['Authorization', 'Content-Type', 'X-Lang', 'X-Phone-Proof']
     });
   }
+
+  // Requests per minute from one address; sign-in routes have a tighter limit of their own.
+  await app.register(require('@fastify/rate-limit'), {
+    max: config.requestsPerMinute,
+    timeWindow: '1 minute',
+    errorResponseBuilder: (req, ctx) => ({ statusCode: ctx.statusCode, ok: false, error: { key: 'errors.tooManyRequests', params: null } })
+  });
+
+  const messenger = createMessenger({ driver: config.messagingDriver, db, log: app.log });
+  const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config });
+  app.decorate('adminTools', { createSuperAdmin: signIn.createSuperAdmin });
 
   app.addHook('onSend', async (req, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff');
@@ -120,20 +134,24 @@ async function buildServer(config) {
     if (token && !userId) return fail(401, 'errors.notSignedIn');
     const lang = req.headers['x-lang'] === 'ar' ? 'ar' : 'en';
 
-    let result, change;
+    let result, change, usersBefore, proofId;
     try {
+      proofId = await signIn.before(name, args, req);
       result = await inEngine(userId, lang, async () => {
+        usersBefore = new Set(ICM.store.db.users.map((u) => u.id));
         const r = await ICM.services[service][method](...args);
         change = engine.sessionChange();
         return r;
       });
     } catch (e) {
+      if (e instanceof signIn.Refusal) return fail(e.status, e.key, e.params);
       // Errors from the engine carry a translation key; anything else is a bug.
       if (e && typeof e.key === 'string' && e.name === 'ServiceError') return fail(STATUS[e.key] || 400, e.key, e.params);
       req.log.error({ err: e, call: name }, 'service call failed');
       return fail(500, 'errors.generic');
     }
 
+    await signIn.after(name, args, req, { usersBefore, proofId });
     const body = { ok: true, result: result === undefined ? null : result };
     if (change) body.session = await sessions.create(change, req.headers['user-agent']);
     if (change === null) await sessions.remove(token);

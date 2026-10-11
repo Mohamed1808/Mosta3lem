@@ -9,31 +9,7 @@ const os = require('os');
 const path = require('path');
 
 const { buildServer } = require('../src/server');
-
-const config = (over) => Object.assign({
-  mode: 'demo', databaseUrl: null, dataDir: 'memory', corsOrigins: [],
-  sessionHours: 1, tickSeconds: 0, bodyLimitMb: 15, logger: false
-}, over);
-
-function client(app) {
-  return async function call(name, args, token, headers) {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/v1/' + name.replace('.', '/'),
-      payload: { args: args || [] },
-      headers: Object.assign(token ? { authorization: 'Bearer ' + token } : {}, headers || {})
-    });
-    return { status: res.statusCode, body: res.json() };
-  };
-}
-
-async function signIn(call, role) {
-  const users = (await call('auth.listDemoUsers')).body.result;
-  const u = users.find((x) => x.role === role);
-  const r = await call('auth.loginAs', [u.id]);
-  assert.equal(r.status, 200);
-  return { user: u, token: r.body.session.token };
-}
+const { config, client, signInAs: signIn } = require('./helpers');
 
 test('API on a fresh database', async (t) => {
   const app = await buildServer(config());

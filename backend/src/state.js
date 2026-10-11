@@ -72,17 +72,17 @@ function createState(db, ICM) {
 
   return {
     /**
-     * Read the data into the engine. An empty database is filled with the demo data when
-     * seedDemo is true. Returns 'loaded' or 'seeded'.
+     * Read the data into the engine. An empty database starts with the demo data
+     * (start: 'demo') or as an empty platform with the default settings (start: 'empty').
+     * Returns 'loaded', 'seeded' or 'created'.
      */
-    async load({ seedDemo }) {
+    async load({ start }) {
       const values = (await db.query('SELECT key, value FROM platform_state')).rows;
       if (!values.length) {
-        if (!seedDemo) throw new Error('The database is empty. Start in demo mode to fill it with the demo data.');
-        ICM.store.db = ICM.seed.build(Date.now());
+        ICM.store.db = start === 'demo' ? ICM.seed.build(Date.now()) : emptyPlatform(ICM);
         saved = { rows: {}, values: {} };
         await this.persist();
-        return 'seeded';
+        return start === 'demo' ? 'seeded' : 'created';
       }
       const data = {};
       for (const r of values) data[r.key] = r.value;
@@ -107,6 +107,18 @@ function createState(db, ICM) {
       return writes.length;
     }
   };
+}
+
+/** A live platform's first day: the default settings and lists, no people, no work. */
+function emptyPlatform(ICM) {
+  const now = Date.now();
+  const data = ICM.seed.build(now);
+  for (const coll of Object.keys(TABLES)) data[coll] = [];
+  data.scores = {};
+  data.counters = {};
+  data.clock = { offsetMs: 0 };
+  data.seededAt = now;
+  return data;
 }
 
 module.exports = { createState, TABLES };
