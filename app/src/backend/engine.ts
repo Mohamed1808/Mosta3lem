@@ -1,13 +1,37 @@
 /**
- * Simulated backend. Until the real API exists, the app runs the prototype's engine
- * (prototype/js: workflow rules, demo data and mock services) inside the app, so the
- * app and the prototype behave exactly the same. Every screen talks to it only through
- * `services()` (the same contract the real API will implement), never to the data directly.
+ * The app's backend. With EXPO_PUBLIC_API_URL set (see .env.example) the app talks to the
+ * Mosta3lem API: the engine (prototype/js) is loaded for translations, settings lists and
+ * workflow rules, and every service call goes to the server (services/remote.js).
+ * Without it the app runs the engine on its own demo data, as before. Every screen talks
+ * only to `services()`, the same contract either way.
  *
- * On a phone the engine's localStorage is a memory copy saved to AsyncStorage.
+ * The engine's localStorage (language, demo data) is a memory copy saved to AsyncStorage.
+ * The sign-in token is kept in the phone's secure storage (the keychain on iPhone).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+
+/** The API address, or empty for the demo on the device. */
+export const API_URL = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/+$/, '');
+export const remoteMode = (): boolean => !!API_URL;
+
+let signedOutHandler: (() => void) | null = null;
+/** Called when the server no longer accepts the sign-in (expired, signed out elsewhere, deactivated). */
+export function onSignedOut(fn: () => void) { signedOutHandler = fn; }
+
+/** Where the sign-in token lives: secure storage on phones, the browser's storage on web. */
+const tokenStorage = Platform.OS === 'web'
+  ? {
+      get: (k: string) => { try { return globalThis.localStorage.getItem(k); } catch { return null; } },
+      set: (k: string, v: string) => { try { globalThis.localStorage.setItem(k, v); } catch { /* unavailable */ } },
+      remove: (k: string) => { try { globalThis.localStorage.removeItem(k); } catch { /* unavailable */ } },
+    }
+  : {
+      get: (k: string) => SecureStore.getItemAsync(k),
+      set: (k: string, v: string) => SecureStore.setItemAsync(k, v),
+      remove: (k: string) => SecureStore.deleteItemAsync(k),
+    };
 
 const g: any = globalThis;
 const PREFIX = 'icm-';
@@ -77,13 +101,14 @@ function loadScripts() {
   require('../../../prototype/js/services/registration.js');
   require('../../../prototype/js/services/exports.js');
   require('../../../prototype/js/services/index.js');
+  require('../../../prototype/js/services/remote.js');
   require('../../../prototype/js/ui/icons.js');
 }
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 let ready: Promise<any> | null = null;
 
-/** Start the simulated backend once. Resolves to the engine namespace. */
+/** Start the backend once: connect to the API, or load the demo data. Resolves to the engine namespace. */
 export function startBackend(): Promise<any> {
   if (ready) return ready;
   ready = (async () => {
@@ -91,9 +116,15 @@ export function startBackend(): Promise<any> {
     if (!g.document) g.document = { documentElement: {} };
     await installStorage();
     loadScripts();
-    g.ICM.store.load();
+    if (API_URL) {
+      await g.ICM.remote.connect({ baseUrl: API_URL, storage: tokenStorage, onSignedOut: () => signedOutHandler && signedOutHandler() });
+    } else {
+      g.ICM.store.load();
+    }
     return g.ICM;
   })();
+  // A failed start (no connection) can be retried.
+  ready.catch(() => { ready = null; });
   return ready;
 }
 

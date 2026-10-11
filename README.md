@@ -18,6 +18,7 @@ Claude Code → GitHub → local/dev → Docker → staging → testing, securit
 ## Quick start
 
 - App: see [app/README.md](app/README.md). Testing on a phone: [docs/provider-phone-test.md](docs/provider-phone-test.md) (service providers) and [docs/client-phone-test.md](docs/client-phone-test.md) (organisations).
+- App on the real server (API on your computer): [docs/server-phone-test.md](docs/server-phone-test.md).
 - Internal console for the Mosta3lem team: see [console/README.md](console/README.md). Test checklist: [docs/console-test.md](docs/console-test.md).
 - Prototype: open `prototype/index.html`, or run `node prototype/serve.js` and open http://localhost:3500. Tests: `node prototype/tests/run-node.js` and `node prototype/tests/scenarios.js`.
 - Vercel (prototype site): set the project's Root Directory to `prototype`.

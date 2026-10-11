@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
-import { icm, services } from '@/backend/engine';
+import { icm, remoteMode, services } from '@/backend/engine';
 import { errorText } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { colors, radius, space } from '@/theme';
@@ -126,7 +126,7 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
           style={[inputStyle, { textAlign: 'left', writingDirection: 'ltr' }]} accessibilityLabel={t('common.email')} />
         <Txt v="sm" b c="muted">{t('common.role')}</Txt>
         <RolePicker value={role} onChange={setRole} />
-        <Txt v="xs" c="faint">{t('client.inviteNote', { pw: icm().config.DEMO_PASSWORD })}</Txt>
+        <Txt v="xs" c="faint">{(remoteMode() ? t('client.inviteLinkNote') : t('client.inviteNote', { pw: icm().config.DEMO_PASSWORD }))}</Txt>
       </Stack>
     </Sheet>
   );

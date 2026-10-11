@@ -14,6 +14,10 @@ const en = {
     asProvider: 'Service provider', asClient: 'Organisation', clientIntro: 'For companies and organisations that request investigations or collections. Mosta3lem creates your account.',
     emailLabel: 'Work email', passwordLabel: 'Password', show: 'Show', hide: 'Hide', continue: 'Continue',
     forgot: 'Forgot your password?', forgotBody: 'Ask your organisation admin or Mosta3lem support to reset it. Passwords are never sent by email.',
+    testServerCode: 'Test server: no message is really sent. The code is in the server log.',
+    codeSentAny: 'If this number has an account, we sent a 6-digit code to {phone}. It works for 10 minutes.',
+    forgotBodyServer: 'Enter your work email and we send you a link to choose a new password.', forgotSend: 'Email me a link',
+    forgotSent: 'If this email has an account, a link to choose a new password is on its way. It works for 24 hours.',
     codeSentEmail: 'We sent a 6-digit code to {email}.', demoPassword: 'Demo: every organisation account uses the password {pw}.', back: 'Back'
   },
   gate: {
@@ -47,6 +51,7 @@ const en = {
     reportsAccepted: 'Delivered reports accepted', usersAdminOnly: 'Users are managed by the Admin of your organisation.', you: 'You',
     reactivated: 'User reactivated', deactivated: 'User deactivated', saveRole: 'Save role',
     inviteNote: 'Demo: no email is sent. The new user signs in with their email and the password {pw}.',
+    inviteLinkNote: 'They get an email with a link to choose a password, then sign in to the app.',
     roleAccess: {
       entity_admin: 'Everything: both services, users, invoices and spending.', entity_operations: 'Investigations and collections, without invoices or users.',
       entity_credit: 'Investigations only.', entity_collections: 'Collections only.'
@@ -165,6 +170,10 @@ const ar: typeof en = {
     asProvider: 'مقدم خدمة', asClient: 'جهة', clientIntro: 'للشركات والجهات التي تطلب الاستعلامات أو التحصيل. ينشئ مستعلم حسابك.',
     emailLabel: 'البريد الإلكتروني للعمل', passwordLabel: 'كلمة المرور', show: 'إظهار', hide: 'إخفاء', continue: 'متابعة',
     forgot: 'نسيت كلمة المرور؟', forgotBody: 'اطلب من مدير الحساب في جهتك أو من دعم مستعلم إعادة تعيينها. لا تُرسل كلمات المرور بالبريد الإلكتروني.',
+    testServerCode: 'خادم تجريبي: لا تُرسل رسالة فعلًا. الرمز في سجل الخادم.',
+    codeSentAny: 'إذا كان لهذا الرقم حساب فقد أرسلنا رمزًا من 6 أرقام إلى {phone}. يعمل لمدة 10 دقائق.',
+    forgotBodyServer: 'أدخل بريد العمل وسنرسل لك رابطًا لاختيار كلمة مرور جديدة.', forgotSend: 'أرسل لي رابطًا',
+    forgotSent: 'إذا كان لهذا البريد حساب فرابط اختيار كلمة المرور الجديدة في الطريق إليك. يعمل لمدة 24 ساعة.',
     codeSentEmail: 'أرسلنا رمزًا من 6 أرقام إلى {email}.', demoPassword: 'نسخة تجريبية: كل حسابات الجهات تستخدم كلمة المرور {pw}.', back: 'رجوع'
   },
   gate: {
@@ -198,6 +207,7 @@ const ar: typeof en = {
     reportsAccepted: 'تم قبول التقارير المسلّمة', usersAdminOnly: 'يدير المستخدمين مدير الحساب في جهتك.', you: 'أنت',
     reactivated: 'تمت إعادة تفعيل المستخدم', deactivated: 'تم إيقاف المستخدم', saveRole: 'حفظ الدور',
     inviteNote: 'نسخة تجريبية: لا يُرسل بريد. يسجّل المستخدم الجديد الدخول ببريده وكلمة المرور {pw}.',
+    inviteLinkNote: 'يصل إليه بريد فيه رابط لاختيار كلمة المرور، ثم يسجّل الدخول إلى التطبيق.',
     roleAccess: {
       entity_admin: 'كل شيء: الخدمتان والمستخدمون والفواتير والإنفاق.', entity_operations: 'الاستعلامات والتحصيل، بدون الفواتير أو المستخدمين.',
       entity_credit: 'الاستعلامات فقط.', entity_collections: 'التحصيل فقط.'
