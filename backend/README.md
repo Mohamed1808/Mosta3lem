@@ -88,6 +88,16 @@ The engine records who should hear about what (59 kinds: a new offer, a deadline
 
 `src/messaging.js` sends every SMS and email. The `dev` driver prints them in the log and keeps their text in the `outbox` table, so codes and links can be read while testing; nothing leaves the server. Real SMS and email providers plug in there once chosen.
 
+## Connecting the app and the console
+
+`prototype/js/services/remote.js` is the shared client. The app and the console load the engine as before (translations, settings lists, workflow rules) and then:
+
+```js
+await ICM.remote.connect({ baseUrl, storage, onSignedOut });
+```
+
+From then on every `ICM.services` method is a request to this API, so pages do not change. It keeps the sign-in token in the given storage, sends the page language, turns errors into the same `{ key, params }` the pages already show, keeps `ICM.store.db.config` and the clock in step with the server, and tells pages to refresh only when a call changed data (`meta.changed` in every answer). `ICM.remote.session` has the real sign-in steps and phone registration for push.
+
 ## How it works
 
 | Piece | File |
@@ -103,7 +113,7 @@ The engine records who should hear about what (59 kinds: a new offer, a deadline
 | The API | `src/server.js` |
 
 - **One endpoint per service method**: `POST /api/v1/<service>/<method>` with `{ "args": [...] }`. The methods are exactly those in `prototype/js/services/contracts.js`, the contract the app and console already use; anything else is refused.
-- **Answers**: `{ ok: true, result }` or `{ ok: false, error: { key, params } }` (key is a translation key). HTTP 401 not signed in, 403 not allowed, 404 not found, 413 file too large, 415 not a photo or PDF, 429 too many tries, 400 other refusals.
+- **Answers**: `{ ok: true, result, meta: { changed, clockOffsetMs } }` or `{ ok: false, error: { key, params } }` (key is a translation key). HTTP 401 not signed in, 403 not allowed, 404 not found, 413 file too large, 415 not a photo or PDF, 429 too many tries, 400 other refusals.
 - Send the session token as `Authorization: Bearer <token>`. Signing out deletes it. Deactivating a person or resetting their sign-in signs them out on every device.
 - **Language**: send `X-Lang: ar` for Arabic (messages are sent in that language too).
 - **Permissions and data hiding** are the engine's, unchanged: the server tells the engine who is calling and the engine decides.

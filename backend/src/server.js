@@ -71,14 +71,15 @@ async function buildServer(config) {
   const queue = serial();
 
   /** Run engine work as this person, then save what changed before answering. */
-  function inEngine(userId, lang, fn) {
+  function inEngine(userId, lang, fn, info) {
     return queue(async () => {
       engine.as(userId, lang);
       try {
         return await fn();
       } finally {
         try {
-          await state.persist();
+          const writes = await state.persist();
+          if (info) info.writes = writes;
         } catch (e) {
           // Memory and database no longer match: stop, and reload from the database on restart.
           app.log.fatal({ err: e }, 'could not save changes; stopping');
@@ -152,6 +153,7 @@ async function buildServer(config) {
     const lang = req.headers['x-lang'] === 'ar' ? 'ar' : 'en';
 
     let result, change, usersBefore, proofId;
+    const info = { writes: 0 };
     try {
       proofId = await signIn.before(name, args, req);
       // Files are only taken from signed-in people, and from a new provider's sign-up.
@@ -161,7 +163,7 @@ async function buildServer(config) {
         const r = await ICM.services[service][method](...args);
         change = engine.sessionChange();
         return r;
-      });
+      }, info);
     } catch (e) {
       if (e instanceof Refusal) return fail(e.status, e.key, e.params);
       // Errors from the engine carry a translation key; anything else is a bug.
@@ -172,6 +174,9 @@ async function buildServer(config) {
 
     await signIn.after(name, args, req, { usersBefore, proofId });
     const body = { ok: true, result: result === undefined ? null : files.present(result, apiBase(req)) };
+    // changed: this call changed data, so screens showing it should refresh. The clock offset
+    // lets screens count deadlines the same way the server does (the demo clock can move).
+    body.meta = { changed: info.writes > 0, clockOffsetMs: (ICM.store.db.clock && ICM.store.db.clock.offsetMs) || 0 };
     if (change) body.session = await sessions.create(change, req.headers['user-agent']);
     if (change === null) await sessions.remove(token);
     const signOut = SIGN_OUT_AFTER[name] && SIGN_OUT_AFTER[name](args);
