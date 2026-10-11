@@ -75,7 +75,7 @@ For whoever deploys the live platform.
 - [ ] **Monitoring:**
   - watch `/health`;
   - alert on errors in the log and on many `signin.locked` or `signin.code_failed` events in `security_events`.
-- [ ] **One copy of the API at a time**, for now (see `backend/README.md`).
+- [ ] **Two or more copies of the API** behind the load balancer for availability, all on the same database and file storage (see "Running several copies" in `backend/README.md`).
 - [ ] **Server updates:** keep the operating system, Node.js and PostgreSQL updated, and merge dependency updates once the checks are green.
 
 ## Still open
@@ -89,5 +89,5 @@ For whoever deploys the live platform.
 - **Choice of providers:** SMS, email, OCR, maps and cloud, each checked for keeping data in Egypt.
 - **Staff second factor:** staff already need an email code. Consider a phone authenticator app for the Super admin and Finance.
 - **Rotating `FILES_KEY`:** the procedure (re-encrypting the files) is not written yet.
-- **More than one API server:** this needs the data in proper columns (planned) before the API can run as several copies behind a load balancer.
+- **Shared rate limits:** with several copies, each copy counts its own sign-in limits. Move the counts into the database or a shared store before relying on them at scale.
 - **Screens for the security log in the console,** for Legal and the Super admin.

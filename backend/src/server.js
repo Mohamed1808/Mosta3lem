@@ -57,6 +57,9 @@ const STATUS = { 'errors.notSignedIn': 401, 'errors.forbidden': 403, 'errors.not
 /** A URL without its query string, so signed file links never reach the logs. */
 const pathOnly = (url) => String(url || '').split('?')[0];
 
+/** The lock all copies of the API take before working on the data (an arbitrary constant). */
+const DATA_LOCK = 7316420501;
+
 /** A one-at-a-time queue: the engine works on shared data, so requests take turns. */
 function serial() {
   let last = Promise.resolve();
@@ -81,14 +84,19 @@ async function buildServer(config) {
     trustProxy: config.trustProxy
   });
 
-  const db = await openDb({ databaseUrl: config.databaseUrl, dataDir: config.dataDir });
+  // config.db: an already open database (tests running several copies on one database).
+  const db = config.db || await openDb({ databaseUrl: config.databaseUrl, dataDir: config.dataDir });
   const applied = await migrate(db);
   if (applied.length) app.log.info({ applied }, 'database migrations applied');
 
   const engine = loadEngine();
   const { ICM } = engine;
   const state = createState(db, ICM);
-  const how = await state.load({ start: config.mode === 'demo' ? 'demo' : 'empty' });
+  // Under the shared lock, so two copies starting together do not both fill an empty database.
+  const how = await db.transaction(async (tx) => {
+    await tx.query('SELECT pg_advisory_xact_lock($1)', [DATA_LOCK]);
+    return state.load(tx, { start: config.mode === 'demo' ? 'demo' : 'empty' });
+  });
   app.log.info({ data: how, database: db.kind, mode: config.mode }, 'data ready');
 
   app.decorate('db', db);
@@ -104,23 +112,32 @@ async function buildServer(config) {
   });
   const queue = serial();
 
-  /** Run engine work as this person, then save what changed before answering. */
+  /**
+   * Run engine work as this person, then save what changed before answering. It runs in one
+   * transaction holding the lock shared by every copy of the API: first pick up what other
+   * copies saved, then do the work, then save. So copies take turns, and none works on old data.
+   */
   function inEngine(userId, lang, fn, info) {
     return queue(async () => {
-      engine.as(userId, lang);
+      let result, failure, failed = false;
       try {
-        return await fn();
-      } finally {
-        try {
-          const writes = await state.persist();
+        await db.transaction(async (tx) => {
+          await tx.query('SELECT pg_advisory_xact_lock($1)', [DATA_LOCK]);
+          await state.catchUp(tx);
+          engine.as(userId, lang);
+          try { result = await fn(); } catch (e) { failure = e; failed = true; }
+          // Whatever the work changed is saved, even when it ended in a refusal.
+          const writes = await state.persist(tx);
           if (info) info.writes = writes;
-        } catch (e) {
-          // Memory and database no longer match: stop, and reload from the database on restart.
-          app.log.fatal({ err: e }, 'could not save changes; stopping');
-          setImmediate(() => process.exit(1));
-          throw e;
-        }
+        });
+      } catch (e) {
+        // Memory and database no longer match: stop, and reload from the database on restart.
+        app.log.fatal({ err: e }, 'could not save changes; stopping');
+        if (config.exitOnSaveFailure !== false) setImmediate(() => process.exit(1));
+        throw e;
       }
+      if (failed) throw failure;
+      return result;
     });
   }
 
@@ -184,6 +201,8 @@ async function buildServer(config) {
   });
 
   app.get('/health', async () => ({ ok: true, mode: config.mode, database: db.kind, dataVersion: ICM.config.DATA_VERSION }));
+  /** Pick up other copies' changes now (tests; requests already do it). */
+  app.decorate('syncNow', () => inEngine(null, 'en', () => null));
 
   app.post('/api/v1/:service/:method', async (req, reply) => {
     const { service, method } = req.params;
@@ -262,7 +281,7 @@ async function buildServer(config) {
     if (ticker) clearInterval(ticker);
     await notifications.stop();
     await queue(() => undefined);
-    await db.close();
+    if (!config.db) await db.close();
   });
 
   return app;

@@ -133,11 +133,19 @@ Example: `SELECT provider, count(*), round(avg(hours_to_deliver), 1) FROM report
 - **Language**: send `X-Lang: ar` for Arabic (messages are sent in that language too).
 - **Permissions and data hiding** are the engine's, unchanged: the server tells the engine who is calling and the engine decides.
 - Requests are served one at a time, and each one's changes are saved before it is answered. If saving fails the server stops rather than answer from unsaved data.
+- **Several copies** of the API can run on one database (behind a load balancer): every piece of work takes a lock all copies share (`pg_advisory_xact_lock`), first picks up what other copies saved (every saved change is numbered from the `data_rev` sequence; removals are noted in `removed_records`), then works and saves. Notifications are claimed before sending, so none goes out twice; migrations and the first data fill are locked too. See **Running several copies** below.
 - Every 30 seconds the server moves deadlines and offers on (the work the apps' timers do today).
+
+## Running several copies
+
+- Point every copy at the same `DATABASE_URL`, with the same `FILES_KEY` and settings.
+- Files must be on storage every copy reaches: a shared volume mounted at `FILES_DIR` (Docker volume or network disk), or the cloud's object storage once that driver exists.
+- Copies take turns to change data, so adding copies helps with availability (one can stop or be updated while others answer) and with work outside the engine (files, sign-in checks, notifications), not with how many changes a second the platform makes. That ceiling is far above a pilot's needs.
+- Rate limits are counted by each copy separately for now: with 3 copies, one address can make up to 3 times the limit.
+- Update copies one at a time; a new version applies its database changes once, whichever copy starts first.
 
 ## Limits for now
 
 - **No real SMS or email provider** yet (your decision); the `dev` driver stands in.
-- **One server at a time.** Data is held in memory and saved on every change, so two copies of the server would not see each other's changes. Fine for staging and a pilot; running several copies is the next step.
 - Files are stored on the server's own disk until a cloud provider in Egypt is chosen.
 - The app and the console still use their simulated backend; connecting them to this API is a later step (including a "choose your password" page for the links).

@@ -128,11 +128,22 @@ function createNotifications({ app, ICM, db, sessions, messenger, translate, con
     return rows.length;
   }
 
-  /** Send what is due. */
+  /**
+   * Send what is due. Rows are claimed first (status 'sending', for 5 minutes), skipping rows
+   * another copy of the API has claimed, so no message goes out twice. A claim left behind by
+   * a copy that stopped mid-way is picked up again when its 5 minutes are over.
+   */
   async function send() {
-    const due = (await db.query(
-      `SELECT d.*, n.doc FROM notification_deliveries d JOIN notifications n ON n.id = d.notification_id
-       WHERE d.status = 'pending' AND d.next_at <= now() ORDER BY d.created_at LIMIT 100`)).rows;
+    const claimed = (await db.query(
+      `UPDATE notification_deliveries d SET status = 'sending', next_at = now() + interval '5 minutes'
+       FROM (SELECT notification_id, channel, destination FROM notification_deliveries
+             WHERE status IN ('pending', 'sending') AND next_at <= now()
+             ORDER BY created_at LIMIT 100 FOR UPDATE SKIP LOCKED) due
+       WHERE d.notification_id = due.notification_id AND d.channel = due.channel AND d.destination = due.destination
+       RETURNING d.*`)).rows;
+    const docs = claimed.length ? new Map((await db.query('SELECT id, doc FROM notifications WHERE id = ANY($1)',
+      [claimed.map((c) => c.notification_id)])).rows.map((r) => [r.id, r.doc])) : new Map();
+    const due = claimed.map((c) => Object.assign({}, c, { doc: docs.get(c.notification_id) })).filter((c) => c.doc);
     let sent = 0;
     for (const row of due) {
       const n = row.doc;
@@ -162,7 +173,7 @@ function createNotifications({ app, ICM, db, sessions, messenger, translate, con
         const failed = result.final || attempts >= MAX_ATTEMPTS;
         await db.query(
           `UPDATE notification_deliveries SET attempts = $4, error = $5, status = $6,
-             next_at = now() + make_interval(mins => $7) WHERE notification_id = $1 AND channel = $2 AND destination = $3`,
+             next_at = now() + make_interval(mins => $7::int) WHERE notification_id = $1 AND channel = $2 AND destination = $3`,
           [row.notification_id, row.channel, row.destination, attempts, result.error, failed ? 'failed' : 'pending', 2 ** attempts]);
       }
     }
@@ -231,7 +242,7 @@ function createNotifications({ app, ICM, db, sessions, messenger, translate, con
       await db.query(
         `INSERT INTO notification_deliveries (notification_id, channel, destination, status)
          SELECT id, 'none', '', 'skipped' FROM notifications ON CONFLICT DO NOTHING`);
-      await db.query("INSERT INTO server_flags (key) VALUES ('notifications_backfilled')");
+      await db.query("INSERT INTO server_flags (key) VALUES ('notifications_backfilled') ON CONFLICT DO NOTHING");
     },
     /** Stop pushes to a person's phones (deactivated, or signed out everywhere). */
     removeDevices: (userId) => db.query('DELETE FROM devices WHERE user_id = $1', [userId])

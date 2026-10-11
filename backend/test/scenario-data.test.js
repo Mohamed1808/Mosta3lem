@@ -44,7 +44,7 @@ test('everything the scenarios produce fits the database rules', async (t) => {
   const { ICM } = loadEngine();
   ICM.store.db = data;
   const state = createState(db, ICM);
-  const written = await state.persist();
+  const written = await db.transaction((tx) => state.persist(tx));
   assert.ok(written > 500, 'the data was saved (' + written + ' rows)');
 
   await t.test('columns are filled from the records', async () => {

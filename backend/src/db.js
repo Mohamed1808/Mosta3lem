@@ -53,21 +53,31 @@ async function openDb({ databaseUrl, dataDir }) {
   };
 }
 
-/** Apply every migrations/*.sql file not applied yet, in name order. */
+/** The lock copies of the API take while migrating (an arbitrary constant). */
+const MIGRATION_LOCK = 7316420500;
+
+/**
+ * Apply every migrations/*.sql file not applied yet, in name order. Each runs in its own
+ * transaction under a lock, so two copies starting together never apply one twice.
+ */
 async function migrate(db) {
-  await db.query('CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
-  const done = new Set((await db.query('SELECT name FROM schema_migrations')).rows.map((r) => r.name));
+  await db.transaction(async (tx) => {
+    await tx.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK]);
+    await tx.query('CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
+  });
   const dir = path.join(__dirname, '..', 'migrations');
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
   const applied = [];
   for (const f of files) {
-    if (done.has(f)) continue;
     const sql = fs.readFileSync(path.join(dir, f), 'utf8');
     await db.transaction(async (tx) => {
+      await tx.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK]);
+      const done = (await tx.query('SELECT 1 FROM schema_migrations WHERE name = $1', [f])).rows.length;
+      if (done) return;
       for (const statement of splitSql(sql)) await tx.query(statement);
       await tx.query('INSERT INTO schema_migrations (name) VALUES ($1)', [f]);
+      applied.push(f);
     });
-    applied.push(f);
   }
   return applied;
 }
