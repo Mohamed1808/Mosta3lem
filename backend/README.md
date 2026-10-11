@@ -16,7 +16,7 @@ Then open http://localhost:4000/health. With no `DATABASE_URL`, the data lives i
 
 With Docker (from the repository root): `docker compose -f backend/docker-compose.yml up --build` runs the API with PostgreSQL 16.
 
-Tests: `npm test`.
+Tests: `npm test`. On a real PostgreSQL server (an empty UTF8 database): `DATABASE_URL=... node scripts/smoke-postgres.js`. The server refuses a database that is not UTF8, since Arabic text needs it.
 
 ## Two modes
 

@@ -14,7 +14,12 @@ async function openDb({ databaseUrl, dataDir }) {
   if (databaseUrl) {
     const { Pool } = require('pg');
     const pool = new Pool({ connectionString: databaseUrl, max: 10 });
-    await pool.query('select 1');
+    // Arabic names and addresses need a UTF-8 database (Windows installs can default to WIN1252).
+    const enc = (await pool.query('SHOW server_encoding')).rows[0].server_encoding;
+    if (String(enc).toUpperCase() !== 'UTF8') {
+      await pool.end();
+      throw new Error(`The database uses the ${enc} encoding; Mosta3lem needs UTF8 (CREATE DATABASE ... ENCODING 'UTF8').`);
+    }
     return {
       kind: 'postgres',
       query: (sql, params) => pool.query(sql, params),
