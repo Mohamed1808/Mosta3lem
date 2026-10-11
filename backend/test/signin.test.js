@@ -152,7 +152,7 @@ test('sign-in in demo mode', async (t) => {
 });
 
 test('a live platform', async (t) => {
-  const app = await start({}, { MOSTA3LEM_MODE: 'live', ALLOW_DEV_MESSAGING: 'true' });
+  const app = await start({}, { MOSTA3LEM_MODE: 'live', ALLOW_DEV_MESSAGING: 'true', FILES_KEY: require('crypto').randomBytes(32).toString('base64') });
   t.after(() => app.close());
   const call = client(app);
 

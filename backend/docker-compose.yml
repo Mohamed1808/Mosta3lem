@@ -25,9 +25,12 @@ services:
       CORS_ORIGINS: http://localhost:3600,http://localhost:8081
     ports:
       - "4000:4000"
+    volumes:
+      - files-data:/srv/backend/.data/files
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   db-data:
+  files-data:
