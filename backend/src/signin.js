@@ -41,7 +41,8 @@ function normalizePhone(input) {
 const maskPhone = (p) => p.slice(0, 3) + '*****' + p.slice(-3);
 const maskEmail = (e) => { const at = e.indexOf('@'); return at > 1 ? e.charAt(0) + '****' + e.slice(at) : e; };
 
-function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config }) {
+function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security }) {
+  const record = (kind, userId, req, detail) => (security ? security.record(kind, { userId, req, detail }) : Promise.resolve());
   const C = ICM.config;
   const users = () => ICM.store.db.users;
   const portalOf = (u) => ICM.services.auth.portalOf(u);
@@ -111,11 +112,12 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config })
   route('password', async (body, req) => {
     const password = String(body.password || '');
     const u = byEmail(body.email);
-    if (!u) { await burn(password); throw new Refusal('errors.wrongPassword'); }
+    if (!u) { await burn(password); await record('signin.unknown_email', null, req); throw new Refusal('errors.wrongPassword'); }
     const cred = await credentialOf(u.id);
     const lockedUntil = cred && cred.locked_until ? new Date(cred.locked_until).getTime() : 0;
     if (lockedUntil > Date.now()) {
       await burn(password);
+      await record('signin.while_locked', u.id, req);
       throw new Refusal('errors.signInLocked', { min: Math.ceil((lockedUntil - Date.now()) / 60000) });
     }
     const ok = cred && cred.password_hash
@@ -129,6 +131,7 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config })
         `INSERT INTO credentials (user_id, failed_count, locked_until) VALUES ($1, $2, $3)
          ON CONFLICT (user_id) DO UPDATE SET failed_count = EXCLUDED.failed_count, locked_until = EXCLUDED.locked_until`,
         [u.id, lock ? 0 : fails, until ? until.toISOString() : null]);
+      await record(lock ? 'signin.locked' : 'signin.password_failed', u.id, req, { fails });
       if (lock) {
         await mirrorLock(u.id, until.getTime());
         throw new Refusal('errors.signInLocked', { min: C.SIGN_IN_LOCK_MINUTES });
@@ -155,6 +158,7 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config })
     if (!row || row.used_at || !row.live || row.attempts >= CODE_TRIES) throw new Refusal('errors.codeExpired');
     if (!sameHash(sha(id + ':' + code), row.code_hash)) {
       await db.query('UPDATE sign_in_codes SET attempts = attempts + 1 WHERE id = $1', [id]);
+      await record('signin.code_failed', row.user_id, req, { channel: row.channel, attempt: row.attempts + 1 });
       throw new Refusal(row.attempts + 1 >= CODE_TRIES ? 'errors.codeExpired' : 'errors.codeWrong');
     }
     if (row.purpose === 'signup') {
@@ -169,17 +173,18 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config })
     // A mobile with no account got no code, so any code for it is "wrong".
     if (!u || u.active === false) throw new Refusal('errors.codeWrong');
     const session = await sessions.create(u.id, req.headers['user-agent']);
+    await record('signin.ok', u.id, req, { channel: row.channel });
     const me = await inEngine(u.id, langOf(req), () => ICM.services.auth.currentUser());
     return { ok: true, result: me, session };
   });
 
   route('forgot', async (body, req) => {
     const u = byEmail(body.email);
-    if (u) await issuePasswordLink(u, 'reset', langOf(req));
+    if (u) { await issuePasswordLink(u, 'reset', langOf(req)); await record('password.reset_requested', u.id, req); }
     return { ok: true, result: null };
   });
 
-  route('set-password', async (body) => {
+  route('set-password', async (body, req) => {
     const token = String(body.token || '');
     const row = token
       ? (await db.query('SELECT *, expires_at > now() AS live FROM password_tokens WHERE token_hash = $1', [sha(token)])).rows[0]
@@ -199,6 +204,7 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config })
     });
     await sessions.removeUser(u.id);
     await inEngine(null, 'en', () => { u.lockedUntil = null; u.signInFails = 0; u.invited = false; });
+    await record('password.set', u.id, req, { from: row.purpose });
     return { ok: true, result: null };
   });
 

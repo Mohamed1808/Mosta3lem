@@ -25,6 +25,7 @@ const { registerSignIn } = require('./signin');
 const { createFiles } = require('./files');
 const { createNotifications } = require('./notifications');
 const { Refusal } = require('./refusal');
+const { createSecurityLog } = require('./security');
 
 /** Demo helpers that must never be reachable on a live platform: "sign in as" anyone,
     the demo password check, and the demo clock and shortcuts. */
@@ -37,7 +38,24 @@ const SIGN_OUT_AFTER = {
   'staff.setActive': (args) => (args[1] === false ? args[0] : null)
 };
 
+/** The only methods that answer without a sign-in. Everything else needs one, whatever the
+    engine would do, so a method added later is private unless it is listed here. */
+const PUBLIC = new Set([
+  'auth.currentUser', 'auth.logout', 'config.get', 'demo.clock', 'demo.tick',
+  'registration.submit',                                   // a new provider (live: with a confirmed mobile)
+  'auth.loginAs', 'auth.listDemoUsers', 'auth.checkPassword' // demo mode only (see DEMO_ONLY)
+]);
+
+/** Demo controls that change everyone's data: on a shared server, the Super admin only. */
+const SUPER_ADMIN_ONLY = new Set(['demo.reset', 'demo.advance', 'demo.resetClock', 'demo.simulateBatchWork']);
+
+/** Without a sign-in, requests stay small (sign-up may carry document photos). */
+const ANONYMOUS_BODY_LIMIT = 64 * 1024;
+
 const STATUS = { 'errors.notSignedIn': 401, 'errors.forbidden': 403, 'errors.notFound': 404 };
+
+/** A URL without its query string, so signed file links never reach the logs. */
+const pathOnly = (url) => String(url || '').split('?')[0];
 
 /** A one-at-a-time queue: the engine works on shared data, so requests take turns. */
 function serial() {
@@ -51,9 +69,16 @@ function serial() {
 
 async function buildServer(config) {
   const app = Fastify({
-    logger: config.logger === false ? false : { level: config.logLevel || 'info', redact: ['req.headers.authorization'] },
+    logger: config.logger === false ? false : {
+      level: config.logLevel || 'info',
+      redact: ['req.headers.authorization', 'req.headers["x-phone-proof"]'],
+      serializers: { req: (req) => ({ method: req.method, url: pathOnly(req.url), ip: req.ip }) },
+      ...(config.logStream ? { stream: config.logStream } : {})
+    },
     bodyLimit: config.bodyLimitMb * 1024 * 1024,
-    trustProxy: true
+    // Only trust X-Forwarded-For from the proxy in front of the API (TRUST_PROXY); trusting it
+    // from anyone would let a caller pick their own address and slip past the rate limits.
+    trustProxy: config.trustProxy
   });
 
   const db = await openDb({ databaseUrl: config.databaseUrl, dataDir: config.dataDir });
@@ -67,7 +92,16 @@ async function buildServer(config) {
   app.log.info({ data: how, database: db.kind, mode: config.mode }, 'data ready');
 
   app.decorate('db', db);
-  const sessions = createSessions(db, { ttlHours: config.sessionHours });
+  const security = createSecurityLog(db, app.log);
+  app.decorate('security', security);
+  const isStaff = (userId) => {
+    const u = ICM.store.db.users.find((x) => x.id === userId);
+    return !!u && ICM.wf.isPlatformRole(u.role);
+  };
+  const sessions = createSessions(db, {
+    ttlHours: config.sessionHours,
+    idleHoursFor: (userId) => (isStaff(userId) ? config.staffIdleHours : config.idleHours)
+  });
   const queue = serial();
 
   /** Run engine work as this person, then save what changed before answering. */
@@ -112,7 +146,7 @@ async function buildServer(config) {
   });
 
   const messenger = createMessenger({ driver: config.messagingDriver, db, log: app.log });
-  const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config });
+  const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security });
   app.decorate('adminTools', { createSuperAdmin: signIn.createSuperAdmin });
 
   const files = createFiles({ db, config, log: app.log });
@@ -129,10 +163,24 @@ async function buildServer(config) {
   app.decorate('notifyNow', () => notifications.run());
   const apiBase = (req) => config.publicApiUrl || `${req.protocol}://${req.host}`;
 
+  // Small anonymous requests only: refuse big bodies before they are read.
+  app.addHook('onRequest', async (req, reply) => {
+    const size = Number(req.headers['content-length'] || 0);
+    if (size > ANONYMOUS_BODY_LIMIT && !bearer(req) && pathOnly(req.url) !== '/api/v1/registration/submit') {
+      return reply.code(413).send({ ok: false, error: { key: 'errors.badRequest', params: null } });
+    }
+  });
+
   app.addHook('onSend', async (req, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'no-referrer');
     reply.header('Cache-Control', 'no-store');
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('Cross-Origin-Opener-Policy', 'same-origin');
+    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    // The API answers JSON (and files, which set their own stricter policy): nothing to run.
+    if (!reply.getHeader('Content-Security-Policy')) reply.header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+    if (req.protocol === 'https') reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   });
 
   app.get('/health', async () => ({ ok: true, mode: config.mode, database: db.kind, dataVersion: ICM.config.DATA_VERSION }));
@@ -150,6 +198,11 @@ async function buildServer(config) {
     const token = bearer(req);
     const userId = token ? await sessions.lookup(token) : null;
     if (token && !userId) return fail(401, 'errors.notSignedIn');
+    if (!userId && !PUBLIC.has(name)) return fail(401, 'errors.notSignedIn');
+    if (SUPER_ADMIN_ONLY.has(name)) {
+      const u = ICM.store.db.users.find((x) => x.id === userId);
+      if (!u || u.role !== 'platform_admin') return fail(403, 'errors.forbidden');
+    }
     const lang = req.headers['x-lang'] === 'ar' ? 'ar' : 'en';
 
     let result, change, usersBefore, proofId;
@@ -180,7 +233,12 @@ async function buildServer(config) {
     if (change) body.session = await sessions.create(change, req.headers['user-agent']);
     if (change === null) await sessions.remove(token);
     const signOut = SIGN_OUT_AFTER[name] && SIGN_OUT_AFTER[name](args);
-    if (signOut) { await sessions.removeUser(signOut); await notifications.removeDevices(signOut); }
+    if (signOut) {
+      await sessions.removeUser(signOut);
+      await notifications.removeDevices(signOut);
+      await security.record('signout.everywhere', { userId: signOut, req, detail: { by: userId, after: name } });
+    }
+    if (change) await security.record('signin.demo', { userId: change, req });
     // Send any notifications this call created, without making the caller wait.
     notifications.run();
     return body;

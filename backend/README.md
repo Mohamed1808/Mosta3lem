@@ -18,6 +18,10 @@ With Docker (from the repository root): `docker compose -f backend/docker-compos
 
 Tests: `npm test`. On a real PostgreSQL server (an empty UTF8 database): `DATABASE_URL=... node scripts/smoke-postgres.js`. The server refuses a database that is not UTF8, since Arabic text needs it.
 
+## Security
+
+What is protected and how, the go-live checklist and what is still open: [../SECURITY.md](../SECURITY.md).
+
 ## Two modes
 
 | | demo (default) | live |
