@@ -22,3 +22,17 @@ Claude Code → GitHub → local/dev → Docker → staging → testing, securit
 - Internal console for the Mosta3lem team: see [console/README.md](console/README.md). Test checklist: [docs/console-test.md](docs/console-test.md).
 - Prototype: open `prototype/index.html`, or run `node prototype/serve.js` and open http://localhost:3500. Tests: `node prototype/tests/run-node.js` and `node prototype/tests/scenarios.js`.
 - Vercel (prototype site): set the project's Root Directory to `prototype`.
+
+## Checks on GitHub
+
+Every pull request runs `.github/workflows/checks.yml`:
+
+| Check | What it runs |
+|---|---|
+| Engine | unit tests, the 34 scenarios, English/Arabic translation check |
+| API tests | `backend` tests on PGlite |
+| API on PostgreSQL 16 | `backend/scripts/smoke-postgres.js` against a real PostgreSQL server |
+| Console | types, lint, translations, production build |
+| Mobile app | types, lint, translations |
+
+A pull request should only be merged when every check is green.

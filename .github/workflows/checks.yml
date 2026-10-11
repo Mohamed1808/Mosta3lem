@@ -1,0 +1,134 @@
+# Every pull request and every change to main runs all the checks. A red check means
+# something broke; the job's log says which test and why.
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  engine:
+    name: Engine (workflow rules, scenarios, translations)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Unit tests
+        run: node prototype/tests/run-node.js
+      - name: Scenarios
+        run: node prototype/tests/scenarios.js
+      - name: Translations (English and Arabic)
+        run: node prototype/tests/i18n-check.js
+
+  backend:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: API tests
+        run: npm test
+
+  backend-postgres:
+    name: API on PostgreSQL 16
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: mosta3lem
+          POSTGRES_USER: mosta3lem
+          POSTGRES_PASSWORD: ci-only-not-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mosta3lem -d mosta3lem"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Smoke test on a real PostgreSQL server
+        run: node scripts/smoke-postgres.js
+        env:
+          DATABASE_URL: postgres://mosta3lem:ci-only-not-secret@localhost:5432/mosta3lem
+
+  console:
+    name: Console (types, lint, translations, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npx eslint src
+      - name: Translations
+        run: node scripts/i18n-check.js
+      - name: Production build
+        run: npx next build
+
+  app:
+    name: Mobile app (types, lint, translations)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npx eslint src
+      - name: Translations
+        run: node scripts/i18n-check.js
