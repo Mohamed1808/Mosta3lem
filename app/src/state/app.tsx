@@ -5,8 +5,9 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { icm, services, startBackend } from '@/backend/engine';
+import { icm, onSignedOut, remoteMode, services, startBackend } from '@/backend/engine';
 import { installStrings } from '@/i18n/strings';
+import { registerForPush, unregisterPush } from '@/lib/push';
 
 export type Lang = 'en' | 'ar';
 
@@ -28,7 +29,10 @@ type AppState = {
   service: string | null;
   setService: (s: string) => void;
   setLang: (l: Lang) => void;
+  /** Demo: sign in as this person. */
   signIn: (userId: string) => Promise<void>;
+  /** With the real API, after the code step (or a provider's sign-up): the signed-in person. */
+  completeSignIn: (s: Session | null) => void;
   signOut: () => Promise<void>;
   refresh: () => void;
   syncSession: () => Promise<void>;
@@ -58,6 +62,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let unsub: (() => void) | null = null;
     let tick: ReturnType<typeof setInterval> | null = null;
+    onSignedOut(() => { setSession(null); setService(null); setRev((r) => r + 1); });
     startBackend()
       .then(async (ICM) => {
         installStrings(ICM);
@@ -68,15 +73,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // once the change has finished.
           setTimeout(() => { syncSession(); }, 0);
         });
-        const s = await services().auth.currentUser();
+        let s: Session | null = null;
+        try { s = await services().auth.currentUser(); } catch { s = null; }
         setSession(s);
         setService(s && s.provider ? s.provider.services[0] : null);
         setReady(true);
+        if (remoteMode()) {
+          // The server moves deadlines on by itself. A phone still signed in renews its push token.
+          if (s) registerForPush();
+          return;
+        }
         // The demo clock moves deadlines, offer expiry and SLA flags forward.
         try { await services().demo.tick(); } catch { /* ignore */ }
         tick = setInterval(() => { services().demo.tick().catch(() => undefined); }, 30000);
       })
-      .catch((e) => setError(String(e && e.message ? e.message : e)));
+      // A translated message when the engine knows it (for example: no connection to the server).
+      .catch((e) => setError(e && e.key && icm() ? (icm().t(e.key) as string) : String(e && e.message ? e.message : e)));
     return () => { if (unsub) unsub(); if (tick) clearInterval(tick); };
   }, [syncSession]);
 
@@ -92,10 +104,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSession(s);
     setService(s && s.provider ? s.provider.services[0] : null);
     setRev((r) => r + 1);
+    if (remoteMode()) registerForPush();
+  }, []);
+
+  const completeSignIn = useCallback((s: Session | null) => {
+    setSession(s);
+    setService(s && s.provider ? s.provider.services[0] : null);
+    setRev((r) => r + 1);
+    if (s) registerForPush();
   }, []);
 
   const signOut = useCallback(async () => {
-    await services().auth.logout();
+    await unregisterPush();
+    await services().auth.logout().catch(() => undefined);
     setSession(null);
     setService(null);
     setRev((r) => r + 1);
@@ -104,8 +125,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppState>(() => ({
     ready, error, session, lang, rtl: lang === 'ar', rev, service,
     setService: (s: string) => { setService(s); setRev((r) => r + 1); },
-    setLang, signIn, signOut, refresh, syncSession,
-  }), [ready, error, session, lang, rev, service, setLang, signIn, signOut, refresh, syncSession]);
+    setLang, signIn, completeSignIn, signOut, refresh, syncSession,
+  }), [ready, error, session, lang, rev, service, setLang, signIn, completeSignIn, signOut, refresh, syncSession]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

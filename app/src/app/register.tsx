@@ -2,13 +2,16 @@
  * Provider sign-up: a company or an individual registers from the app in five steps
  * (type and services, details, address and coverage, documents, confirm). The mobile
  * number is confirmed with a one-time code, then the application is submitted and the
- * owner is signed in to follow it. The SMS is simulated: the code is shown on screen.
+ * owner is signed in to follow it.
+ *
+ * With the real API the server sends the SMS and checks the code; the confirmed mobile
+ * travels with the application. On the device's own demo data the code is shown on screen.
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
-import { icm, services } from '@/backend/engine';
+import { icm, remoteMode, services } from '@/backend/engine';
 import { CheckRow, FormView, Values } from '@/components/form';
 import {
   areaDef, detailsDef, DocSlot, docTypes, emptyValues, RegSummary, Step, stepOfField, STEPS, TypeStep, validate, withAreaRules,
@@ -24,7 +27,11 @@ const digits = (s: string) => String(s || '').replace(/\D/g, '');
 
 export default function Register() {
   const t = useT();
-  const { signIn } = useApp();
+  const { signIn, completeSignIn } = useApp();
+  const remote = remoteMode();
+  const [challengeId, setChallengeId] = useState('');
+  // The mobile was confirmed with the server (kept if the application must be corrected first).
+  const [proved, setProved] = useState(false);
   const { ask, toast } = useDialog();
   const [step, setStep] = useState<Step>('type');
   const [values, setValues] = useState<Values>(emptyValues);
@@ -59,23 +66,40 @@ export default function Register() {
     if (await ask({ title: t('signup.leaveTitle'), message: t('signup.leaveBody'), confirmLabel: t('signup.leave'), danger: true })) router.back();
   };
 
-  const sendCode = () => {
+  const sendCode = async () => {
     const errs = validate(values, ['submit'], { terms: true });
     if (Object.keys(errs).length) { setErrors(errs); return; }
-    setSent(String(Math.floor(100000 + Math.random() * 900000)));
     setCode('');
     setCodeErr('');
+    if (remote) {
+      setBusy(true);
+      try {
+        const r: any = await icm().remote.session.phone(phone, 'signup');
+        setChallengeId(r.challengeId);
+        setProved(false);
+        setSent(r.sentTo);
+      } catch (e) { toast(errorText(e), 'danger'); } finally { setBusy(false); }
+      return;
+    }
+    setSent(String(Math.floor(100000 + Math.random() * 900000)));
   };
 
   const submit = async () => {
-    if (digits(code) !== sent) { setCodeErr(t('login.wrongCode')); return; }
+    if (!remote && digits(code) !== sent) { setCodeErr(t('login.wrongCode')); return; }
     setBusy(true);
     try {
+      if (remote && !proved) {
+        try {
+          await icm().remote.session.verify(challengeId, code);
+          setProved(true);
+        } catch (e) { setCodeErr(errorText(e)); setCode(''); return; }
+      }
       const all = validate(values, ['type', 'details', 'area', 'submit'], { terms: true });
       const first = Object.keys(all)[0];
       if (first) { setErrors(all); setSent(''); setStep(stepOfField(first)); return; }
       const res = await services().registration.submit(withExpiry(values));
-      await signIn(res.userId);
+      if (remote) completeSignIn(await services().auth.currentUser());
+      else await signIn(res.userId);
       toast(t('signup.received', { ref: res.ref }));
       router.replace('/application');
     } catch (e: any) {
@@ -152,18 +176,18 @@ export default function Register() {
             {!sent ? (
               <Stack>
                 <Txt c="muted">{t('signup.verifyBody', { phone: phone || '-' })}</Txt>
-                <Button label={t('login.sendCode')} kind="primary" icon="send" onPress={sendCode} block />
+                <Button label={t('login.sendCode')} kind="primary" icon="send" onPress={sendCode} busy={busy} block />
                 <Button label={t('common.back')} icon="chevronLeft" onPress={() => go('docs')} block />
               </Stack>
             ) : (
               <Stack>
-                <Txt c="muted">{t('login.codeSent', { phone })}</Txt>
-                <Notice tone="info" text={t('login.demoCode', { code: sent })} />
+                <Txt c="muted">{t('login.codeSent', { phone: remote ? sent : phone })}</Txt>
+                {!remote ? <Notice tone="info" text={t('login.demoCode', { code: sent })} /> : null}
                 <TextInput value={code} onChangeText={(v) => { setCode(digits(v).slice(0, 6)); setCodeErr(''); }} keyboardType="number-pad" maxLength={6}
                   autoComplete="one-time-code" textContentType="oneTimeCode" placeholder="000000" onSubmitEditing={submit} accessibilityLabel={t('login.codeTitle')}
                   style={[inputStyle, { textAlign: 'center', fontSize: 24, letterSpacing: 10, writingDirection: 'ltr' }]} />
                 {codeErr ? <Txt v="sm" c="bad">{codeErr}</Txt> : null}
-                <Button label={t('reg.submitCta')} kind="primary" icon="check" onPress={submit} disabled={code.length !== 6} busy={busy} block />
+                <Button label={t('reg.submitCta')} kind="primary" icon="check" onPress={submit} disabled={!proved && code.length !== 6} busy={busy} block />
                 <Button label={t('login.changeNumber')} kind="ghost" onPress={() => { setSent(''); go('details'); }} />
               </Stack>
             )}

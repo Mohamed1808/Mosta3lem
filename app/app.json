@@ -52,7 +52,14 @@
           "locationWhenInUsePermission": "Mosta3lem records your location when you check in at a visit address and when you take visit photos."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#1D5BA6"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

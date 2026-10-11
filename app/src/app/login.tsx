@@ -1,14 +1,17 @@
 /**
  * Sign in. Service providers use their mobile number and a one-time code; organisations
- * that request work use their work email, a password and a one-time code. No SMS or email
- * provider is chosen yet, so the code is generated on the device and shown in a demo notice.
+ * that request work use their work email, a password and a one-time code.
+ *
+ * With the real API the server sends and checks the codes, and "Forgot your password?"
+ * emails a link. On the device's own demo data the code is generated here and shown in a
+ * demo notice. Demo accounts are offered whenever the data is demo data.
  */
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { icm, services } from '@/backend/engine';
+import { icm, remoteMode, services } from '@/backend/engine';
 import { errorText } from '@/lib/format';
 import { useApp, useT } from '@/state/app';
 import { colors, radius, space } from '@/theme';
@@ -22,7 +25,8 @@ type Mode = 'provider' | 'client';
 export default function Login() {
   const t = useT();
   const insets = useSafeAreaInsets();
-  const { signIn, lang, setLang } = useApp();
+  const { signIn, completeSignIn, lang, setLang } = useApp();
+  const remote = remoteMode();
   const [mode, setMode] = useState<Mode>('provider');
   const [step, setStep] = useState<'start' | 'code'>('start');
   const [phone, setPhone] = useState('');
@@ -36,6 +40,14 @@ export default function Login() {
   const [userId, setUserId] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [challengeId, setChallengeId] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
+  // Demo data (on the device, or a server in demo mode): offer the demo accounts and codes help.
+  const [demoData, setDemoData] = useState(!remote);
+  useEffect(() => {
+    if (!remote) return;
+    services().auth.listDemoUsers().then(() => setDemoData(true), () => setDemoData(false));
+  }, [remote]);
 
   const toCode = (id: string, to: string) => {
     setUserId(id);
@@ -48,6 +60,15 @@ export default function Login() {
 
   const sendPhoneCode = async () => {
     setErr('');
+    if (remote) {
+      setBusy(true);
+      try {
+        const r: any = await icm().remote.session.phone(phone, 'signin');
+        setChallengeId(r.challengeId);
+        toCode('', r.sentTo);
+      } catch (e) { setErr(errorText(e)); } finally { setBusy(false); }
+      return;
+    }
     const p = digits(phone);
     const users: any[] = await services().auth.listDemoUsers();
     const u = users.find((x) => x.phone && digits(x.phone) === p && x.portal !== 'entity' && x.portal !== 'admin');
@@ -59,6 +80,13 @@ export default function Login() {
     setErr('');
     setBusy(true);
     try {
+      if (remote) {
+        const r: any = await icm().remote.session.password(email, password);
+        setChallengeId(r.challengeId);
+        setPassword('');
+        toCode('', r.sentTo);
+        return;
+      }
       const r: any = await services().auth.checkPassword(email, password);
       setPassword('');
       toCode(r.userId, r.maskedEmail);
@@ -68,12 +96,26 @@ export default function Login() {
   };
 
   const verify = async () => {
+    if (remote) {
+      setBusy(true);
+      try {
+        const s = await icm().remote.session.verify(challengeId, code);
+        completeSignIn(s);
+        router.replace('/');
+      } catch (e) { setErr(errorText(e)); setCode(''); } finally { setBusy(false); }
+      return;
+    }
     if (digits(code) !== sent) { setErr(t('login.wrongCode')); return; }
     setBusy(true);
     try { await signIn(userId); router.replace('/'); } finally { setBusy(false); }
   };
 
-  const switchMode = (m: Mode) => { setMode(m); setStep('start'); setErr(''); setForgot(false); };
+  const sendForgot = async () => {
+    setErr(''); setBusy(true);
+    try { await icm().remote.session.forgot(email); setForgotSent(true); } catch (e) { setErr(errorText(e)); } finally { setBusy(false); }
+  };
+
+  const switchMode = (m: Mode) => { setMode(m); setStep('start'); setErr(''); setForgot(false); setForgotSent(false); };
   const ltrInput = { textAlign: 'left' as const, writingDirection: 'ltr' as const };
 
   return (
@@ -107,7 +149,7 @@ export default function Login() {
                     <Txt v="xs" c="faint">{t('login.phoneHint')}</Txt>
                   </Stack>
                   {err ? <Notice tone="danger" text={err} /> : null}
-                  <Button label={t('login.sendCode')} kind="primary" onPress={sendPhoneCode} disabled={digits(phone).length < 10} block />
+                  <Button label={t('login.sendCode')} kind="primary" onPress={sendPhoneCode} disabled={digits(phone).length < 10} busy={busy} block />
                 </>
               ) : (
                 <>
@@ -129,18 +171,26 @@ export default function Login() {
                     </Row>
                   </Stack>
                   {err ? <Notice tone="danger" text={err} /> : null}
-                  <Notice tone="info" text={t('login.demoPassword', { pw: icm().config.DEMO_PASSWORD })} />
+                  {demoData ? <Notice tone="info" text={t('login.demoPassword', { pw: icm().config.DEMO_PASSWORD })} /> : null}
                   <Button label={t('login.continue')} kind="primary" onPress={checkPassword} disabled={!email.trim() || !password} busy={busy} block />
                   <Button label={t('login.forgot')} kind="ghost" onPress={() => setForgot(!forgot)} />
-                  {forgot ? <Notice tone="info" text={t('login.forgotBody')} /> : null}
+                  {forgot && !remote ? <Notice tone="info" text={t('login.forgotBody')} /> : null}
+                  {forgot && remote ? (
+                    <Stack gap={8}>
+                      <Txt v="sm" c="muted">{t('login.forgotBodyServer')}</Txt>
+                      {forgotSent ? <Notice tone="success" text={t('login.forgotSent')} />
+                        : <Button label={t('login.forgotSend')} onPress={sendForgot} disabled={!email.trim()} busy={busy} block />}
+                    </Stack>
+                  ) : null}
                 </>
               )}
             </Stack>
           ) : (
             <Stack>
               <Txt v="title">{t('login.codeTitle')}</Txt>
-              <Txt c="muted">{mode === 'provider' ? t('login.codeSent', { phone: sentTo }) : t('login.codeSentEmail', { email: sentTo })}</Txt>
-              <Notice tone="info" text={t(mode === 'provider' ? 'login.demoCode' : 'login.demoCodeEmail', { code: sent })} />
+              <Txt c="muted">{mode === 'provider' ? t(remote ? 'login.codeSentAny' : 'login.codeSent', { phone: sentTo }) : t('login.codeSentEmail', { email: sentTo })}</Txt>
+              {!remote ? <Notice tone="info" text={t(mode === 'provider' ? 'login.demoCode' : 'login.demoCodeEmail', { code: sent })} />
+                : demoData ? <Notice tone="info" text={t('login.testServerCode')} /> : null}
               <TextInput value={code} onChangeText={(v) => { setCode(digits(v).slice(0, 6)); setErr(''); }} keyboardType="number-pad" maxLength={6}
                 autoComplete="one-time-code" textContentType="oneTimeCode" placeholder="000000" onSubmitEditing={verify}
                 style={[inputStyle, { textAlign: 'center', fontSize: 26, letterSpacing: 10, writingDirection: 'ltr' }]} accessibilityLabel={t('login.codeTitle')} />
@@ -160,11 +210,15 @@ export default function Login() {
               </Stack>
             </>
           ) : null}
-          <View style={{ height: 1, backgroundColor: colors.border }} />
-          <Stack gap={8}>
-            <Txt v="sm" c="muted">{t('login.demoAccountsHint')}</Txt>
-            <Button label={t('login.demoAccounts')} icon="users" onPress={() => router.push('/demo')} block />
-          </Stack>
+          {demoData ? (
+            <>
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+              <Stack gap={8}>
+                <Txt v="sm" c="muted">{t('login.demoAccountsHint')}</Txt>
+                <Button label={t('login.demoAccounts')} icon="users" onPress={() => router.push('/demo')} block />
+              </Stack>
+            </>
+          ) : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
