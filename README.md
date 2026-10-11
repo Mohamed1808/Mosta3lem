@@ -8,8 +8,8 @@ Marketplace for field investigations and collections in Egypt: banks and finance
 |---|---|
 | `app/` | The Mosta3lem mobile app (React Native with Expo). One app for providers and requesters; the login decides what each person sees. Provider side first. |
 | `prototype/` | The clickable HTML prototype (all portals, no build step). It is the spec, and its engine powers the app's simulated backend until the real API exists. |
-| `backend/` | (next) The API and database, in Docker. |
-| `console/` | (later) The internal web console for operations, finance, data, management, support, sales and legal. |
+| `backend/` | The API and its PostgreSQL database. Step 1: the shared engine behind a real API. See [backend/README.md](backend/README.md). |
+| `console/` | The internal web console for operations, finance, data, management, support, sales and legal. |
 
 ## Delivery pipeline
 
