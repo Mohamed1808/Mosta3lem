@@ -10,10 +10,10 @@
 
 /** Event kinds by what they mean, for filtering. */
 const GROUPS = {
-  signin: ['signin.ok', 'signin.demo'],
+  signin: ['signin.ok', 'signin.demo', 'authenticator.enrolled'],
   failed: ['signin.password_failed', 'signin.code_failed', 'signin.unknown_email', 'signin.while_locked'],
   locked: ['signin.locked'],
-  password: ['password.reset_requested', 'password.set'],
+  password: ['password.reset_requested', 'password.set', 'authenticator.reset'],
   signout: ['signout.everywhere'],
   log: ['security_log.viewed']
 };

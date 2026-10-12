@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const { readConfig } = require('../src/config');
 const { buildServer } = require('../src/server');
+const totp = require('../src/totp');
 
 if (!process.env.DATABASE_URL) {
   console.error('Set DATABASE_URL to an empty PostgreSQL database.');
@@ -64,15 +65,20 @@ async function step(name, fn) {
       "INSERT INTO cases (id, doc) SELECT 'case_x', jsonb_set(jsonb_set(doc, '{id}', '\"case_x\"'), '{entityId}', '\"ent_missing\"') FROM cases LIMIT 1")), /cases_entity_fk/);
   });
 
-  await step('real sign-in: password, emailed code, session', async () => {
+  await step('real sign-in: password, emailed code, authenticator set up, session', async () => {
     laila = (await call('auth.listDemoUsers')).body.result.find((u) => u.role === 'platform_admin');
     const start = await post('password', { email: laila.email, password: 'Mosta3lem@2026' });
     assert.equal(start.status, 200, JSON.stringify(start.body));
     const msg = (await app.db.query('SELECT body FROM outbox WHERE destination = $1 ORDER BY id DESC LIMIT 1', [laila.email])).rows[0];
     const code = msg.body.match(/\b(\d{6})\b/)[1];
-    const done = await post('verify', { challengeId: start.body.result.challengeId, code });
+    const enrol = await post('verify', { challengeId: start.body.result.challengeId, code });
+    assert.equal(enrol.status, 200, JSON.stringify(enrol.body));
+    // The Super admin signs in with an authenticator app: set it up with its first code.
+    const appCode = totp.codeAt(enrol.body.result.enrol.secret, totp.stepAt(Date.now()));
+    const done = await post('verify', { challengeId: enrol.body.result.challengeId, code: appCode });
     assert.equal(done.status, 200, JSON.stringify(done.body));
     token = done.body.session.token;
+    assert.ok((await app.db.query('SELECT confirmed_at FROM authenticators')).rows[0].confirmed_at);
   });
 
   await step('a change is saved in one transaction', async () => {

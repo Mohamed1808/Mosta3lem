@@ -160,6 +160,8 @@ function createFiles({ db, config, log }) {
   }
 
   return {
+    /** A key for another purpose, derived from the same master key (e.g. authenticator secrets). */
+    keyFor: (label) => derive(label),
     ingest,
     present,
     referenced,

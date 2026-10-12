@@ -67,15 +67,22 @@ const en = {
         signin_ok: 'Signed in', signin_demo: 'Signed in (demo)', signin_password_failed: 'Wrong password', signin_code_failed: 'Wrong code',
         signin_unknown_email: 'Unknown email', signin_while_locked: 'Tried while locked', signin_locked: 'Account locked',
         password_reset_requested: 'Asked for a password link', password_set: 'Chose a password', signout_everywhere: 'Signed out everywhere',
-        security_log_viewed: 'Opened the security log'
+        security_log_viewed: 'Opened the security log', authenticator_enrolled: 'Set up an authenticator app', authenticator_reset: 'Authenticator app removed'
       },
-      channel: { email: 'Code by email', sms: 'Code by SMS', undefined: '' },
+      channel: { email: 'Code by email', sms: 'Code by SMS', authenticator: 'Authenticator app', undefined: '' },
       from: { invite: 'From an invitation', reset: 'From a reset link', undefined: '' },
       attempt: 'Attempt {n}', lockedAfter: 'After {n} wrong passwords', codeAttempt: '{channel}, attempt {n}', afterDeactivate: 'Account deactivated', afterReset: 'Sign-in reset',
       noAccount: 'No account', removedUser: 'Removed account', none: 'Nothing in this period.', older: 'Show older events'
     },
     name: 'Mosta3lem Console', tagline: 'Internal console for the Mosta3lem team.',
     signIn: 'Sign in', email: 'Work email', password: 'Password', show: 'Show', hide: 'Hide', continue: 'Continue',
+    appCodeBody: 'Open your authenticator app and type the 6-digit code it shows for Mosta3lem.',
+    enrol: {
+      title: 'Set up your authenticator app', body: 'Your account signs in with an authenticator app instead of an emailed code. This takes a minute, once.',
+      step1: 'Install an authenticator app on your phone (Google Authenticator or Microsoft Authenticator).',
+      step2: 'In the app, add an account and scan this QR code.', step3: 'Type the 6-digit code the app shows for Mosta3lem.',
+      qrAlt: 'QR code to add Mosta3lem to your authenticator app', cantScan: 'Cannot scan? Type this key in the app instead:', codeLabel: 'Code from the app'
+    },
     codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code to {email}.', demoCode: 'Demo: no email is sent. Your code is {code}.',
     verify: 'Verify and sign in', wrongCode: 'The code is not correct.', back: 'Back',
     demoPassword: 'Demo: every staff account uses the password {pw}.',
@@ -269,15 +276,22 @@ const ar: typeof en = {
         signin_ok: 'سجّل الدخول', signin_demo: 'سجّل الدخول (تجريبي)', signin_password_failed: 'كلمة مرور خاطئة', signin_code_failed: 'رمز خاطئ',
         signin_unknown_email: 'بريد غير معروف', signin_while_locked: 'محاولة أثناء القفل', signin_locked: 'تم قفل الحساب',
         password_reset_requested: 'طلب رابط كلمة مرور', password_set: 'اختار كلمة مرور', signout_everywhere: 'خروج من كل الأجهزة',
-        security_log_viewed: 'فتح سجل الأمان'
+        security_log_viewed: 'فتح سجل الأمان', authenticator_enrolled: 'إعداد تطبيق مصادقة', authenticator_reset: 'إزالة تطبيق المصادقة'
       },
-      channel: { email: 'رمز بالبريد', sms: 'رمز برسالة', undefined: '' },
+      channel: { email: 'رمز بالبريد', sms: 'رمز برسالة', authenticator: 'تطبيق المصادقة', undefined: '' },
       from: { invite: 'من دعوة', reset: 'من رابط إعادة التعيين', undefined: '' },
       attempt: 'المحاولة {n}', lockedAfter: 'بعد {n} كلمات مرور خاطئة', codeAttempt: '{channel}، المحاولة {n}', afterDeactivate: 'تم إيقاف الحساب', afterReset: 'إعادة تعيين الدخول',
       noAccount: 'لا يوجد حساب', removedUser: 'حساب محذوف', none: 'لا شيء في هذه المدة.', older: 'عرض الأحداث الأقدم'
     },
     name: 'لوحة تحكم مستعلم', tagline: 'لوحة التحكم الداخلية لفريق مستعلم.',
     signIn: 'تسجيل الدخول', email: 'البريد الإلكتروني للعمل', password: 'كلمة المرور', show: 'إظهار', hide: 'إخفاء', continue: 'متابعة',
+    appCodeBody: 'افتح تطبيق المصادقة واكتب الرمز المكون من 6 أرقام الظاهر لمستعلم.',
+    enrol: {
+      title: 'إعداد تطبيق المصادقة', body: 'يسجل حسابك الدخول بتطبيق مصادقة بدلًا من رمز البريد الإلكتروني. يستغرق ذلك دقيقة، مرة واحدة.',
+      step1: 'ثبّت تطبيق مصادقة على هاتفك (Google Authenticator أو Microsoft Authenticator).',
+      step2: 'في التطبيق، أضف حسابًا وامسح رمز QR هذا.', step3: 'اكتب الرمز المكون من 6 أرقام الذي يظهره التطبيق لمستعلم.',
+      qrAlt: 'رمز QR لإضافة مستعلم إلى تطبيق المصادقة', cantScan: 'لا يمكنك المسح؟ اكتب هذا المفتاح في التطبيق بدلًا من ذلك:', codeLabel: 'الرمز من التطبيق'
+    },
     codeTitle: 'أدخل الرمز', codeSent: 'أرسلنا رمزًا من 6 أرقام إلى {email}.', demoCode: 'نسخة تجريبية: لا يُرسل بريد. الرمز هو {code}.',
     verify: 'تحقق وسجّل الدخول', wrongCode: 'الرمز غير صحيح.', back: 'رجوع',
     demoPassword: 'نسخة تجريبية: كل حسابات الموظفين تستخدم كلمة المرور {pw}.',

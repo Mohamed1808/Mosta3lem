@@ -38,6 +38,12 @@ $env:MOSTA3LEM_MODE = "live"
 npm run create-admin -- --name "Full Name" --email name@company.com
 ```
 
+**A lost phone** (Super admin or Finance sign in with an authenticator app): another Super admin resets their sign-in from the console, or, with the API stopped:
+
+```
+npm run reset-authenticator -- --email name@company.com
+```
+
 Live mode refuses to start with the development messenger (codes would only be in the log) unless `ALLOW_DEV_MESSAGING=true`, for a closed staging server.
 
 ## Sign-in

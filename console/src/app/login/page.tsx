@@ -6,10 +6,14 @@
  * the code is generated here and shown in a demo notice. Demo staff accounts are listed
  * whenever the data is demo data. Organisations and service providers are turned away:
  * they use the mobile app.
+ *
+ * Key staff (the Super admin and Finance) use an authenticator app instead of the emailed
+ * code. The first time, after the emailed code, they scan a QR code and type the app's code.
  */
 "use client";
 
 import { useRouter } from "next/navigation";
+import QRCode from "qrcode";
 import { FormEvent, useEffect, useState } from "react";
 
 import { icm, remoteMode, services } from "@/backend/engine";
@@ -19,7 +23,8 @@ import { useApp, useT } from "@/lib/app";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
 const newCode = () => String(Math.floor(100000 + Math.random() * 900000));
-type Pending = { masked: string; userId?: string; code?: string; challengeId?: string };
+type Pending = { masked: string; userId?: string; code?: string; challengeId?: string; method?: string };
+type Enrol = { secret: string; uri: string; challengeId: string; qr: string };
 
 export default function Login() {
   const t = useT();
@@ -29,7 +34,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [step, setStep] = useState<"start" | "code" | "forgot">("start");
+  const [step, setStep] = useState<"start" | "code" | "enrol" | "forgot">("start");
+  const [enrol, setEnrol] = useState<Enrol | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
@@ -49,7 +55,7 @@ export default function Login() {
   }, [ready]);
 
   const errorText = (e: Any) => (e && e.key ? t(e.key, e.params || {}) : t("errors.generic"));
-  const go = (s: "start" | "code" | "forgot") => { setStep(s); setErr(""); setInfo(""); };
+  const go = (s: "start" | "code" | "enrol" | "forgot") => { setStep(s); setErr(""); setInfo(""); };
 
   const submitPassword = async (ev: FormEvent) => {
     ev.preventDefault();
@@ -57,7 +63,7 @@ export default function Login() {
     try {
       if (remote) {
         const r: Any = await icm().remote.session.password(email, password);
-        setPending({ masked: r.sentTo, challengeId: r.challengeId });
+        setPending({ masked: r.sentTo, challengeId: r.challengeId, method: r.method });
       } else {
         const r: Any = await services().auth.checkPassword(email, password);
         if (!staff.find((x) => x.id === r.userId)) { setErr(t("console.staffOnly")); return; }
@@ -74,12 +80,33 @@ export default function Login() {
     setBusy(true);
     try {
       if (remote) {
-        const s = await icm().remote.session.verify(pending.challengeId, code);
+        const s: Any = await icm().remote.session.verify(pending.challengeId, code);
+        if (s && s.enrol) {
+          // First sign-in of key staff: set up the authenticator app before going on.
+          const qr = await QRCode.toDataURL(s.enrol.uri, { margin: 1, width: 200 });
+          setEnrol({ secret: s.enrol.secret, uri: s.enrol.uri, challengeId: s.challengeId, qr });
+          setCode(""); go("enrol");
+          return;
+        }
         if (!(await completeSignIn(s))) { go("start"); setErr(t("console.staffOnly")); return; }
       } else {
         if (code.replace(/\D/g, "") !== pending.code) { setErr(t("console.wrongCode")); return; }
         await signIn(pending.userId as string);
       }
+      router.replace("/");
+    } catch (e) {
+      setErr(errorText(e));
+      setCode("");
+    } finally { setBusy(false); }
+  };
+
+  const submitEnrol = async (ev: FormEvent) => {
+    ev.preventDefault();
+    if (!enrol) return;
+    setBusy(true);
+    try {
+      const s = await icm().remote.session.verify(enrol.challengeId, code);
+      if (!(await completeSignIn(s))) { go("start"); setErr(t("console.staffOnly")); return; }
       router.replace("/");
     } catch (e) {
       setErr(errorText(e));
@@ -133,13 +160,33 @@ export default function Login() {
           ) : step === "code" ? (
             <form onSubmit={submitCode} className="space-y-4">
               <h1 className="text-xl font-semibold">{t("console.codeTitle")}</h1>
-              <p className="text-sm text-ink2">{remote ? t("console.codeSentServer", { email: pending?.masked }) : t("console.codeSent", { email: pending?.masked })}</p>
-              {!remote ? <Notice>{t("console.demoCode", { code: pending?.code })}</Notice> : demoData ? <Notice>{t("console.testServerCode")}</Notice> : null}
+              <p className="text-sm text-ink2">{pending?.method === "authenticator" ? t("console.appCodeBody") : remote ? t("console.codeSentServer", { email: pending?.masked }) : t("console.codeSent", { email: pending?.masked })}</p>
+              {!remote ? <Notice>{t("console.demoCode", { code: pending?.code })}</Notice> : demoData && pending?.method !== "authenticator" ? <Notice>{t("console.testServerCode")}</Notice> : null}
               <input className={`${inputClass} ltr text-center text-2xl tracking-[0.5em]`} inputMode="numeric" autoComplete="one-time-code" maxLength={6}
                 value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setErr(""); }} aria-label={t("console.codeTitle")} autoFocus />
               {err ? <Notice tone="danger">{err}</Notice> : null}
               <Button type="submit" kind="primary" busy={busy} disabled={code.length !== 6} full>{t("console.verify")}</Button>
               <Button kind="ghost" onClick={() => go("start")} full>{t("console.back")}</Button>
+            </form>
+          ) : step === "enrol" && enrol ? (
+            <form onSubmit={submitEnrol} className="space-y-4">
+              <h1 className="text-xl font-semibold">{t("console.enrol.title")}</h1>
+              <p className="text-sm text-ink2">{t("console.enrol.body")}</p>
+              <ol className="list-decimal space-y-1 ps-5 text-sm">
+                <li>{t("console.enrol.step1")}</li>
+                <li>{t("console.enrol.step2")}</li>
+                <li>{t("console.enrol.step3")}</li>
+              </ol>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a generated data URL */}
+              <img src={enrol.qr} alt={t("console.enrol.qrAlt")} width={200} height={200} className="mx-auto rounded-lg border border-line" />
+              <div className="text-center text-xs text-ink2">
+                {t("console.enrol.cantScan")}
+                <div className="mt-1 select-all font-mono text-sm tracking-wider text-ink"><bdi dir="ltr">{enrol.secret.match(/.{1,4}/g)?.join(" ")}</bdi></div>
+              </div>
+              <input className={`${inputClass} ltr text-center text-2xl tracking-[0.5em]`} inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+                value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setErr(""); }} aria-label={t("console.enrol.codeLabel")} />
+              {err ? <Notice tone="danger">{err}</Notice> : null}
+              <Button type="submit" kind="primary" busy={busy} disabled={code.length !== 6} full>{t("console.verify")}</Button>
             </form>
           ) : (
             <form onSubmit={submitForgot} className="space-y-4">
