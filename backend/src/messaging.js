@@ -26,6 +26,11 @@ const TEMPLATES = {
     en: (p) => `Mosta3lem: ${p.text}`,
     ar: (p) => `مستعلم: ${p.text}`
   },
+  // The daily summary: the engine writes the whole text (digest.* translations).
+  digest: {
+    en: (p) => p.text,
+    ar: (p) => p.text
+  },
   reset: {
     en: (p) => `Hello ${p.name}, choose a new Mosta3lem password here: ${p.link} (valid ${p.hours} hours). If you did not ask for this, ignore this message.`,
     ar: (p) => `مرحبا ${p.name}، اختر كلمة مرور جديدة لمستعلم من هنا: ${p.link} (صالح ${p.hours} ساعة). إذا لم تطلب ذلك فتجاهل هذه الرسالة.`

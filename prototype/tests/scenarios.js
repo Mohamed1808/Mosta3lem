@@ -1469,6 +1469,38 @@ async function runInvestigation(caseId, providerId, opts) {
     db.entities.find((e) => e.id === 'ent_delta').fraRegulated = undefined;
   });
 
+  await scenario('37. Daily summary email for organisations', async () => {
+    const db = ICM.store.db, E = ICM.engine;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const nadia = db.users.find((u) => u.name === 'Nadia Samir');
+    const tamer = db.users.find((u) => u.name === 'Tamer Lotfy');
+    // 10:00 in Cairo (UTC+3 in October) on a fixed day.
+    const at10 = Date.UTC(2026, 9, 13, 7, 0);
+
+    await as('Nadia Samir');
+    const mine = await S.digest.mine();
+    ok(mine.enabled && mine.email === nadia.email, 'organisation users get it unless they turn it off');
+    ok(mine.summary.invoices !== null, 'the Admin sees invoices to pay');
+    const names = db.cases.filter((c) => c.customer && c.customer.name).map((c) => c.customer.name);
+    ok(mine.text && !names.some((n) => mine.text.indexOf(n) >= 0), 'the email has reference numbers and counts, no customer names');
+    await as('Tamer Lotfy');
+    const t = await S.digest.mine();
+    ok(t.summary.invoices === null, 'other roles see no money');
+    ok([].concat(t.summary.waiting.refs, t.summary.late.refs).every((ref) => ref.indexOf('INV-') === 0), 'and only the services they cover');
+
+    ok(E.claimDigests(Date.UTC(2026, 9, 13, 4, 0), 8).length === 0, 'nothing goes out before 8:00 Cairo time');
+    const first = E.claimDigests(at10, 8);
+    ok(first.some((x) => x.userId === nadia.id) && first.every((x) => db.users.find((u) => u.id === x.userId).entityId), 'after 8:00, each organisation user is picked once');
+    ok(E.claimDigests(at10 + 3600e3, 8).length === 0, 'and not again the same day');
+    ok(E.claimDigests(at10 + 24 * 3600e3, 8).length === first.length, 'the next day they are picked again');
+
+    await S.digest.setEnabled(false);
+    ok(!E.claimDigests(at10 + 48 * 3600e3, 8).some((x) => x.userId === tamer.id), 'someone who turned it off gets nothing');
+    await S.digest.setEnabled(true);
+    await as('Mai Adel');
+    ok(await errOf(S.digest.mine()) === 'errors.forbidden', 'staff do not get it');
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

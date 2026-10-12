@@ -58,6 +58,7 @@ function Navigator() {
         <Stack.Screen name="reports" />
         <Stack.Screen name="org-users" />
         <Stack.Screen name="data-agreement" />
+        <Stack.Screen name="daily-summary" />
         <Stack.Screen name="gate" />
         <Stack.Screen name="case/[id]" />
         <Stack.Screen name="field/[id]" />

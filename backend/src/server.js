@@ -179,9 +179,10 @@ async function buildServer(config) {
 
   /** A notification's text in a language (the engine's translations). */
   const translate = (lang, key, params) => queue(() => { engine.as(null, lang); return ICM.t(key, params); });
-  const notifications = createNotifications({ app, ICM, db, sessions, messenger, translate, config });
+  const notifications = createNotifications({ app, ICM, db, sessions, messenger, translate, config, inEngine });
   await notifications.skipExisting();
   app.decorate('notifyNow', () => notifications.run());
+  app.decorate('digestsNow', () => notifications.digests());
   const apiBase = (req) => config.publicApiUrl || `${req.protocol}://${req.host}`;
 
   // Small anonymous requests only: refuse big bodies before they are read.
@@ -276,6 +277,10 @@ async function buildServer(config) {
     sessions.purgeExpired().catch(() => undefined);
     rateLimitStore.sweep(db).catch(() => undefined);
     notifications.run();
+    // About every 5 minutes, send the daily summaries that are due.
+    if (ticks % Math.max(1, Math.round(300 / config.tickSeconds)) === 0) {
+      notifications.digests().catch((e) => app.log.error({ err: e }, 'daily summaries failed'));
+    }
     // About once an hour, remove files nothing points to any more.
     if (++ticks % Math.max(1, Math.round(3600 / config.tickSeconds)) === 0) {
       files.sweep(ICM.store.db).then((n) => n && app.log.info({ removed: n }, 'unused files removed'))

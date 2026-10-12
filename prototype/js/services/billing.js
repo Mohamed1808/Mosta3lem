@@ -524,4 +524,104 @@
       });
     }
   };
+
+  // ---------------------------------------------------------------- daily summary email
+  /*
+   * Each morning organisation users get one email: results delivered in the last day, cases
+   * waiting for their decision, cases past their deadline, and (for the Admin) invoices to
+   * pay. It carries reference numbers and counts, never customers' names. Each person can
+   * turn it off. The server sends it (E.claimDigests, E.digestText); the app shows a preview.
+   */
+  var DIGEST_TZ = 'Africa/Cairo';
+  var DIGEST_REFS = 5;
+  var WAITING = ['delivered', 'awaiting_entity_approval', 'declined', 'expired'];
+
+  /** The date and hour in Cairo: { day: 'YYYY-MM-DD', hour }. */
+  function cairoNow(now) {
+    var parts = {};
+    new Intl.DateTimeFormat('en-GB', { timeZone: DIGEST_TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' })
+      .formatToParts(new Date(now)).forEach(function (p) { parts[p.type] = p.value; });
+    return { day: parts.year + '-' + parts.month + '-' + parts.day, hour: +parts.hour };
+  }
+  function digestOn(u) { return !(u.digest && u.digest.enabled === false); }
+  function digestReceiver(u) { return u && u.active !== false && wf.isEntityRole(u.role) && !!u.email; }
+  function section(list) { return { n: list.length, refs: list.slice(0, DIGEST_REFS).map(function (c) { return c.ref; }) }; }
+
+  /** What one person's summary holds now. */
+  function digestFor(u, now) {
+    var db = E.db(), since = now - U.DAY;
+    var cases = db.cases.filter(function (c) { return c.entityId === u.entityId && wf.entityServes(u.role, c.service); });
+    var delivered = cases.filter(function (c) {
+      return (c.timeline || []).some(function (t) { return t.at >= since && (t.action === 'approve' || (t.action === 'close' && c.service === 'collection')); });
+    });
+    var out = {
+      delivered: section(delivered),
+      waiting: section(cases.filter(function (c) { return WAITING.indexOf(c.status) >= 0; })),
+      late: section(cases.filter(function (c) { return !wf.isTerminal(c.status) && wf.sla.state(c, now) === 'breached'; })),
+      invoices: null
+    };
+    if (seesClientMoney(D.actorOf(u))) {
+      var due = db.invoices.filter(function (i) { return i.entityId === u.entityId && i.status === 'issued'; });
+      out.invoices = { n: due.length, refs: due.slice(0, DIGEST_REFS).map(function (i) { return i.ref; }), total: U.sum(due, function (i) { return U.sum(i.lines, lineAmount); }) };
+    }
+    out.empty = !out.delivered.n && !out.waiting.n && !out.late.n && !(out.invoices && out.invoices.n);
+    return out;
+  }
+
+  /** The email text in the current language, or null when there is nothing to say. */
+  function digestText(u, d) {
+    if (d.empty) return null;
+    var t = ICM.t, lines = [t('digest.hello', { name: (u.name || '').split(' ')[0] })];
+    var line = function (key, s, extra) {
+      if (!s || !s.n) return;
+      lines.push('- ' + t(key, Object.assign({ n: U.num(s.n) }, extra || {})) + (s.refs.length ? ': ' + s.refs.join(', ') + (s.n > s.refs.length ? ', ...' : '') : ''));
+    };
+    line('digest.delivered', d.delivered);
+    line('digest.waiting', d.waiting);
+    line('digest.late', d.late);
+    line('digest.invoices', d.invoices, d.invoices ? { amount: U.money(d.invoices.total) } : null);
+    lines.push(t('digest.footer'));
+    return lines.join('\n');
+  }
+
+  /**
+   * The server, after the sending hour (Cairo time): who gets today's summary. Each person
+   * is marked for the day as they are picked, so several copies of the API never send twice.
+   */
+  E.claimDigests = function (now, hour) {
+    var c = cairoNow(now), out = [];
+    if (c.hour < (hour == null ? 8 : hour)) return out;
+    E.db().users.forEach(function (u) {
+      if (!digestReceiver(u) || !digestOn(u) || (u.digest && u.digest.lastDay === c.day)) return;
+      u.digest = Object.assign({}, u.digest, { lastDay: c.day });
+      out.push({ userId: u.id, email: u.email });
+    });
+    return out;
+  };
+  /** The summary email for a person, in the current language (null: nothing to send). */
+  E.digestText = function (userId, now) {
+    var u = E.userById(userId);
+    return digestReceiver(u) && digestOn(u) ? digestText(u, digestFor(u, now)) : null;
+  };
+
+  S.digest = {
+    /** Whether the signed-in organisation user gets the summary, and what it would say now. */
+    mine: function () {
+      return E.run(function () {
+        var u = E.currentUser();
+        if (!digestReceiver(u)) throw new Err('errors.forbidden');
+        var d = digestFor(u, E.now());
+        return { enabled: digestOn(u), email: u.email, summary: d, text: digestText(u, d) };
+      });
+    },
+    setEnabled: function (on) {
+      return E.mutate(function () {
+        var u = E.currentUser();
+        if (!digestReceiver(u)) throw new Err('errors.forbidden');
+        u.digest = Object.assign({}, u.digest, { enabled: !!on });
+        E.audit(on ? 'user.digest_on' : 'user.digest_off', 'user', u.id, u.name, null, null, null, D.actorOf(u));
+        return { enabled: !!on };
+      });
+    }
+  };
 })();
