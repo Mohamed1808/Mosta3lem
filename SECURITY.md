@@ -33,6 +33,7 @@ Tell the Mosta3lem team directly (not in a public GitHub issue): what you found,
   - Files nothing points to any more are deleted after a day.
 - **The database must be UTF8**, since Arabic text needs it. The server refuses any other encoding.
 - **Every change is saved before the answer goes back**, in one transaction. If saving fails, the server stops instead of serving unsaved data.
+- **The daily summary email** to organisations carries reference numbers and counts only, never customers' names, and goes only to the person's work email. Each person can turn it off.
 - **Push notifications carry no names**, because push services are outside Egypt. Email and SMS will go through providers chosen in Egypt.
 
 ### Data protection (Law 151 of 2020)

@@ -9,6 +9,9 @@
  *
  * Each send is a row in notification_deliveries, retried with growing waits up to 5 times.
  *
+ * Once a day, after DIGEST_HOUR in Cairo, organisation users also get a summary email
+ * (digests(): the engine picks who, marking each person for the day, and writes the text).
+ *
  *   POST /api/v1/devices/register    { token, platform, lang }  (signed in)
  *   POST /api/v1/devices/unregister  { token }
  *
@@ -79,7 +82,7 @@ function expoPush({ accessToken }) {
   };
 }
 
-function createNotifications({ app, ICM, db, sessions, messenger, translate, config }) {
+function createNotifications({ app, ICM, db, sessions, messenger, translate, config, inEngine }) {
   const push = config.pushDriver === 'expo' ? expoPush({ accessToken: config.expoAccessToken })
     : config.pushDriver === 'dev' ? devPush({ db, log: app.log })
       : (() => { throw new Error(`Unknown PUSH_DRIVER "${config.pushDriver}". Available: dev, expo.`); })();
@@ -186,6 +189,29 @@ function createNotifications({ app, ICM, db, sessions, messenger, translate, con
     return r && r.lang === 'en' ? 'en' : 'ar';
   }
 
+  /**
+   * The daily summary emails due now. People are picked and marked inside one engine run
+   * (holding the shared lock), so with several copies of the API each person gets one email.
+   * A summary with nothing in it is not sent.
+   */
+  async function digests() {
+    if (stopped) return 0;
+    const due = await inEngine(null, 'en', () => ICM.engine.claimDigests(ICM.clock.now(), config.digestHour));
+    let sent = 0;
+    for (const d of due) {
+      try {
+        const lang = await langOf(d.userId);
+        const text = await inEngine(null, lang, () => ICM.engine.digestText(d.userId, ICM.clock.now()));
+        if (!text) continue;
+        await messenger.send('email', d.email, 'digest', { text }, lang);
+        sent++;
+      } catch (e) {
+        app.log.error({ err: e, user: d.userId }, 'daily summary failed');
+      }
+    }
+    return sent;
+  }
+
   // One run at a time; a request that adds notifications asks for a run straight away.
   let running = null, again = false, stopped = false;
   async function run() {
@@ -233,6 +259,7 @@ function createNotifications({ app, ICM, db, sessions, messenger, translate, con
 
   return {
     run,
+    digests,
     /** Finish the current run and send nothing more (the server is closing). */
     async stop() { stopped = true; if (running) await running; },
     /** First start with delivery: notifications already in the data are not sent again. */

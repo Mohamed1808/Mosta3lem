@@ -297,6 +297,12 @@
       breachStatus: { open: 'Not reported yet', reported: 'Reported to the centre', closed: 'Closed' },
       step: { in_review: 'Review started', done: 'Answered', refused: 'Refused', exported: 'Data exported', contained: 'Contained', reported: 'Reported to the data protection centre', people_told: 'People affected told', note: 'Note', closed: 'Closed' }
     },
+    digest: {
+      hello: 'Good morning {name}. Your Mosta3lem summary:',
+      delivered: '{n} new result(s) in the last day', waiting: '{n} case(s) waiting for your decision',
+      late: '{n} case(s) past their deadline', invoices: '{n} invoice(s) to pay, {amount} in total',
+      footer: 'Open the Mosta3lem app to see them. To stop this email: More, then Daily summary.'
+    },
     fra: {
       registered: 'FRA registered', number: 'FRA register no. {n}', regulated: 'Supervised by the FRA', notRegulated: 'Not supervised by the FRA',
       requiredNote: 'Collections for this client go only to providers registered with the Financial Regulatory Authority (FRA).',
@@ -482,7 +488,7 @@
         privacy_request_logged: 'Data request logged', privacy_request_review: 'Data request in review', privacy_request_done: 'Data request answered',
         privacy_request_refused: 'Data request refused', privacy_exported: 'Personal data exported', privacy_breach_logged: 'Breach logged',
         privacy_breach_reported: 'Breach reported to the centre', privacy_breach_contained: 'Breach contained', privacy_breach_people_told: 'People told about a breach',
-        privacy_breach_note: 'Breach note', privacy_breach_closed: 'Breach closed', entity_dpa_accepted: 'Data processing agreement accepted', entity_fra_regulated: 'FRA supervision changed',
+        privacy_breach_note: 'Breach note', privacy_breach_closed: 'Breach closed', entity_dpa_accepted: 'Data processing agreement accepted', entity_fra_regulated: 'FRA supervision changed', user_digest_on: 'Daily summary turned on', user_digest_off: 'Daily summary turned off',
         case_submit: 'Case submitted', case_send_offer: 'Offer sent', case_decline: 'Offer declined', case_expire: 'Offer expired', case_accept: 'Case accepted',
         case_assign: 'Agent assigned', case_check_in: 'Checked in', case_submit_report: 'Report submitted', case_return_to_agent: 'Report returned',
         case_resume: 'Work resumed', case_approve: 'Report delivered', case_request_rework: 'Rework requested', case_accept_report: 'Report accepted',

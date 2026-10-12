@@ -296,6 +296,12 @@
       breachStatus: { open: 'لم يُبلَّغ بعد', reported: 'تم إبلاغ المركز', closed: 'مغلق' },
       step: { in_review: 'بدأت المراجعة', done: 'تم الرد', refused: 'مرفوض', exported: 'تم تصدير البيانات', contained: 'تم الاحتواء', reported: 'تم إبلاغ مركز حماية البيانات', people_told: 'تم إخطار المتأثرين', note: 'ملاحظة', closed: 'مغلق' }
     },
+    digest: {
+      hello: 'صباح الخير {name}. ملخصك من مستعلم:',
+      delivered: '{n} نتيجة جديدة خلال اليوم الماضي', waiting: '{n} حالة تنتظر قرارك',
+      late: '{n} حالة تجاوزت موعدها', invoices: '{n} فاتورة للسداد، بإجمالي {amount}',
+      footer: 'افتح تطبيق مستعلم لعرضها. لإيقاف هذا البريد: المزيد، ثم الملخص اليومي.'
+    },
     fra: {
       registered: 'مقيد بالرقابة المالية', number: 'رقم القيد بالرقابة المالية {n}', regulated: 'تخضع لرقابة الهيئة العامة للرقابة المالية', notRegulated: 'لا تخضع لرقابة الهيئة العامة للرقابة المالية',
       requiredNote: 'تُرسل حالات التحصيل لهذا العميل فقط لمقدمي خدمة مقيدين لدى الهيئة العامة للرقابة المالية.',
@@ -481,7 +487,7 @@
         privacy_request_logged: 'تسجيل طلب بيانات', privacy_request_review: 'مراجعة طلب بيانات', privacy_request_done: 'الرد على طلب بيانات',
         privacy_request_refused: 'رفض طلب بيانات', privacy_exported: 'تصدير بيانات شخصية', privacy_breach_logged: 'تسجيل اختراق',
         privacy_breach_reported: 'إبلاغ المركز بالاختراق', privacy_breach_contained: 'احتواء اختراق', privacy_breach_people_told: 'إخطار المتأثرين بالاختراق',
-        privacy_breach_note: 'ملاحظة على اختراق', privacy_breach_closed: 'إغلاق اختراق', entity_dpa_accepted: 'الموافقة على اتفاقية معالجة البيانات', entity_fra_regulated: 'تغيير خضوع الجهة للرقابة المالية',
+        privacy_breach_note: 'ملاحظة على اختراق', privacy_breach_closed: 'إغلاق اختراق', entity_dpa_accepted: 'الموافقة على اتفاقية معالجة البيانات', entity_fra_regulated: 'تغيير خضوع الجهة للرقابة المالية', user_digest_on: 'تفعيل الملخص اليومي', user_digest_off: 'إيقاف الملخص اليومي',
         case_submit: 'أُرسلت الحالة', case_send_offer: 'أُرسل العرض', case_decline: 'رُفض العرض', case_expire: 'انتهى العرض', case_accept: 'قُبلت الحالة',
         case_assign: 'كُلّف مندوب', case_check_in: 'سُجل الوصول', case_submit_report: 'أُرسل التقرير', case_return_to_agent: 'أُعيد التقرير',
         case_resume: 'استُؤنف العمل', case_approve: 'سُلّم التقرير', case_request_rework: 'طُلب تعديل', case_accept_report: 'قُبل التقرير',

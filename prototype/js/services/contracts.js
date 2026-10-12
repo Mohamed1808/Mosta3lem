@@ -133,6 +133,10 @@
       setFraRegulated: '(entityId, true|false, reason) -> Entity   (Sales, Management: whether its collections need FRA-registered providers)',
       acceptDpa: '() -> Entity   (organisation Admin accepts the current data processing agreement; needed before cases go to providers)'
     },
+    digest: {
+      mine: '() -> { enabled, email, summary, text }   (organisation user: the morning summary email, and what it would say now)',
+      setEnabled: '(true|false) -> { enabled }'
+    },
     privacy: {
       status: '() -> { settings, limits, due, erased, lastRun, openRequests, openBreaches, organisations }   (Legal, Management)',
       updateSettings: '({ photosDays, personalDays, requestDays }) -> settings',

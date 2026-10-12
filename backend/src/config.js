@@ -43,6 +43,8 @@ function readConfig(env = process.env) {
     fileMaxMb: Number(env.FILE_MAX_MB || 8),
     sessionHours: Number(env.SESSION_HOURS || 168),
     tickSeconds: Number(env.TICK_SECONDS || 30),
+    // Hour (Cairo time) after which organisation users get the daily summary email.
+    digestHour: env.DIGEST_HOUR === undefined || env.DIGEST_HOUR === '' ? 8 : Number(env.DIGEST_HOUR),
     bodyLimitMb: Number(env.BODY_LIMIT_MB || 15),
     requestsPerMinute: Number(env.REQUESTS_PER_MINUTE || 300),
     signInPerMinute: Number(env.SIGN_IN_PER_MINUTE || 10),

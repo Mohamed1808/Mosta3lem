@@ -85,6 +85,12 @@ const en = {
   },
   assignScreen: { title: 'Assign cases', pick: 'Pick the field agent', selected: '{n} selected', assignTo: 'Assign to agent', covers: 'Covers this area', none: 'No active agents for this service' },
   reviewScreen: { title: 'Review report', approve: 'Approve and deliver', returnTo: 'Return to agent', returnBody: 'Tell the agent what to fix.', approved: 'Report delivered to the client', returned: 'Report returned to the agent' },
+  summary: {
+    title: 'Daily summary', sub: 'One email each morning about your work',
+    on: 'Each morning after 8:00 we email {email}: new results, cases waiting for you, late cases and, for the Admin, invoices to pay. Only reference numbers, no customer names.',
+    off: 'The daily summary email is off.', turnOn: 'Turn on', turnOff: 'Turn off', turnedOn: 'Daily summary on', turnedOff: 'Daily summary off',
+    preview: 'If it were sent now', nothing: 'Nothing to report right now. On days like this no email is sent.'
+  },
   dpa: {
     title: 'Data processing agreement', version: 'Version {v}', open: 'Read and accept', read: 'Read the agreement', done: 'Agreement accepted',
     accept: 'I accept on behalf of {org}', accepted: 'Accepted on {date} by {name}.',
@@ -256,6 +262,12 @@ const ar: typeof en = {
   },
   assignScreen: { title: 'تكليف الحالات', pick: 'اختر المندوب الميداني', selected: 'تم اختيار {n}', assignTo: 'تكليف المندوب', covers: 'يغطي هذه المنطقة', none: 'لا يوجد مندوبون نشطون لهذه الخدمة' },
   reviewScreen: { title: 'مراجعة التقرير', approve: 'اعتماد وتسليم', returnTo: 'إعادة للمندوب', returnBody: 'أخبر المندوب بما يجب تصحيحه.', approved: 'تم تسليم التقرير للعميل', returned: 'أُعيد التقرير للمندوب' },
+  summary: {
+    title: 'الملخص اليومي', sub: 'بريد واحد كل صباح عن أعمالكم',
+    on: 'كل صباح بعد الساعة 8 نرسل إلى {email}: النتائج الجديدة والحالات التي تنتظركم والحالات المتأخرة، وللمدير الفواتير المستحقة. أرقام مرجعية فقط، دون أسماء العملاء.',
+    off: 'بريد الملخص اليومي متوقف.', turnOn: 'تفعيل', turnOff: 'إيقاف', turnedOn: 'تم تفعيل الملخص اليومي', turnedOff: 'تم إيقاف الملخص اليومي',
+    preview: 'لو أُرسل الآن', nothing: 'لا يوجد ما يُذكر الآن. في أيام كهذه لا يُرسل بريد.'
+  },
   dpa: {
     title: 'اتفاقية معالجة البيانات', version: 'الإصدار {v}', open: 'قراءة والموافقة', read: 'قراءة الاتفاقية', done: 'تمت الموافقة على الاتفاقية',
     accept: 'أوافق نيابة عن {org}', accepted: 'تمت الموافقة في {date} بواسطة {name}.',
