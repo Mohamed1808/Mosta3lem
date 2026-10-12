@@ -166,11 +166,11 @@ async function buildServer(config) {
   });
 
   const messenger = createMessenger({ driver: config.messagingDriver, db, log: app.log });
-  const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security });
-  app.decorate('adminTools', { createSuperAdmin: signIn.createSuperAdmin });
+  const files = createFiles({ db, config, log: app.log });
+  const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security, secretKey: files.keyFor('mosta3lem authenticator secrets') });
+  app.decorate('adminTools', { createSuperAdmin: signIn.createSuperAdmin, resetAuthenticator: signIn.resetAuthenticator });
   registerSecurityLog(app, { db, sessions, ICM, security });
 
-  const files = createFiles({ db, config, log: app.log });
   files.routes(app);
   // Data saved before file storage existed may still hold files inline: store them properly.
   await inEngine(null, 'en', async () => { ICM.store.db = await files.ingest(ICM.store.db, null); });

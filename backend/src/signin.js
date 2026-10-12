@@ -11,12 +11,20 @@
  *
  * Every sign-in ends with a one-time code. Answers never reveal whether an email or mobile
  * has an account. Codes, links and passwords are stored only as hashes.
+ *
+ * Key staff (TOTP_ROLES: the Super admin and Finance by default) use an authenticator app
+ * instead of the emailed code. The first time, after the emailed code, verify answers with
+ * { enrol: { secret, uri }, challengeId }: the person scans the QR code and types the app's
+ * first code to the same verify route. From then on the password step answers with
+ * { method: 'authenticator' } and no email is sent. A Super admin resetting someone's
+ * sign-in (accounts.resetLogin) also removes their authenticator.
  */
 'use strict';
 
 const crypto = require('crypto');
 const { hashPassword, verifyPassword, burn, passwordProblem } = require('./passwords');
 const { Refusal } = require('./refusal');
+const totp = require('./totp');
 
 const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
@@ -41,7 +49,7 @@ function normalizePhone(input) {
 const maskPhone = (p) => p.slice(0, 3) + '*****' + p.slice(-3);
 const maskEmail = (e) => { const at = e.indexOf('@'); return at > 1 ? e.charAt(0) + '****' + e.slice(at) : e; };
 
-function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security }) {
+function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security, secretKey }) {
   const record = (kind, userId, req, detail) => (security ? security.record(kind, { userId, req, detail }) : Promise.resolve());
   const C = ICM.config;
   const users = () => ICM.store.db.users;
@@ -80,6 +88,34 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, s
     if (user || purpose === 'signup') {
       await messenger.send(channel, destination, purpose === 'signup' ? 'signup_code' : 'signin_code', { code, minutes: CODE_MINUTES }, lang);
     }
+    return { challengeId: id, expiresAt: Date.now() + CODE_MINUTES * 60000 };
+  }
+
+  // ------------------------------------------------------------- authenticator apps
+  const needsAuthenticator = (u) => (config.totpRoles || []).includes(u.role);
+  const authenticatorOf = async (userId) => (await db.query('SELECT * FROM authenticators WHERE user_id = $1', [userId])).rows[0] || null;
+  // The secret is encrypted (AES-256-GCM, the person's id bound in) with a key from FILES_KEY.
+  function sealSecret(userId, secret) {
+    const iv = crypto.randomBytes(12);
+    const c = crypto.createCipheriv('aes-256-gcm', secretKey, iv);
+    c.setAAD(Buffer.from(userId));
+    const body = Buffer.concat([c.update(secret, 'utf8'), c.final()]);
+    return Buffer.concat([iv, c.getAuthTag(), body]).toString('base64');
+  }
+  function openSecret(userId, sealed) {
+    const blob = Buffer.from(sealed, 'base64');
+    const d = crypto.createDecipheriv('aes-256-gcm', secretKey, blob.subarray(0, 12));
+    d.setAAD(Buffer.from(userId));
+    d.setAuthTag(blob.subarray(12, 28));
+    return Buffer.concat([d.update(blob.subarray(28)), d.final()]).toString('utf8');
+  }
+  /** A challenge answered with the app's code instead of a sent one (channel totp or totp-enrol). */
+  async function authenticatorChallenge(user, channel) {
+    const id = randomToken();
+    await db.query(
+      `INSERT INTO sign_in_codes (id, purpose, user_id, channel, destination, code_hash, expires_at)
+       VALUES ($1, 'signin', $2, $3, $4, '-', now() + interval '${CODE_MINUTES} minutes')`,
+      [id, user.id, channel, 'app:' + user.id]);
     return { challengeId: id, expiresAt: Date.now() + CODE_MINUTES * 60000 };
   }
 
@@ -139,6 +175,10 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, s
       throw new Refusal('errors.wrongPassword');
     }
     if (cred && cred.failed_count) await db.query('UPDATE credentials SET failed_count = 0 WHERE user_id = $1', [u.id]);
+    if (needsAuthenticator(u)) {
+      const auth = await authenticatorOf(u.id);
+      if (auth && auth.confirmed_at) return { ok: true, result: Object.assign(await authenticatorChallenge(u, 'totp'), { method: 'authenticator' }) };
+    }
     const c = await issueCode({ purpose: 'signin', user: u, channel: 'email', destination: u.email.toLowerCase(), lang: langOf(req) });
     return { ok: true, result: Object.assign(c, { sentTo: maskEmail(u.email) }) };
   });
@@ -156,6 +196,7 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, s
     const id = String(body.challengeId || ''), code = String(body.code || '').replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660)).replace(/\D/g, '');
     const row = id ? (await db.query('SELECT *, expires_at > now() AS live FROM sign_in_codes WHERE id = $1', [id])).rows[0] : null;
     if (!row || row.used_at || !row.live || row.attempts >= CODE_TRIES) throw new Refusal('errors.codeExpired');
+    if (row.channel === 'totp' || row.channel === 'totp-enrol') return verifyAuthenticator(row, code, req);
     if (!sameHash(sha(id + ':' + code), row.code_hash)) {
       await db.query('UPDATE sign_in_codes SET attempts = attempts + 1 WHERE id = $1', [id]);
       await record('signin.code_failed', row.user_id, req, { channel: row.channel, attempt: row.attempts + 1 });
@@ -172,11 +213,45 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, s
     const u = row.user_id ? userById(row.user_id) : null;
     // A mobile with no account got no code, so any code for it is "wrong".
     if (!u || u.active === false) throw new Refusal('errors.codeWrong');
+    // Key staff without an authenticator yet set one up now, before they get a session.
+    if (needsAuthenticator(u)) {
+      const auth = await authenticatorOf(u.id);
+      if (!auth || !auth.confirmed_at) {
+        const secret = totp.newSecret();
+        await db.query(
+          `INSERT INTO authenticators (user_id, secret_enc) VALUES ($1, $2)
+           ON CONFLICT (user_id) DO UPDATE SET secret_enc = EXCLUDED.secret_enc, confirmed_at = NULL, last_step = 0, created_at = now()`,
+          [u.id, sealSecret(u.id, secret)]);
+        const c = await authenticatorChallenge(u, 'totp-enrol');
+        return { ok: true, result: Object.assign(c, { enrol: { secret, uri: totp.otpauthUri(secret, u.email, 'Mosta3lem') } }) };
+      }
+    }
+    return startSession(u, req, row.channel);
+  });
+
+  async function startSession(u, req, channel) {
     const session = await sessions.create(u.id, req.headers['user-agent']);
-    await record('signin.ok', u.id, req, { channel: row.channel });
+    await record('signin.ok', u.id, req, { channel });
     const me = await inEngine(u.id, langOf(req), () => ICM.services.auth.currentUser());
     return { ok: true, result: me, session };
-  });
+  }
+
+  /** The code from the authenticator app: signs in, and on first use confirms the app. */
+  async function verifyAuthenticator(row, code, req) {
+    const u = userById(row.user_id);
+    const auth = await authenticatorOf(row.user_id);
+    if (!u || u.active === false || !auth) throw new Refusal('errors.codeExpired');
+    const step = totp.check(openSecret(u.id, auth.secret_enc), code, Date.now(), Number(auth.last_step));
+    if (step == null) {
+      await db.query('UPDATE sign_in_codes SET attempts = attempts + 1 WHERE id = $1', [row.id]);
+      await record('signin.code_failed', u.id, req, { channel: 'authenticator', attempt: row.attempts + 1 });
+      throw new Refusal(row.attempts + 1 >= CODE_TRIES ? 'errors.codeExpired' : 'errors.codeWrong');
+    }
+    await db.query('UPDATE sign_in_codes SET used_at = now() WHERE id = $1', [row.id]);
+    await db.query('UPDATE authenticators SET last_step = $2, confirmed_at = coalesce(confirmed_at, now()) WHERE user_id = $1', [u.id, step]);
+    if (row.channel === 'totp-enrol') await record('authenticator.enrolled', u.id, req);
+    return startSession(u, req, 'authenticator');
+  }
 
   route('forgot', async (body, req) => {
     const u = byEmail(body.email);
@@ -234,9 +309,21 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, s
         const u = userById(args[0]);
         if (u) {
           await db.query('UPDATE credentials SET password_hash = NULL, failed_count = 0, locked_until = NULL WHERE user_id = $1', [u.id]);
+          // A lost phone: the person sets up the authenticator again at their next sign-in.
+          const removed = await db.query('DELETE FROM authenticators WHERE user_id = $1', [u.id]);
+          if (removed.rowCount) await record('authenticator.reset', u.id, req);
           await issuePasswordLink(u, 'reset', langOf(req));
         }
       }
+    },
+
+    /** Remove someone's authenticator (a lost phone; see reset-authenticator.js). */
+    async resetAuthenticator(email) {
+      const u = users().find((x) => (x.email || '').toLowerCase() === email);
+      if (!u) throw new Error('No account uses this email.');
+      const r = await db.query('DELETE FROM authenticators WHERE user_id = $1', [u.id]);
+      if (r.rowCount) await record('authenticator.reset', u.id, null, { by: 'command line' });
+      return { userId: u.id, removed: r.rowCount > 0 };
     },
 
     /** The first Super admin of a live platform (see create-admin.js). */

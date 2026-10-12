@@ -16,6 +16,11 @@ Tell the Mosta3lem team directly (not in a public GitHub issue): what you found,
 
 ### Sign-in
 - **Every sign-in ends with a one-time code**, sent by SMS to providers and by email to organisations and staff. Codes have 6 digits, last 10 minutes and allow 5 tries. At most 5 codes an hour go to one mobile or email.
+- **Authenticator app for key staff.** The Super admin and Finance (`TOTP_ROLES`) sign in with a code from an authenticator app (Google or Microsoft Authenticator) instead of an emailed code.
+  - They set it up at their first sign-in, after the emailed code, by scanning a QR code.
+  - Codes follow RFC 6238 (30 seconds, 6 digits). Each code works once, and 5 wrong codes end the attempt.
+  - The secret is stored encrypted, with a key derived from `FILES_KEY`.
+  - A lost phone: another Super admin uses **Reset sign-in**, or `npm run reset-authenticator -- --email ...` with the API stopped. Both are recorded in the security log.
 - **Passwords** are stored with scrypt and a random salt, never as typed. They need at least 10 characters, letters and numbers, and must not contain the email name. Five wrong passwords lock the account for 15 minutes.
 - **No account fishing.** An unknown email or mobile gets exactly the same answer as a real account; a wrong email takes as long to check as a wrong password.
 - **Password links** (invitations and resets) work once and expire after 72 and 24 hours. Choosing a password signs the person out everywhere else.
@@ -96,5 +101,4 @@ For whoever deploys the live platform.
   - the full text of the data processing agreement and the privacy notice;
   - the licence from the data protection centre and the Data Protection Officer.
 - **Choice of providers:** SMS, email, OCR, maps and cloud, each checked for keeping data in Egypt.
-- **Staff second factor:** staff already need an email code. Consider a phone authenticator app for the Super admin and Finance.
 - **Rotating `FILES_KEY`:** the procedure (re-encrypting the files) is not written yet.
