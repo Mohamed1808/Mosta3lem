@@ -25,6 +25,7 @@ const crypto = require('crypto');
 const { hashPassword, verifyPassword, burn, passwordProblem } = require('./passwords');
 const { Refusal } = require('./refusal');
 const totp = require('./totp');
+const { deriveKey, parseKey } = require('./files');
 
 const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
@@ -95,16 +96,16 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, s
   const needsAuthenticator = (u) => (config.totpRoles || []).includes(u.role);
   const authenticatorOf = async (userId) => (await db.query('SELECT * FROM authenticators WHERE user_id = $1', [userId])).rows[0] || null;
   // The secret is encrypted (AES-256-GCM, the person's id bound in) with a key from FILES_KEY.
-  function sealSecret(userId, secret) {
+  function sealSecret(userId, secret, key = secretKey) {
     const iv = crypto.randomBytes(12);
-    const c = crypto.createCipheriv('aes-256-gcm', secretKey, iv);
+    const c = crypto.createCipheriv('aes-256-gcm', key, iv);
     c.setAAD(Buffer.from(userId));
     const body = Buffer.concat([c.update(secret, 'utf8'), c.final()]);
     return Buffer.concat([iv, c.getAuthTag(), body]).toString('base64');
   }
-  function openSecret(userId, sealed) {
+  function openSecret(userId, sealed, key = secretKey) {
     const blob = Buffer.from(sealed, 'base64');
-    const d = crypto.createDecipheriv('aes-256-gcm', secretKey, blob.subarray(0, 12));
+    const d = crypto.createDecipheriv('aes-256-gcm', key, blob.subarray(0, 12));
     d.setAAD(Buffer.from(userId));
     d.setAuthTag(blob.subarray(12, 28));
     return Buffer.concat([d.update(blob.subarray(28)), d.final()]).toString('utf8');
@@ -315,6 +316,23 @@ function registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, s
           await issuePasswordLink(u, 'reset', langOf(req));
         }
       }
+    },
+
+    /** Re-encrypt the authenticator secrets for a new FILES_KEY (see rotate-files-key.js); safe to rerun. */
+    async rotateSecrets(newKeyB64) {
+      const next = deriveKey(parseKey(newKeyB64), 'mosta3lem authenticator secrets');
+      let rotated = 0, already = 0;
+      for (const a of (await db.query('SELECT user_id, secret_enc FROM authenticators')).rows) {
+        let secret;
+        try { secret = openSecret(a.user_id, a.secret_enc); } catch (e) {
+          openSecret(a.user_id, a.secret_enc, next);
+          already++;
+          continue;
+        }
+        await db.query('UPDATE authenticators SET secret_enc = $2 WHERE user_id = $1', [a.user_id, sealSecret(a.user_id, secret, next)]);
+        rotated++;
+      }
+      return { rotated, already };
     },
 
     /** Remove someone's authenticator (a lost phone; see reset-authenticator.js). */

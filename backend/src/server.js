@@ -23,6 +23,7 @@ const { createSessions } = require('./sessions');
 const { createMessenger } = require('./messaging');
 const { registerSignIn } = require('./signin');
 const { createFiles } = require('./files');
+const { createOps } = require('./ops');
 const { createNotifications } = require('./notifications');
 const { Refusal } = require('./refusal');
 const { createSecurityLog, registerSecurityLog } = require('./security');
@@ -168,7 +169,17 @@ async function buildServer(config) {
   const messenger = createMessenger({ driver: config.messagingDriver, db, log: app.log });
   const files = createFiles({ db, config, log: app.log });
   const signIn = registerSignIn(app, { ICM, db, sessions, messenger, inEngine, config, security, secretKey: files.keyFor('mosta3lem authenticator secrets') });
-  app.decorate('adminTools', { createSuperAdmin: signIn.createSuperAdmin, resetAuthenticator: signIn.resetAuthenticator });
+  app.decorate('adminTools', {
+    createSuperAdmin: signIn.createSuperAdmin,
+    resetAuthenticator: signIn.resetAuthenticator,
+    /** Re-encrypt files and authenticator secrets with a new FILES_KEY (rotate-files-key.js). */
+    async rotateFilesKey(newKey) {
+      const done = await files.rotateTo(newKey);
+      const secrets = await signIn.rotateSecrets(newKey);
+      await security.record('files_key.rotated', { detail: { files: done.rotated, secrets: secrets.rotated } });
+      return { files: done, secrets };
+    }
+  });
   registerSecurityLog(app, { db, sessions, ICM, security });
 
   files.routes(app);
@@ -206,6 +217,8 @@ async function buildServer(config) {
   });
 
   app.get('/health', async () => ({ ok: true, mode: config.mode, database: db.kind, dataVersion: ICM.config.DATA_VERSION }));
+  const ops = createOps({ app, db, config, messenger });
+  app.decorate('ops', ops);
   /** Pick up other copies' changes now (tests; requests already do it). */
   app.decorate('syncNow', () => inEngine(null, 'en', () => null));
   /** Run the clock tick now (tests; the timer runs it every TICK_SECONDS). */
@@ -273,13 +286,14 @@ async function buildServer(config) {
   // Deadlines, offer expiry and document reminders move on with time, not with requests.
   let ticks = 0;
   const ticker = config.tickSeconds > 0 ? setInterval(() => {
-    inEngine(null, 'en', () => ICM.services.demo.tick()).catch((e) => app.log.error({ err: e }, 'tick failed'));
+    inEngine(null, 'en', () => ICM.services.demo.tick()).then(() => ops.tickOk(), (e) => { ops.tickFailed(); app.log.error({ err: e }, 'tick failed'); });
     sessions.purgeExpired().catch(() => undefined);
     rateLimitStore.sweep(db).catch(() => undefined);
     notifications.run();
     // About every 5 minutes, send the daily summaries that are due.
     if (ticks % Math.max(1, Math.round(300 / config.tickSeconds)) === 0) {
       notifications.digests().catch((e) => app.log.error({ err: e }, 'daily summaries failed'));
+      ops.check().catch((e) => app.log.error({ err: e }, 'health check failed'));
     }
     // About once an hour, remove files nothing points to any more.
     if (++ticks % Math.max(1, Math.round(3600 / config.tickSeconds)) === 0) {

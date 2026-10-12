@@ -12,7 +12,8 @@
     "dev": "node --env-file-if-exists=.env --watch src/index.js",
     "test": "node --test test/*.test.js",
     "create-admin": "node --env-file-if-exists=.env src/create-admin.js",
-    "reset-authenticator": "node --env-file-if-exists=.env src/reset-authenticator.js"
+    "reset-authenticator": "node --env-file-if-exists=.env src/reset-authenticator.js",
+    "rotate-files-key": "node --env-file-if-exists=.env src/rotate-files-key.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

@@ -43,6 +43,10 @@ function readConfig(env = process.env) {
     fileMaxMb: Number(env.FILE_MAX_MB || 8),
     sessionHours: Number(env.SESSION_HOURS || 168),
     tickSeconds: Number(env.TICK_SECONDS || 30),
+    // Who gets an email when something needs a person (comma list), and whether a daily
+    // backup is expected (then a missing or failed one is an alert and /health/ready fails).
+    alertEmails: String(env.ALERT_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean),
+    backupsExpected: env.BACKUPS_EXPECTED === 'true',
     // Staff roles that sign in with an authenticator app instead of an emailed code.
     totpRoles: (env.TOTP_ROLES === undefined ? 'platform_admin,platform_finance' : env.TOTP_ROLES).split(',').map((r) => r.trim()).filter(Boolean),
     // Hour (Cairo time) after which organisation users get the daily summary email.
