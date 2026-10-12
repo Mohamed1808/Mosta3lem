@@ -691,6 +691,30 @@
     });
   });
 
+  describe('FRA registration', function () {
+    var NOW = Date.UTC(2026, 9, 12);
+    function prov(doc) { return { verification: { documents: doc ? [doc] : [] } }; }
+    it('knows which clients the FRA supervises, unless staff set it', function () {
+      expect(wf.fraRegulated({ type: 'consumer_finance' })).toBe(true);
+      expect(wf.fraRegulated({ type: 'bank' })).toBe(false);
+      expect(wf.fraRegulated({ type: 'bank', fraRegulated: true })).toBe(true);
+      expect(wf.fraRegulated({ type: 'auto_finance', fraRegulated: false })).toBe(false);
+      expect(wf.fraRequired({ type: 'auto_finance' }, 'investigation')).toBe(false);
+      expect(wf.fraRequired({ type: 'auto_finance' }, 'collection')).toBe(true);
+    });
+    it('counts only a checked registration that is in force', function () {
+      expect(wf.fraRegistration(prov(null), NOW)).toBe(null);
+      expect(wf.fraRegistration(prov({ type: 'fra_registration', status: 'uploaded', number: 'X' }), NOW)).toBe(null);
+      expect(wf.fraRegistration(prov({ type: 'fra_registration', status: 'verified', number: 'X', expiresAt: NOW - 1 }), NOW)).toBe(null);
+      expect(wf.fraRegistration(prov({ type: 'fra_registration', status: 'verified', number: 'X' }), NOW).number).toBe('X');
+    });
+    it('reminds before it expires, without pausing other work', function () {
+      var d = { type: 'fra_registration', status: 'verified', expiresAt: NOW + 5 * D };
+      expect(wf.dueReminder(d, NOW)).toBe(7);
+      expect(wf.expiredDocs(prov(Object.assign({}, d, { expiresAt: NOW - D })), NOW).length).toBe(0);
+    });
+  });
+
   describe('data protection', function () {
     var P = wf.privacy, s = P.settings({});
     var closedAt = Date.UTC(2025, 0, 1);

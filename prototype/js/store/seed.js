@@ -207,6 +207,10 @@
         ? [{ type: 'national_id', status: 'verified' }, { type: 'training_certificate', status: 'verified' }]
         : [{ type: 'commercial_register', status: 'verified', expiresAt: U.endOfDay(T + exp.commercial_register * DAY) },
           { type: 'tax_card', status: 'verified', expiresAt: U.endOfDay(T + exp.tax_card * DAY) }, { type: 'insurance', status: 'verified' }];
+      // Collection companies registered with the FRA, so non-bank finance clients can use them.
+      if (p.kind !== 'freelancer' && p.services.indexOf('collection') >= 0) {
+        docs.push({ type: wf.FRA_DOC, status: 'verified', number: 'FRA-COL-2026-0' + String(p.joined).slice(-3), verifiedAt: T - 60 * DAY, expiresAt: U.endOfDay(T + 330 * DAY) });
+      }
       var rec = providerRecord(p, { status: 'verified', documents: docs, idVerified: p.kind === 'freelancer' ? true : null, certified: p.kind === 'freelancer' ? true : null, verifiedAt: T - (p.joined - 2) * DAY, notes: [] });
       db.providers.push(rec);
       if (p.kind === 'freelancer') {

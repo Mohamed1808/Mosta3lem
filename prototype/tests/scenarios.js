@@ -1412,6 +1412,63 @@ async function runInvestigation(caseId, providerId, opts) {
     await S.privacy.updateSettings({ photosDays: 365, personalDays: 1095 });
   });
 
+  await scenario('36. FRA registration for collections from non-bank finance clients', async () => {
+    const db = ICM.store.db, wf = ICM.wf, DAY = 24 * H;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const rp = db.providers.find((p) => p.id === 'prv_recovery');
+    const fraDoc = () => rp.verification.documents.find((d) => d.type === wf.FRA_DOC);
+    const ask = (entityId) => S.marketplace.eligible({ service: 'collection', demand: { cairo: 1 }, bucket: 'b1_30', entityId });
+    const has = (r) => r.providers.some((p) => p.id === rp.id);
+
+    await as('Youssef Kamel');
+    let r = await ask();
+    ok(r.fraRequired && has(r) && r.providers.find((p) => p.id === rp.id).fraNumber, 'Horus (auto finance) needs FRA registration; Recovery Partners has it and shows its number');
+    const saved = Object.assign({}, fraDoc());
+    rp.verification.documents = rp.verification.documents.filter((d) => d.type !== wf.FRA_DOC);
+    r = await ask();
+    ok(!has(r) && r.excluded.fra === 1, 'without it, the provider is left out of Horus collections');
+    ok(has(await ask('ent_delta')), 'a bank does not need it');
+    ok((await S.marketplace.eligible({ service: 'investigation', demand: { cairo: 1 }, inquiryTypes: ['residence'] })).fraRequired === false, 'investigations never need it');
+
+    // The owner sends the registration; Operations checks it.
+    await as('Adel Morsy');
+    const settings = await S.providers.settings();
+    ok(settings.documents.some((d) => d.type === wf.FRA_DOC && d.status === 'missing' && d.optional), 'the owner sees it as an optional document');
+    ok(await errOf(S.providers.submitDocument(wf.FRA_DOC, { fileName: 'fra.jpg', url: 'data:x' })) === 'errors.required', 'the register number is needed');
+    await S.providers.submitDocument(wf.FRA_DOC, { fileName: 'fra.jpg', url: 'data:x', number: 'FRA-COL-2026-118', expiresAt: ICM.clock.now() + 20 * DAY });
+    await as('Youssef Kamel');
+    ok(!has(await ask()), 'until Operations checks it, it does not count');
+    await as('Mai Adel');
+    await S.providers.verifyDocument(rp.id, wf.FRA_DOC);
+    await as('Youssef Kamel');
+    r = await ask();
+    ok(has(r) && r.providers.find((p) => p.id === rp.id).fraNumber === 'FRA-COL-2026-118', 'once checked, Horus collections reach the provider again');
+
+    // It lapses: reminders, then only these collections stop.
+    const owner = db.users.find((u) => u.name === 'Adel Morsy');
+    await as('Laila Hosny');
+    await S.demo.advance(15 * DAY);
+    await S.demo.tick();
+    ok(notifs(owner.id, 'notif.document_expiring').some((n) => n.params.doc === wf.FRA_DOC), 'the owner is reminded before it expires');
+    await S.demo.advance(6 * DAY);
+    await S.demo.tick();
+    ok(notifs(owner.id, 'notif.fra_expired').length === 1, 'and told when it lapses');
+    await as('Youssef Kamel');
+    ok(!has(await ask()) && has(await ask('ent_delta')), 'Horus collections stop; bank collections carry on');
+
+    // Sales can say a client is supervised (or not), with a reason.
+    await as('Sherif Lotfy');
+    ok(await errOf(S.entities.setFraRegulated('ent_delta', true, '')) === 'wf.err.reasonRequired', 'a reason is needed');
+    const delta = await S.entities.setFraRegulated('ent_delta', true, 'Its consumer finance arm sends these cases');
+    ok(delta.fraRegulated === true, 'Delta Crest is now treated as supervised');
+    await as('Youssef Kamel');
+    ok(!has(await ask('ent_delta')), 'so its collections also need a registered provider');
+    await as('Laila Hosny');
+    await S.demo.resetClock();
+    rp.verification.documents = rp.verification.documents.filter((d) => d.type !== wf.FRA_DOC).concat([saved]);
+    db.entities.find((e) => e.id === 'ent_delta').fraRegulated = undefined;
+  });
+
   // ---------------------------------------------------------------- report
   const missing = S.verify();
   results.forEach((r) => {

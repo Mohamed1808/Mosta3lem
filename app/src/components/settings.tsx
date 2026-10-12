@@ -35,6 +35,7 @@ export function DocStateBadge({ doc }: { doc: any }) {
   const st = doc.expiry?.state;
   if (st === 'expired') return <Badge label={t('settings.state.expired')} tone="danger" />;
   if (st === 'expiring') return <Badge label={t('settings.state.expiring')} tone="warning" />;
+  if (doc.optional && doc.status === 'missing') return <Badge label={t('settingsApp.notSent')} tone="muted" />;
   const s = doc.status === 'verified' ? 'verified' : doc.status === 'missing' ? 'rejected' : 'pending';
   return <Badge label={t('docStatus.' + s)} tone={s === 'verified' ? 'success' : s === 'rejected' ? 'danger' : 'pending'} />;
 }

@@ -162,6 +162,7 @@ function Body({ p }: { p: Any }) {
                 <li key={d.type} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                   <div className="min-w-0">
                     <div className="font-medium">{t("doc." + d.type)}</div>
+                    {d.number || (d.renewal && d.renewal.number) ? <div className="text-xs text-ink2"><bdi dir="ltr">{t("fra.number", { n: (d.renewal && d.renewal.number) || d.number })}</bdi></div> : null}
                     {d.expiresAt ? <div className={`text-xs ${ex.state === "expired" ? "text-bad" : ex.state === "expiring" ? "text-warn" : "text-ink3"}`}>{t("settings.expires", { date: date(d.expiresAt) })}</div> : null}
                     {d.renewal ? <div className="text-xs text-accent">{t("settings.renewalSent", { date: d.renewal.expiresAt ? date(d.renewal.expiresAt) : "-" })}</div> : null}
                     {/* eslint-disable-next-line @next/next/no-img-element -- document scans are data URLs from the app, not files next/image can optimise */}

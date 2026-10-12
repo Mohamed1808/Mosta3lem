@@ -191,7 +191,11 @@
     var buckets = U.uniq([].concat(q.buckets || (q.bucket ? [q.bucket] : [])));
     // Where the cases are, down to the city: { gov, city }. A provider must cover every place.
     var places = q.places || (c ? [D.casePlace(c)] : []);
-    var excluded = { full: 0, suspended: 0, documents: 0 };
+    var excluded = { full: 0, suspended: 0, documents: 0, fra: 0 };
+    // Collections for a non-bank finance client go only to FRA-registered providers.
+    var me = E.currentUser();
+    var client = c ? E.entityById(c.entityId) : q.entityId ? E.entityById(q.entityId) : me && me.entityId ? E.entityById(me.entityId) : null;
+    var needsFra = wf.fraRequired(client, service);
     var out = [];
     db.providers.forEach(function (p) {
       if (!p.verification || p.verification.status !== 'verified') return;
@@ -203,6 +207,8 @@
       if (p.enforcement && p.enforcement.level === 'suspended') { excluded.suspended++; return; }
       // An expired commercial register or tax card pauses new offers until the renewal is checked.
       if (wf.expiredDocs(p, now).length) { excluded.documents++; return; }
+      var fra = wf.fraRegistration(p, now);
+      if (needsFra && !fra) { excluded.fra++; return; }
       var load = D.providerLoad(db, p.id);
       // Cases already in this offer's demand count as load if they are pending with this provider (reselect).
       var order = ['none', 'full', 'low', 'medium', 'high'];
@@ -222,7 +228,8 @@
         score: sc ? sc.score : null, avgRating: sc ? sc.avgRating : null, ratingCount: sc ? sc.ratingCount : 0,
         isNew: sc ? sc.isNew : true, criteria: sc ? sc.criteria : {},
         metrics: sc ? sc.metrics : {},
-        availability: worst, spare: spareMin
+        availability: worst, spare: spareMin,
+        fraNumber: fra ? fra.number || null : null
       };
       if (service === 'investigation') {
         var types = q.inquiryTypes || ['residence'];
@@ -244,7 +251,7 @@
       out.push(card);
     });
     out.sort(function (a, b) { return b.rank - a.rank; });
-    return { providers: out, excluded: excluded, now: now };
+    return { providers: out, excluded: excluded, fraRequired: needsFra, now: now };
   }
 
   S.marketplace = {

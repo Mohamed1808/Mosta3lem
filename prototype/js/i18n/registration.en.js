@@ -137,7 +137,7 @@
       },
       demoBody: 'Demo: you can continue with a simulated location. In the live app a real location is required.', useDemo: 'Use simulated location',
       sentLater: 'Done without signal, sent {time}', finishedOffline: 'The agent finished this report without signal at {finished}; it arrived at {sent}.'
-    },    select: { hiddenDocuments: '{n} paused: expired documents' },
+    },    select: { hiddenDocuments: '{n} paused: expired documents', hiddenFra: '{n} not registered with the FRA' },
     earnings: {
       byAgent: 'By field agent', noAgent: 'No agent recorded', casesMonth: 'Cases this month', allTime: 'All time', casesN: '{n} cases',
       teamOnly: 'You see the earnings of the field agents you supervise. The owner sees the whole company.', teamTitle: 'Your team\'s earnings'
