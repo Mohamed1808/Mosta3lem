@@ -169,6 +169,8 @@
       history: {}, enforcement: { level: 'none', source: 'auto', since: now }, joinedAt: now, description: '',
       registration: { ref: D.nextRef(db, 'registration'), source: source, at: now, byUserId: actor ? actor.userId : null, byName: actor ? actor.name : null }
     };
+    // What the applicant agreed to, and when (self sign-up ticks the terms and privacy notice).
+    if (source === 'self') p.registration.consent = { terms: wf.privacy.TERMS_VERSION, at: now };
     var user, agent = null;
     if (company) {
       user = { id: U.uid('u'), role: 'provider_admin', owner: true, providerId: pid, active: true, createdAt: now };

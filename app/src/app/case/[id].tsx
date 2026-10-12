@@ -30,6 +30,7 @@ export default function CaseScreen() {
   return (
     <Screen title={c.ref} sub={client ? c.providerName || undefined : c.entityName || (q.data.entity && q.data.entity.name)} back>
       <Row wrap gap={6}><StatusBadge status={c.status} /><SlaBadge c={c} /><Badge label={t('service.' + c.service)} tone={c.service === 'investigation' ? 'accent' : 'pending'} />{c.disputed ? <Badge label={t('dispute.flag')} tone="danger" /> : null}</Row>
+      {c.maskReason === 'erased' ? <Notice tone="info" icon="lock" text={t('mask.erasedNotice')} /> : null}
       {client ? <ClientActions d={q.data} /> : <Actions d={q.data} />}
       <Card title={t('caseScreen.request')}><RequestDetails d={q.data} /></Card>
       {Object.keys(c.addresses || {}).length ? (
@@ -83,7 +84,7 @@ function RequestDetails({ d }: { d: any }) {
   if (c.price != null) rows.push([t('caseScreen.price'), priceText(c, t)]);
   if (c.agentName) rows.push([t('caseScreen.agent'), c.agentName]);
   rows.push([t('case.instructions'), c.instructions === null && c.masked ? hidden : c.instructions || '-']);
-  return <Stack>{c.masked ? <Notice tone="info" icon="lock" text={t('caseScreen.masked')} /> : null}<KeyValue rows={rows} /></Stack>;
+  return <Stack>{c.masked && c.maskReason !== 'erased' ? <Notice tone="info" icon="lock" text={t('caseScreen.masked')} /> : null}<KeyValue rows={rows} /></Stack>;
 }
 
 function Balance({ c }: { c: any }) {

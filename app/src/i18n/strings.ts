@@ -85,6 +85,20 @@ const en = {
   },
   assignScreen: { title: 'Assign cases', pick: 'Pick the field agent', selected: '{n} selected', assignTo: 'Assign to agent', covers: 'Covers this area', none: 'No active agents for this service' },
   reviewScreen: { title: 'Review report', approve: 'Approve and deliver', returnTo: 'Return to agent', returnBody: 'Tell the agent what to fix.', approved: 'Report delivered to the client', returned: 'Report returned to the agent' },
+  dpa: {
+    title: 'Data processing agreement', version: 'Version {v}', open: 'Read and accept', read: 'Read the agreement', done: 'Agreement accepted',
+    accept: 'I accept on behalf of {org}', accepted: 'Accepted on {date} by {name}.',
+    needed: 'Accept the data processing agreement before sending cases to providers.',
+    adminOnly: 'Your organisation Admin must accept the data processing agreement. Until then, cases cannot be sent to providers.',
+    intro: 'Your organisation decides which customers to send and must have the legal basis to share their data: their consent, a contract with them, or a legal duty. Mosta3lem processes the data for you, only to carry out your requests.',
+    point1: 'We use the data only for the investigations and collections you request, and never sell or share it for anything else.',
+    point2: 'Providers see a customer’s details only after accepting the case, and lose them 30 days after it closes.',
+    point3: 'Data is stored in Egypt and encrypted. Photos and documents open only through links that expire within minutes.',
+    point4: 'Photos are deleted {photos} days, and all other personal details {personal} days, after a case closes.',
+    point5: 'If one of your customers asks about their data, we tell you and answer within the legal deadline.',
+    point6: 'If personal data is exposed, we report it to the data protection centre within 72 hours and tell you.',
+    summaryNote: 'This is a summary. Your Mosta3lem account manager shares the full agreement.'
+  },
   more: {
     account: 'Account', language: 'Language', notifications: 'Notifications', demo: 'Demo', resetDemo: 'Reset demo data',
     resetBody: 'All demo data returns to its starting state.', resetDone: 'Demo data reset', signOut: 'Sign out', version: 'Version {v}',
@@ -241,6 +255,20 @@ const ar: typeof en = {
   },
   assignScreen: { title: 'تكليف الحالات', pick: 'اختر المندوب الميداني', selected: 'تم اختيار {n}', assignTo: 'تكليف المندوب', covers: 'يغطي هذه المنطقة', none: 'لا يوجد مندوبون نشطون لهذه الخدمة' },
   reviewScreen: { title: 'مراجعة التقرير', approve: 'اعتماد وتسليم', returnTo: 'إعادة للمندوب', returnBody: 'أخبر المندوب بما يجب تصحيحه.', approved: 'تم تسليم التقرير للعميل', returned: 'أُعيد التقرير للمندوب' },
+  dpa: {
+    title: 'اتفاقية معالجة البيانات', version: 'الإصدار {v}', open: 'قراءة والموافقة', read: 'قراءة الاتفاقية', done: 'تمت الموافقة على الاتفاقية',
+    accept: 'أوافق نيابة عن {org}', accepted: 'تمت الموافقة في {date} بواسطة {name}.',
+    needed: 'وافق على اتفاقية معالجة البيانات قبل إرسال الحالات لمقدمي الخدمة.',
+    adminOnly: 'يجب أن يوافق مدير جهتك على اتفاقية معالجة البيانات. حتى ذلك الحين لا يمكن إرسال الحالات لمقدمي الخدمة.',
+    intro: 'تقرر جهتك أي العملاء ترسلهم، ويجب أن يكون لديها السند القانوني لمشاركة بياناتهم: موافقتهم، أو عقد معهم، أو التزام قانوني. يعالج مستعلم هذه البيانات نيابة عنكم ولتنفيذ طلباتكم فقط.',
+    point1: 'نستخدم البيانات فقط للاستعلامات والتحصيلات التي تطلبونها، ولا نبيعها أو نشاركها لأي غرض آخر.',
+    point2: 'لا يرى مقدمو الخدمة بيانات العميل إلا بعد قبول الحالة، وتُخفى عنهم بعد 30 يومًا من إغلاقها.',
+    point3: 'تُخزَّن البيانات داخل مصر ومشفرة. لا تُفتح الصور والمستندات إلا بروابط تنتهي خلال دقائق.',
+    point4: 'تُحذف الصور بعد {photos} يومًا، وباقي البيانات الشخصية بعد {personal} يومًا، من إغلاق الحالة.',
+    point5: 'إذا سأل أحد عملائكم عن بياناته، نخطركم ونرد عليه خلال المهلة القانونية.',
+    point6: 'إذا تعرضت بيانات شخصية للاختراق، نبلغ مركز حماية البيانات خلال 72 ساعة ونخطركم.',
+    summaryNote: 'هذا ملخص. يشارككم مدير حسابكم في مستعلم الاتفاقية الكاملة.'
+  },
   more: {
     account: 'الحساب', language: 'اللغة', notifications: 'الإشعارات', demo: 'النسخة التجريبية', resetDemo: 'إعادة ضبط البيانات التجريبية',
     resetBody: 'تعود كل البيانات التجريبية إلى حالتها الأولى.', resetDone: 'تمت إعادة ضبط البيانات', signOut: 'تسجيل الخروج', version: 'الإصدار {v}',

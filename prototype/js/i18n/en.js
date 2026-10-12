@@ -110,7 +110,8 @@
     payout: { accruing: 'Accruing', pending: 'Payout pending', paid_out: 'Paid out' },
     mask: {
       hidden: 'Hidden', preAcceptNotice: 'Customer details are hidden until you accept this case. You can see the service, type, governorate, amount range, deadline and price.',
-      retentionNotice: 'This case closed more than 30 days ago, so customer details are masked again.'
+      retentionNotice: 'This case closed more than 30 days ago, so customer details are masked again.',
+      erasedNotice: 'The personal details of this case were deleted under the data protection rules.'
     },
     kpi: {
       openCases: 'Open cases', slaAtRisk: 'SLA at risk', slaAtRiskSub: '80% of time used', slaBreached: 'SLA breached',
@@ -287,6 +288,15 @@
       farFromAddress: 'More than {max} m from the address', photos: 'Photos ({n} of {min} required)', photo: 'Evidence photo', noReport: 'No report answers yet',
       label: { entrance: 'Entrance', building: 'Building', door: 'Door', street: 'Street', premises: 'Premises', signboard: 'Signboard' }
     },
+    privacy: {
+      kind: { access: 'See their data', correction: 'Correct their data', deletion: 'Delete their data', objection: 'Object to processing' },
+      status: { open: 'New', in_review: 'In review', done: 'Answered', refused: 'Refused' },
+      channel: { email: 'Email', phone: 'Phone', letter: 'Letter', in_person: 'In person', organisation: 'Through the organisation' },
+      severity: { low: 'Low', medium: 'Medium', high: 'High' },
+      data: { identity: 'Names and national IDs', contact: 'Phone numbers and emails', address: 'Addresses', financial: 'Amounts and accounts', photos: 'Photos and documents', reports: 'Investigation reports', accounts: 'Sign-in details' },
+      breachStatus: { open: 'Not reported yet', reported: 'Reported to the centre', closed: 'Closed' },
+      step: { in_review: 'Review started', done: 'Answered', refused: 'Refused', exported: 'Data exported', contained: 'Contained', reported: 'Reported to the data protection centre', people_told: 'People affected told', note: 'Note', closed: 'Closed' }
+    },
     dispute: {
       title: 'Disputes', flag: 'Disputed', raise: 'Raise a dispute', raiseCase: 'Dispute case {ref}', raiseRating: 'Dispute this rating',
       caseIntro: 'The platform reviews both sides and the case timeline, then decides.', ratingIntro: 'If the platform upholds your dispute, the rating is removed from your score.',
@@ -460,8 +470,13 @@
     },
     audit: {
       subtitle: '{n} entries shown, newest first.', who: 'Who', what: 'What', target: 'Target', beforeAfter: 'Before and after',
-      type: { case: 'Case', offer: 'Offer', batch: 'Batch', provider: 'Provider', rating: 'Rating', dispute: 'Dispute', invoice: 'Invoice', config: 'Config', user: 'User', agent: 'Agent', entity: 'Client', clock: 'Clock' },
+      type: { case: 'Case', offer: 'Offer', batch: 'Batch', provider: 'Provider', rating: 'Rating', dispute: 'Dispute', invoice: 'Invoice', config: 'Config', user: 'User', agent: 'Agent', entity: 'Client', clock: 'Clock', privacy: 'Data request', breach: 'Data breach' },
       action: {
+        privacy_settings: 'Data protection settings changed', privacy_erased_photos: 'Photos deleted (retention)', privacy_erased_all: 'Personal data deleted',
+        privacy_request_logged: 'Data request logged', privacy_request_review: 'Data request in review', privacy_request_done: 'Data request answered',
+        privacy_request_refused: 'Data request refused', privacy_exported: 'Personal data exported', privacy_breach_logged: 'Breach logged',
+        privacy_breach_reported: 'Breach reported to the centre', privacy_breach_contained: 'Breach contained', privacy_breach_people_told: 'People told about a breach',
+        privacy_breach_note: 'Breach note', privacy_breach_closed: 'Breach closed', entity_dpa_accepted: 'Data processing agreement accepted',
         case_submit: 'Case submitted', case_send_offer: 'Offer sent', case_decline: 'Offer declined', case_expire: 'Offer expired', case_accept: 'Case accepted',
         case_assign: 'Agent assigned', case_check_in: 'Checked in', case_submit_report: 'Report submitted', case_return_to_agent: 'Report returned',
         case_resume: 'Work resumed', case_approve: 'Report delivered', case_request_rework: 'Rework requested', case_accept_report: 'Report accepted',
@@ -527,9 +542,17 @@
       fee_changed: 'The platform fee is now {pct}%', fee_change_sent_back: 'Your proposed fee of {pct}% was sent back',
       platform_fee_changed: 'The platform fee is now {pct}% for invoices opened from today', invoice_issued: 'Invoice {ref} was issued', invoice_paid: 'Invoice {ref} was paid',
       enforcement_changed: 'Your account status changed: {level}', enforcement_admin: '{provider} status changed automatically: {level}',
-      provider_verified: 'Your account is verified', batch_progress: 'Batch {ref} moved forward'
+      provider_verified: 'Your account is verified', batch_progress: 'Batch {ref} moved forward',
+      privacy_request_new: 'New data request {ref} waits for an answer', privacy_request_due: 'Data request {ref} is due within a day',
+      privacy_request_late: 'Data request {ref} is past its deadline',
+      privacy_request_org: 'A person in {count} of your cases made a request about their data ({ref}). The platform Legal team will contact you.',
+      breach_new: 'A data breach was reported: {ref}', breach_due: 'Breach {ref} must be reported to the data protection centre within 24 hours',
+      breach_late: 'Breach {ref} is past the 72-hour reporting deadline'
     },
     errors: {
+      dpaRequired: 'Your organisation Admin must accept the data processing agreement before cases can be sent to providers.',
+      privacyRange: 'Enter a whole number from {min} to {max}', photosAfterPersonal: 'Photos cannot be kept longer than the other personal details',
+      idOrPhone: 'Enter the national ID or the mobile number', breachCloseReason: 'Report it to the data protection centre first, or write why no report was needed',
       wrongPassword: 'Wrong email or password', signInLocked: 'Too many wrong tries. Try again in {min} minutes.',
       passwordShort: 'Use at least 10 characters', passwordLong: 'The password is too long', passwordMix: 'Use both letters and numbers', passwordPersonal: 'Do not use your email name in the password',
       codeWrong: 'Wrong code', codeExpired: 'This code has expired. Ask for a new one.', tooManyRequests: 'Too many tries. Wait a few minutes and try again.',

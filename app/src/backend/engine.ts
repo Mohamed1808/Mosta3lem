@@ -87,6 +87,7 @@ function loadScripts() {
   require('../../../prototype/js/workflow/registration.js');
   require('../../../prototype/js/workflow/settings.js');
   require('../../../prototype/js/workflow/reports.js');
+  require('../../../prototype/js/workflow/privacy.js');
   require('../../../prototype/js/store/store.js');
   require('../../../prototype/js/store/domain.js');
   require('../../../prototype/js/store/seed.js');
@@ -100,6 +101,7 @@ function loadScripts() {
   require('../../../prototype/js/services/billing.js');
   require('../../../prototype/js/services/registration.js');
   require('../../../prototype/js/services/exports.js');
+  require('../../../prototype/js/services/privacy.js');
   require('../../../prototype/js/services/index.js');
   require('../../../prototype/js/services/remote.js');
   require('../../../prototype/js/ui/icons.js');

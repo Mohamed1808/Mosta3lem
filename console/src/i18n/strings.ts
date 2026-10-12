@@ -5,6 +5,41 @@
  */
 const en = {
   console: {
+    privacy: {
+      sub: 'Requests from people about their data, data breaches, and how long personal data is kept (Personal Data Protection Law, Law 151 of 2020).',
+      tab: { requests: 'Requests from people', breaches: 'Breaches', settings: 'Retention and agreements' },
+      newRequest: 'Log a request', newRequestSub: 'Someone asked to see, correct or delete their data, or objected to its use. Log it the day it arrives: the deadline starts then.',
+      kind: 'What they ask', name: 'Their name', nationalId: 'National ID', phone: 'Mobile', email: 'Email', channel: 'How it arrived', receivedAt: 'Received on', details: 'What they wrote',
+      idOrPhoneHint: 'Enter the national ID, the mobile, or both. They are used to find the cases about this person.',
+      logged: 'Request {ref} logged', noRequests: 'No requests yet.', noBreaches: 'No breaches reported.',
+      col: { ref: 'Reference', kind: 'Request', person: 'Person', received: 'Received', due: 'Answer by', status: 'Status', title: 'What happened', found: 'Found', severity: 'Severity', deadline: 'Report by' },
+      late: 'Late', dueSoon: 'Due soon', hoursLeft: '{h} hours left',
+      request: {
+        person: 'The person', subject: 'Name, ID and contact', cases: 'Cases about this person', noCases: 'No case matches this national ID or mobile.',
+        orgs: 'Organisations told', orgsNote: 'They sent these cases and decided to collect the data, so they were told when the request was logged.',
+        steps: 'What was done', loggedBy: 'Logged by {name} on {date}', startReview: 'Start the review', export: 'Export their data', exported: 'Data exported',
+        answer: 'Mark as answered', refuse: 'Refuse', answerTitle: 'Answer the request', answerBody: 'Note what was sent or done. The person must get the answer by {date}.',
+        deleteTitle: 'Delete their data', deleteBody: 'The person\u2019s name, national ID, phones, addresses, report answers, notes and photos are deleted from their {n} closed case(s). Open cases keep their data until they close. This cannot be undone.',
+        deleteConfirm: 'Delete and answer', refuseBody: 'Write the legal reason. It is part of the answer to the person.', answered: 'Request answered', refused: 'Request refused',
+        erased: 'Deleted from: {refs}', stillOpen: 'Still open, deleted when they close: {refs}', outcome: 'Answer', erasedTag: 'Deleted'
+      },
+      breach: {
+        report: 'Report a breach', reportSub: 'Personal data was lost, sent to the wrong person, seen by someone who should not, or a system was broken into. Report it straight away: Legal has 72 hours to tell the data protection centre.',
+        title: 'What happened, in one line', description: 'Details: what, when, how you found out', discoveredAt: 'Found on', severity: 'How serious', dataTypes: 'What data', peopleAffected: 'People affected (about)',
+        sent: 'Breach {ref} reported. Legal has been told.', mine: 'Breaches you reported', deadline: 'Report to the centre by {date}', reportedOn: 'Reported to the centre on {date}',
+        centreRef: 'Centre reference', contained: 'Mark as contained', reported: 'Reported to the centre', peopleTold: 'People affected told', addNote: 'Add a note', close: 'Close',
+        reportedTitle: 'Reported to the data protection centre', reportedNote: 'The reference the centre gave, if any', closeTitle: 'Close the breach',
+        closeBody: 'If it was not reported to the centre, write why no report was needed.', saved: 'Saved', reportedBy: 'Reported by {name}'
+      },
+      settings: {
+        retention: 'How long personal data is kept', retentionSub: 'Counted from the day a case closes. Then the data is deleted for good, from the database and the file storage. Confirm the periods with the lawyer.',
+        photosDays: 'Photos and receipts (days)', personalDays: 'All other personal details (days)', requestDays: 'Answer requests within (working days)',
+        saved: 'Settings saved', due: 'Waiting to be deleted now', duePhotos: '{n} case(s): photos', dueAll: '{n} case(s): all personal details',
+        erased: 'Cases with deleted data so far: {n}', lastRun: 'Last deletion run: {date}, {n} case(s)', never: 'Nothing deleted yet.',
+        dpa: 'Data processing agreements', dpaSub: 'Each organisation\u2019s Admin accepts the agreement in the app before their cases can go to providers. Current version: {v}.',
+        accepted: 'Accepted {date} by {name}', notAccepted: 'Not accepted', oldVersion: 'Older version ({v})'
+      }
+    },
     security: {
       sub: 'Sign-ins, failed attempts, lockouts and password changes, with the address and device they came from.',
       needsServer: 'The security log is kept by the server. Connect the console to the API to see it.',
@@ -43,7 +78,7 @@ const en = {
     },
     demoAccounts: 'Demo staff accounts', demoHint: 'Sign in as one person per team, without a code.',
     loading: 'Loading', signOut: 'Sign out', language: 'العربية', hello: 'Hello, {name}', menu: 'Menu',
-    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', reports: 'Reports', activity: 'Activity log', security: 'Security log', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
+    nav: { overview: 'Overview', providers: 'Providers', cases: 'Cases', quality: 'Quality review', disputes: 'Disputes', finance: 'Finance', organisations: 'Organisations', reports: 'Reports', activity: 'Activity log', security: 'Security log', privacy: 'Data protection', reportBreach: 'Report a breach', staff: 'Staff', settings: 'Settings', access: 'Teams and access' },
     orgs: {
       sub: 'Client organisations, their work with providers and how providers rate them as clients.', new: 'New organisation', none: 'No organisations yet.',
       col: { name: 'Organisation', users: 'Users', open: 'Open cases', volume: 'All cases', spend: 'Spend to date', rating: 'Rated by providers' },
@@ -148,13 +183,48 @@ const en = {
       qa_review: 'Review reports (Quality)', disputes_view: 'See disputes', disputes_decide: 'Decide disputes', disputes_openOnBehalf: 'Open a dispute on behalf of a client',
       billing_view: 'See invoices and payments', billing_issue: 'Issue invoices', billing_pay: 'Record payments', billing_adjust: 'Adjust invoices after disputes',
       fee_change: 'Change the platform fee', orgs_view: 'See organisations', orgs_create: 'Create organisation accounts', accounts_resetLogin: 'Reset logins',
-      reports_view: 'Platform reports', audit_view: 'Audit log', security_view: 'Security log', staff_manage: 'Manage staff accounts', settings_manage: 'Platform settings'
+      reports_view: 'Platform reports', audit_view: 'Audit log', security_view: 'Security log', privacy_manage: 'Data protection: requests, breaches, retention', staff_manage: 'Manage staff accounts', settings_manage: 'Platform settings'
     }
   }
 };
 
 const ar: typeof en = {
   console: {
+    privacy: {
+      sub: 'طلبات الأشخاص بخصوص بياناتهم، واختراقات البيانات، ومدة الاحتفاظ بالبيانات الشخصية (قانون حماية البيانات الشخصية رقم 151 لسنة 2020).',
+      tab: { requests: 'طلبات الأشخاص', breaches: 'الاختراقات', settings: 'مدة الاحتفاظ والاتفاقيات' },
+      newRequest: 'تسجيل طلب', newRequestSub: 'طلب شخص الاطلاع على بياناته أو تصحيحها أو حذفها، أو اعترض على استخدامها. سجّل الطلب يوم وصوله: تبدأ المهلة من حينها.',
+      kind: 'ما يطلبه', name: 'اسمه', nationalId: 'الرقم القومي', phone: 'الموبايل', email: 'البريد الإلكتروني', channel: 'طريقة الوصول', receivedAt: 'تاريخ الاستلام', details: 'ما كتبه',
+      idOrPhoneHint: 'أدخل الرقم القومي أو الموبايل أو كليهما. يُستخدمان للبحث عن الحالات الخاصة بهذا الشخص.',
+      logged: 'تم تسجيل الطلب {ref}', noRequests: 'لا توجد طلبات بعد.', noBreaches: 'لم يُبلَّغ عن أي اختراق.',
+      col: { ref: 'المرجع', kind: 'الطلب', person: 'الشخص', received: 'الاستلام', due: 'الرد قبل', status: 'الحالة', title: 'ما حدث', found: 'تاريخ الاكتشاف', severity: 'الخطورة', deadline: 'الإبلاغ قبل' },
+      late: 'متأخر', dueSoon: 'يقترب الموعد', hoursLeft: 'متبقٍ {h} ساعة',
+      request: {
+        person: 'الشخص', subject: 'الاسم والهوية والتواصل', cases: 'الحالات الخاصة بهذا الشخص', noCases: 'لا توجد حالة بهذا الرقم القومي أو الموبايل.',
+        orgs: 'الجهات التي أُخطرت', orgsNote: 'أرسلت هذه الجهات الحالات وقررت جمع البيانات، لذا أُخطرت عند تسجيل الطلب.',
+        steps: 'ما تم', loggedBy: 'سجّله {name} في {date}', startReview: 'بدء المراجعة', export: 'تصدير بياناته', exported: 'تم تصدير البيانات',
+        answer: 'تسجيل الرد', refuse: 'رفض', answerTitle: 'الرد على الطلب', answerBody: 'اكتب ما أُرسل أو ما تم. يجب أن يصل الرد للشخص قبل {date}.',
+        deleteTitle: 'حذف بياناته', deleteBody: 'سيُحذف اسم الشخص ورقمه القومي وهواتفه وعناوينه وإجابات التقارير والملاحظات والصور من {n} حالة مغلقة. تبقى بيانات الحالات المفتوحة حتى تُغلق. لا يمكن التراجع عن ذلك.',
+        deleteConfirm: 'حذف وتسجيل الرد', refuseBody: 'اكتب السبب القانوني. سيكون جزءًا من الرد على الشخص.', answered: 'تم تسجيل الرد', refused: 'تم رفض الطلب',
+        erased: 'حُذفت من: {refs}', stillOpen: 'ما زالت مفتوحة وستُحذف عند إغلاقها: {refs}', outcome: 'الرد', erasedTag: 'محذوفة'
+      },
+      breach: {
+        report: 'الإبلاغ عن اختراق', reportSub: 'فُقدت بيانات شخصية، أو أُرسلت لشخص خطأ، أو اطلع عليها من لا يحق له، أو اختُرق نظام. أبلغ فورًا: أمام الفريق القانوني 72 ساعة لإبلاغ مركز حماية البيانات.',
+        title: 'ما حدث في سطر واحد', description: 'التفاصيل: ماذا ومتى وكيف عرفت', discoveredAt: 'تاريخ الاكتشاف', severity: 'درجة الخطورة', dataTypes: 'نوع البيانات', peopleAffected: 'عدد المتأثرين (تقريبًا)',
+        sent: 'تم الإبلاغ عن الاختراق {ref}. أُخطر الفريق القانوني.', mine: 'الاختراقات التي أبلغت عنها', deadline: 'الإبلاغ للمركز قبل {date}', reportedOn: 'أُبلغ المركز في {date}',
+        centreRef: 'مرجع المركز', contained: 'تم الاحتواء', reported: 'تم إبلاغ المركز', peopleTold: 'تم إخطار المتأثرين', addNote: 'إضافة ملاحظة', close: 'إغلاق',
+        reportedTitle: 'تم إبلاغ مركز حماية البيانات', reportedNote: 'المرجع الذي أعطاه المركز إن وُجد', closeTitle: 'إغلاق الاختراق',
+        closeBody: 'إن لم يُبلَّغ المركز، اكتب سبب عدم الحاجة للإبلاغ.', saved: 'تم الحفظ', reportedBy: 'أبلغ عنه {name}'
+      },
+      settings: {
+        retention: 'مدة الاحتفاظ بالبيانات الشخصية', retentionSub: 'تُحسب من يوم إغلاق الحالة، ثم تُحذف البيانات نهائيًا من قاعدة البيانات ومن مخزن الملفات. راجع المدد مع المحامي.',
+        photosDays: 'الصور والإيصالات (أيام)', personalDays: 'باقي البيانات الشخصية (أيام)', requestDays: 'الرد على الطلبات خلال (أيام عمل)',
+        saved: 'تم حفظ الإعدادات', due: 'في انتظار الحذف الآن', duePhotos: '{n} حالة: الصور', dueAll: '{n} حالة: كل البيانات الشخصية',
+        erased: 'حالات حُذفت بياناتها حتى الآن: {n}', lastRun: 'آخر عملية حذف: {date}، {n} حالة', never: 'لم يُحذف شيء بعد.',
+        dpa: 'اتفاقيات معالجة البيانات', dpaSub: 'يوافق مدير كل جهة على الاتفاقية من التطبيق قبل إرسال حالاتها لمقدمي الخدمة. الإصدار الحالي: {v}.',
+        accepted: 'وافق في {date}: {name}', notAccepted: 'لم يوافق', oldVersion: 'إصدار أقدم ({v})'
+      }
+    },
     security: {
       sub: 'تسجيلات الدخول والمحاولات الفاشلة وقفل الحسابات وتغيير كلمات المرور، مع العنوان والجهاز.',
       needsServer: 'سجل الأمان يحفظه الخادم. اربط لوحة التحكم بالخادم لعرضه.',
@@ -193,7 +263,7 @@ const ar: typeof en = {
     },
     demoAccounts: 'حسابات موظفين تجريبية', demoHint: 'سجّل الدخول كشخص من كل فريق بدون رمز.',
     loading: 'جارٍ التحميل', signOut: 'تسجيل الخروج', language: 'English', hello: 'مرحبًا، {name}', menu: 'القائمة',
-    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', reports: 'التقارير', activity: 'سجل النشاط', security: 'سجل الأمان', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },
+    nav: { overview: 'نظرة عامة', providers: 'مقدمو الخدمة', cases: 'الحالات', quality: 'مراجعة الجودة', disputes: 'النزاعات', finance: 'المالية', organisations: 'الجهات', reports: 'التقارير', activity: 'سجل النشاط', security: 'سجل الأمان', privacy: 'حماية البيانات', reportBreach: 'الإبلاغ عن اختراق', staff: 'الموظفون', settings: 'الإعدادات', access: 'الفرق والصلاحيات' },
     orgs: {
       sub: 'الجهات العميلة وأعمالها مع مقدمي الخدمة وتقييم مقدمي الخدمة لها كعملاء.', new: 'جهة جديدة', none: 'لا توجد جهات بعد.',
       col: { name: 'الجهة', users: 'المستخدمون', open: 'حالات مفتوحة', volume: 'كل الحالات', spend: 'الإنفاق حتى الآن', rating: 'تقييم مقدمي الخدمة' },
@@ -298,7 +368,7 @@ const ar: typeof en = {
       qa_review: 'مراجعة التقارير (الجودة)', disputes_view: 'عرض النزاعات', disputes_decide: 'الفصل في النزاعات', disputes_openOnBehalf: 'فتح نزاع نيابة عن جهة',
       billing_view: 'عرض الفواتير والمدفوعات', billing_issue: 'إصدار الفواتير', billing_pay: 'تسجيل المدفوعات', billing_adjust: 'تعديل الفواتير بعد النزاعات',
       fee_change: 'تغيير عمولة المنصة', orgs_view: 'عرض الجهات', orgs_create: 'إنشاء حسابات الجهات', accounts_resetLogin: 'إعادة تعيين الدخول',
-      reports_view: 'تقارير المنصة', audit_view: 'سجل التدقيق', security_view: 'سجل الأمان', staff_manage: 'إدارة حسابات الموظفين', settings_manage: 'إعدادات المنصة'
+      reports_view: 'تقارير المنصة', audit_view: 'سجل التدقيق', security_view: 'سجل الأمان', privacy_manage: 'حماية البيانات: الطلبات والاختراقات والاحتفاظ', staff_manage: 'إدارة حسابات الموظفين', settings_manage: 'إعدادات المنصة'
     }
   }
 };

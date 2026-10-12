@@ -87,7 +87,7 @@ function Body({ d }: { d: Any }) {
       <div className="mb-2 text-sm"><Link href="/cases" className="text-accent hover:underline">{t("console.nav.cases")}</Link></div>
       <PageHead title={c.ref} sub={c.entityName + (c.providerName ? " → " + c.providerName : "")}
         right={<div className="flex flex-wrap gap-1"><Badge>{t("status." + c.status)}</Badge>{slaBadge(c, t)}<Badge tone="info">{t("service." + c.service)}</Badge>{c.disputed ? <Badge tone="danger">{t("dispute.flag")}</Badge> : null}</div>} />
-      {c.masked ? <div className="mb-4"><Notice>{t("console.cases.maskedNote")}</Notice></div> : null}
+      {c.masked ? <div className="mb-4"><Notice>{t(c.maskReason === "erased" ? "mask.erasedNotice" : "console.cases.maskedNote")}</Notice></div> : null}
       {actions.length ? <div className="mb-4 flex flex-wrap gap-2">{actions}</div> : null}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">

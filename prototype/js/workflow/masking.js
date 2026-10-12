@@ -27,6 +27,8 @@
   /** null when visible, otherwise the reason it is masked. */
   function maskReason(c, viewer, now) {
     if (!canView(c, viewer)) return 'no_access';
+    // Erased under the retention period or at the person's request (workflow/privacy.js).
+    if (c.erased && c.erased.scope === 'all') return 'erased';
     if (wf.isPlatformRole(viewer.role)) return wf.seesPersonalData(viewer.role) ? null : 'staff_no_personal_data';
     if (!wf.isProviderSide(viewer.role)) return null;
     if (!c.acceptedAt || wf.PRE_ACCEPT.indexOf(c.status) >= 0) return 'pre_acceptance';

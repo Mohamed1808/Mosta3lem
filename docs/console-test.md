@@ -74,6 +74,11 @@ The console keeps its own demo data in this browser, separate from the phone. To
 - [ ] Yara: **Reports** shows totals by month, service, provider, client and governorate, with no money and no customer names.
 - [ ] Nermine: **Activity log** lists who did what; search and filter by team.
 
+- [ ] Nermine: **Data protection** shows a request waiting (DPR-...). Open it: the cases about the person and the organisation told. **Export their data** downloads a file.
+- [ ] Nermine: **Log a request** to delete someone's data (copy a national ID from a closed case). On the request, **Delete their data**: the case now says its personal details were deleted.
+- [ ] Amira (Support): **Report a breach** works, but there is no Data protection page. Nermine gets the breach, with 72 hours on the clock; mark it reported, then close it.
+- [ ] Nermine: **Retention and agreements** shows the periods (photos 365 days, the rest 1,095) and which organisations accepted the data processing agreement.
+
 ## 8. Arabic and layout
 
 - [ ] Switch to العربية: the whole console reads right to left, no English labels (names, emails and typed text stay as written).

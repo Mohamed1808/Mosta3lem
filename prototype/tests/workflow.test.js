@@ -691,6 +691,66 @@
     });
   });
 
+  describe('data protection', function () {
+    var P = wf.privacy, s = P.settings({});
+    var closedAt = Date.UTC(2025, 0, 1);
+    function closedCase(extra) {
+      return Object.assign(makeCase('investigation', 'closed', {
+        closedAt: closedAt, photos: [{ id: 'ph1', dataUrl: 'x' }],
+        customer: { name: 'Test Name', nationalId: '29001010112345', mobiles: ['01012345678'] },
+        addresses: { home: { governorate: 'giza', city: 'Dokki', street: '5 Nile St', landmark: 'Mosque' } },
+        report: { a: 1 }, timeline: [{ action: 'close', note: 'Met the customer at home' }]
+      }), extra || {});
+    }
+    it('fills defaults for data saved before the settings existed', function () {
+      expect(s.photosDays).toBe(365);
+      expect(P.settings({ privacy: { photosDays: 90 } }).personalDays).toBe(1095);
+    });
+    it('counts request deadlines in working days, skipping Friday and Saturday', function () {
+      var thu = Date.UTC(2026, 9, 8, 9);
+      expect(new Date(P.addWorkingDays(thu, 1)).getUTCDay()).toBe(0);
+      expect(P.requestDueAt(thu, { requestDays: 6 })).toBe(thu + 10 * D);
+      expect(P.breachDueAt(thu, s)).toBe(thu + 72 * H);
+    });
+    it('erases photos first, then all personal details, only from closed cases', function () {
+      var c = closedCase();
+      expect(P.eraseDue(c, closedAt + 10 * D, s)).toBe(null);
+      expect(P.eraseDue(c, closedAt + 366 * D, s)).toBe('photos');
+      expect(P.eraseDue(c, closedAt + 1096 * D, s)).toBe('all');
+      expect(P.eraseDue(makeCase('investigation', 'in_field', { closedAt: null }), closedAt + 2000 * D, s)).toBe(null);
+      var photosGone = P.eraseCase(c, closedAt + 366 * D, 'photos', 'retention');
+      expect(photosGone.photos.length).toBe(0);
+      expect(photosGone.customer.name).toBe('Test Name');
+      expect(P.eraseDue(photosGone, closedAt + 400 * D, s)).toBe(null);
+    });
+    it('keeps the governorate, status and price but nothing that names or locates the person', function () {
+      var c = P.eraseCase(closedCase(), closedAt + 1096 * D, 'all', 'request');
+      expect(c.customer.name).toBe(null);
+      expect(c.customer.nationalId).toBe(null);
+      expect(c.addresses.home.governorate).toBe('giza');
+      expect(c.addresses.home.street).toBe(null);
+      expect(c.timeline[0].note).toBe(null);
+      expect(c.status).toBe('closed');
+      expect(c.erased.reason).toBe('request');
+      expect(wf.masking.maskReason(c, { role: 'platform_legal' }, closedAt)).toBe('erased');
+    });
+    it('finds a person by national ID or by mobile in any format', function () {
+      var c = closedCase();
+      expect(P.matchesCase(c, { nationalId: '2900-1010-1123-45' })).toBe(true);
+      expect(P.matchesCase(c, { phone: '+20 101 234 5678' })).toBe(true);
+      expect(P.matchesCase(c, { phone: '01099999999' })).toBe(false);
+      expect(P.phoneKey('00201012345678')).toBe('01012345678');
+    });
+    it('checks a new request and the settings', function () {
+      expect(P.validateRequest({ kind: 'access', name: 'A' }, P.REQUEST_KINDS).key).toBe('errors.idOrPhone');
+      expect(P.validateRequest({ kind: 'access', name: 'A', nationalId: '123' }, P.REQUEST_KINDS).key).toBe('errors.nationalIdFormat');
+      expect(P.validateRequest({ kind: 'access', name: 'A', phone: '01012345678' }, P.REQUEST_KINDS)).toBe(null);
+      expect(P.validateSettings({ photosDays: 400, personalDays: 300, requestDays: 6 }).key).toBe('errors.photosAfterPersonal');
+      expect(P.validateSettings({ photosDays: 10, personalDays: 300, requestDays: 6 }).key).toBe('errors.privacyRange');
+      expect(P.validateSettings({ photosDays: 90, personalDays: 730, requestDays: 6 })).toBe(null);
+    });
+  });
+
   describe('provider settings', function () {
     var DAY = 86400000, NOW = new Date('2026-10-04T12:00:00').getTime();
     var doc = function (days, reminders) { return { type: 'commercial_register', expiresAt: NOW + days * DAY, reminders: reminders || {} }; };
