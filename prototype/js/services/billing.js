@@ -89,6 +89,50 @@
       });
     },
 
+    // ---- e-invoicing (ETA): the platform's tax profile and each invoice's ETA document
+    /** Mosta3lem's tax profile for e-invoices, and what is still missing in it. */
+    etaSettings: function () {
+      return E.run(function () {
+        E.requirePermission('billing.view');
+        var s = wf.eta.settings(E.db().config);
+        return { settings: s, problems: wf.eta.profileProblems(s) };
+      });
+    },
+    /** Finance fills in the tax profile (partial changes are fine; problems list what is left). */
+    updateEtaSettings: function (patch) {
+      return E.mutate(function (db) {
+        var a = E.requirePermission('billing.issue');
+        var before = wf.eta.settings(db.config);
+        var p = patch || {}, next = U.clone(before);
+        ['legalName', 'taxId', 'activityCode'].forEach(function (k) { if (p[k] != null) next[k] = String(p[k]).trim(); });
+        if (p.vatRate != null && p.vatRate !== '') {
+          if (!(+p.vatRate >= 0 && +p.vatRate <= 100)) throw new Err('errors.pctRange', { field: 'vatRate' });
+          next.vatRate = +p.vatRate;
+        }
+        if (p.pricesIncludeVat != null) next.pricesIncludeVat = !!p.pricesIncludeVat;
+        if (p.branch) ['governorate', 'regionCity', 'street', 'buildingNumber'].forEach(function (k) { if (p.branch[k] != null) next.branch[k] = String(p.branch[k]).trim(); });
+        if (p.itemCodes) ['investigation', 'collection'].forEach(function (k) { if (p.itemCodes[k] != null) next.itemCodes[k] = String(p.itemCodes[k]).trim(); });
+        if (next.taxId && !/^\d{9}$/.test(next.taxId)) throw new Err('errors.taxIdFormat', { field: 'taxId' });
+        db.config.eta = next;
+        E.audit('config.eta', 'config', 'eta', null, { taxId: before.taxId, vatRate: before.vatRate, pricesIncludeVat: before.pricesIncludeVat },
+          { taxId: next.taxId, vatRate: next.vatRate, pricesIncludeVat: next.pricesIncludeVat }, null, a);
+        return { settings: next, problems: wf.eta.profileProblems(next) };
+      });
+    },
+    /**
+     * The ETA document for one invoice, with what is missing before it can be sent. The
+     * signing and sending come once the company is registered on the ETA portal.
+     */
+    etaDocument: function (invoiceId) {
+      return E.run(function () {
+        E.requirePermission('billing.view');
+        var inv = E.invoiceById(invoiceId);
+        if (!inv) throw new Err('errors.notFound');
+        var built = wf.eta.document(withTotals(inv), E.entityById(inv.entityId), E.db().config);
+        return { document: built.document, problems: built.problems, ready: !built.problems.length };
+      });
+    },
+
     // ---- the platform fee: Finance and Management decide together (wf.DUAL_APPROVAL)
     /** The current fee, a change waiting for the second team, and past changes. */
     fee: function () {

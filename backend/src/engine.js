@@ -24,7 +24,7 @@ const SCRIPTS = [
   'config/status.js', 'config/defaults.js', 'config/forms.js', 'config/reportForms.js',
   'workflow/common.js', 'workflow/validation.js', 'workflow/investigation.js',
   'workflow/collection.js', 'workflow/batch.js', 'workflow/sla.js', 'workflow/masking.js',
-  'workflow/scoring.js', 'workflow/registration.js', 'workflow/settings.js', 'workflow/reports.js', 'workflow/privacy.js',
+  'workflow/scoring.js', 'workflow/registration.js', 'workflow/settings.js', 'workflow/reports.js', 'workflow/privacy.js', 'workflow/eta.js',
   'store/store.js', 'store/domain.js', 'store/seed.js',
   'services/engine.js', 'services/contracts.js', 'services/core.js', 'services/cases.js',
   'services/batches.js', 'services/providers.js', 'services/ratings.js', 'services/billing.js',

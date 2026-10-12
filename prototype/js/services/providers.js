@@ -549,6 +549,7 @@
     return Object.assign({}, e, {
       dpaCurrent: E.dpaCurrent(e),
       fraRegulated: wf.fraRegulated(e),
+      etaProblems: wf.eta.receiverProblems(e),
       users: db.users.filter(function (u) { return u.entityId === e.id; }),
       volume: cases.length,
       open: cases.filter(function (c) { return !wf.isTerminal(c.status); }).length,
@@ -627,6 +628,27 @@
         var a = E.actor();
         if (!a.entityId) throw new Err('errors.forbidden');
         return entityStats(E.entityById(a.entityId));
+      });
+    },
+    /**
+     * The organisation's tax registration number and registered address, which e-invoices
+     * to it must carry. Sales (who opens the account) or Finance enter them.
+     * values: { taxId, address: { governorate, regionCity, street, buildingNumber } }
+     */
+    setTaxDetails: function (entityId, values) {
+      return E.mutate(function () {
+        var a = E.actor();
+        if (!wf.isPlatformRole(a.role) || !(wf.can(a.role, 'orgs.create') || wf.can(a.role, 'billing.issue'))) throw new Err('errors.forbidden');
+        var e = E.entityById(entityId);
+        if (!e) throw new Err('errors.notFound');
+        var v = values || {}, ad = v.address || {};
+        var tax = { taxId: String(v.taxId || '').trim(), address: { governorate: ad.governorate || e.governorate || 'cairo', regionCity: String(ad.regionCity || '').trim(), street: String(ad.street || '').trim(), buildingNumber: String(ad.buildingNumber || '').trim() } };
+        var bad = wf.eta.validateTaxDetails(tax);
+        if (bad) throw new Err(bad.key, { field: bad.field });
+        var before = e.tax ? e.tax.taxId : null;
+        e.tax = tax;
+        E.audit('entity.tax_details', 'entity', e.id, e.name, { taxId: before }, { taxId: tax.taxId }, null, a);
+        return entityForStaff(e, a);
       });
     },
     /**

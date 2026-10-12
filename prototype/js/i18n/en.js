@@ -297,6 +297,15 @@
       breachStatus: { open: 'Not reported yet', reported: 'Reported to the centre', closed: 'Closed' },
       step: { in_review: 'Review started', done: 'Answered', refused: 'Refused', exported: 'Data exported', contained: 'Contained', reported: 'Reported to the data protection centre', people_told: 'People affected told', note: 'Note', closed: 'Closed' }
     },
+    eta: {
+      problem: {
+        legalName: 'Mosta3lem legal name is missing', taxId: 'Mosta3lem tax registration number (9 digits) is missing',
+        activityCode: 'Activity code (4 digits) is missing', branch: 'Mosta3lem registered address is incomplete', vatRate: 'VAT rate must be 0 to 100',
+        itemCode: 'Item code for {service} is missing (EG-tax number-code, registered on the ETA portal)',
+        receiverTaxId: 'The organisation tax registration number (9 digits) is missing', receiverAddress: 'The organisation registered address is incomplete',
+        notIssued: 'The invoice is not issued yet', noLines: 'The invoice has no cases'
+      }
+    },
     digest: {
       hello: 'Good morning {name}. Your Mosta3lem summary:',
       delivered: '{n} new result(s) in the last day', waiting: '{n} case(s) waiting for your decision',
@@ -488,7 +497,7 @@
         privacy_request_logged: 'Data request logged', privacy_request_review: 'Data request in review', privacy_request_done: 'Data request answered',
         privacy_request_refused: 'Data request refused', privacy_exported: 'Personal data exported', privacy_breach_logged: 'Breach logged',
         privacy_breach_reported: 'Breach reported to the centre', privacy_breach_contained: 'Breach contained', privacy_breach_people_told: 'People told about a breach',
-        privacy_breach_note: 'Breach note', privacy_breach_closed: 'Breach closed', entity_dpa_accepted: 'Data processing agreement accepted', entity_fra_regulated: 'FRA supervision changed', user_digest_on: 'Daily summary turned on', user_digest_off: 'Daily summary turned off',
+        privacy_breach_note: 'Breach note', privacy_breach_closed: 'Breach closed', entity_dpa_accepted: 'Data processing agreement accepted', entity_fra_regulated: 'FRA supervision changed', user_digest_on: 'Daily summary turned on', config_eta: 'E-invoice tax profile changed', entity_tax_details: 'Tax details changed', user_digest_off: 'Daily summary turned off',
         case_submit: 'Case submitted', case_send_offer: 'Offer sent', case_decline: 'Offer declined', case_expire: 'Offer expired', case_accept: 'Case accepted',
         case_assign: 'Agent assigned', case_check_in: 'Checked in', case_submit_report: 'Report submitted', case_return_to_agent: 'Report returned',
         case_resume: 'Work resumed', case_approve: 'Report delivered', case_request_rework: 'Rework requested', case_accept_report: 'Report accepted',
@@ -563,6 +572,7 @@
       breach_late: 'Breach {ref} is past the 72-hour reporting deadline'
     },
     errors: {
+      taxIdFormat: 'The tax registration number is 9 digits',
       fraCollectionOnly: 'The FRA registration is for providers that do collections.',
       dpaRequired: 'Your organisation Admin must accept the data processing agreement before cases can be sent to providers.',
       privacyRange: 'Enter a whole number from {min} to {max}', photosAfterPersonal: 'Photos cannot be kept longer than the other personal details',

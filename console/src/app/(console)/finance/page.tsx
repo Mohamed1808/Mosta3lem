@@ -33,7 +33,8 @@ export default function Finance() {
 
   return (
     <>
-      <PageHead title={t("console.nav.finance")} sub={t("console.finance.sub")} />
+      <PageHead title={t("console.nav.finance")} sub={t("console.finance.sub")}
+        right={<Link href="/finance/e-invoicing" className="rounded-lg border border-line-strong bg-surface px-4 py-2 text-sm font-medium hover:bg-surface2">{t("console.eta.title")}</Link>} />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label={t("console.finance.outstanding")} value={money(sum(issued, "subtotal"))} sub={t("console.finance.invoicesN", { n: num(issued.length) })} tone={issued.length ? "warn" : undefined} />
         <Kpi label={t("console.finance.toIssue")} value={money(sum(toIssue, "subtotal"))} sub={t("console.finance.invoicesN", { n: num(toIssue.length) })} tone={toIssue.length ? "warn" : undefined} />

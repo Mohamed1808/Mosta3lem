@@ -88,6 +88,7 @@ function loadScripts() {
   require('../../../prototype/js/workflow/settings.js');
   require('../../../prototype/js/workflow/reports.js');
   require('../../../prototype/js/workflow/privacy.js');
+  require('../../../prototype/js/workflow/eta.js');
   require('../../../prototype/js/store/store.js');
   require('../../../prototype/js/store/domain.js');
   require('../../../prototype/js/store/seed.js');
