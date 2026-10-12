@@ -115,11 +115,12 @@ jobs:
           curl -sf http://localhost:4000/health/ready
       - name: Server setup file is valid
         run: |
-          printf 'CONSOLE_DOMAIN=c.example.eg
-API_DOMAIN=a.example.eg
-POSTGRES_PASSWORD=x
-FILES_KEY=x
-' > ops/.env
+          {
+            echo "CONSOLE_DOMAIN=c.example.eg"
+            echo "API_DOMAIN=a.example.eg"
+            echo "POSTGRES_PASSWORD=x"
+            echo "FILES_KEY=x"
+          } > ops/.env
           docker compose -f ops/docker-compose.yml --env-file ops/.env config --quiet
 
   console:
