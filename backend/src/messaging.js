@@ -26,6 +26,11 @@ const TEMPLATES = {
     en: (p) => `Mosta3lem: ${p.text}`,
     ar: (p) => `مستعلم: ${p.text}`
   },
+  // An alert to the people who run the platform (ALERT_EMAILS); always in English.
+  alert: {
+    en: (p) => `Mosta3lem alert (${p.server}): ${p.text}`,
+    ar: (p) => `Mosta3lem alert (${p.server}): ${p.text}`
+  },
   // The daily summary: the engine writes the whole text (digest.* translations).
   digest: {
     en: (p) => p.text,

@@ -6,3 +6,8 @@ Thumbs.db
 backend/.data/
 backend/.env
 
+# Server settings and backups (ops/)
+ops/.env
+ops/staging.env
+ops/backups*/
+

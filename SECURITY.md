@@ -71,7 +71,7 @@ The mobile app's audit lists warnings in Expo's build tools (Metro, the Expo com
 
 ## Going live: checklist
 
-For whoever deploys the live platform.
+For whoever deploys the live platform. The steps are in `docs/deploy.md`; `ops/` has the server setup (HTTPS, two API copies, PostgreSQL, backups).
 
 - [ ] **Hosting in Egypt:** the server, the database, the files and the backups all stay inside Egypt.
 - [ ] `MOSTA3LEM_MODE=live`.
@@ -83,13 +83,14 @@ For whoever deploys the live platform.
   - set `PUBLIC_URL` (the console) and `PUBLIC_API_URL`;
   - set `CORS_ORIGINS` to the console's https address only.
 - [ ] **The first Super admin** is added with `npm run create-admin`. Everyone else is invited from the console.
-- [ ] **Backups** every day, kept for at least 30 days, tested by restoring them:
-  - the database (`pg_dump`);
-  - the files folder or bucket;
+- [ ] **Backups** every day, kept for at least 30 days, each one restored into a scratch database and checked (the `backup` service in `ops/`, with `BACKUPS_EXPECTED=true`):
+  - the database (`pg_dump`) and the files folder, copied off the server to storage in Egypt;
   - `FILES_KEY`, kept separately.
 - [ ] **Monitoring:**
-  - watch `/health`;
-  - alert on errors in the log and on many `signin.locked` or `signin.code_failed` events in `security_events`.
+  - an uptime monitor on `/health/ready`, which fails when the database, the background clock or the backups are not right;
+  - `ALERT_EMAILS` set, for alerts about backups, failed deliveries and the clock;
+  - watch for many `signin.locked` or `signin.code_failed` events in the Security log.
+- [ ] **Changing `FILES_KEY`** when it may have leaked, or yearly: `npm run rotate-files-key` (see `docs/deploy.md`).
 - [ ] **Two or more copies of the API** behind the load balancer for availability, all on the same database and file storage (see "Running several copies" in `backend/README.md`).
 - [ ] **Server updates:** keep the operating system, Node.js and PostgreSQL updated, and merge dependency updates once the checks are green.
 
@@ -101,4 +102,3 @@ For whoever deploys the live platform.
   - the full text of the data processing agreement and the privacy notice;
   - the licence from the data protection centre and the Data Protection Officer.
 - **Choice of providers:** SMS, email, OCR, maps and cloud, each checked for keeping data in Egypt.
-- **Rotating `FILES_KEY`:** the procedure (re-encrypting the files) is not written yet.

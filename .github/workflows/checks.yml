@@ -88,6 +88,39 @@ jobs:
         run: node scripts/smoke-postgres.js
         env:
           DATABASE_URL: postgres://mosta3lem:ci-only-not-secret@localhost:5432/mosta3lem
+      # The daily backup and its restore test (ops/backup), on the data the smoke test left.
+      - name: Backup, then restore it into a fresh database and check it
+        working-directory: .
+        run: |
+          mkdir -p "$RUNNER_TEMP/backups"
+          docker run --rm --network host             -v "$PWD/ops/backup:/ops:ro" -v "$RUNNER_TEMP/backups:/backups"             -e DATABASE_URL=postgres://mosta3lem:ci-only-not-secret@localhost:5432/mosta3lem             postgres:16-alpine sh -c "sh /ops/backup.sh && sh /ops/restore-test.sh"
+          docker run --rm --network host postgres:16-alpine             psql postgres://mosta3lem:ci-only-not-secret@localhost:5432/mosta3lem -tA             -c "SELECT kind || ':' || ok FROM ops_events ORDER BY id" | tee results.txt
+          grep -q '^backup:true$' results.txt
+          grep -q '^restore_test:true$' results.txt
+
+  images:
+    name: Server images (API and console build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: API image
+        run: docker build -f backend/Dockerfile -t mosta3lem-api .
+      - name: Console image
+        run: docker build -f console/Dockerfile --build-arg NEXT_PUBLIC_API_URL=https://api.example.eg -t mosta3lem-console .
+      - name: The API image starts and answers
+        run: |
+          docker run -d --name api -p 4000:4000 -e MOSTA3LEM_MODE=demo mosta3lem-api
+          for i in $(seq 1 30); do curl -sf http://localhost:4000/health && break; sleep 2; done
+          curl -sf http://localhost:4000/health/ready
+      - name: Server setup file is valid
+        run: |
+          printf 'CONSOLE_DOMAIN=c.example.eg
+API_DOMAIN=a.example.eg
+POSTGRES_PASSWORD=x
+FILES_KEY=x
+' > ops/.env
+          docker compose -f ops/docker-compose.yml --env-file ops/.env config --quiet
 
   console:
     name: Console (types, lint, translations, build)

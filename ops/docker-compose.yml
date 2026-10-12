@@ -1,0 +1,95 @@
+# Mosta3lem on one server (any cloud in Egypt): HTTPS, the console, two copies of the API,
+# PostgreSQL 16 and the daily backup. From the repository root:
+#
+#   cp ops/.env.example ops/.env        (fill it in; keep it out of git)
+#   docker compose -f ops/docker-compose.yml --env-file ops/.env up -d --build
+#
+# Staging is the same with its own file and project name:
+#   docker compose -f ops/docker-compose.yml --env-file ops/staging.env -p mosta3lem-staging up -d --build
+#
+# With a managed PostgreSQL from the cloud, remove the db service and set DATABASE_URL.
+services:
+  proxy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      CONSOLE_DOMAIN: ${CONSOLE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [api, console]
+
+  console:
+    build:
+      context: ..
+      dockerfile: console/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+    environment:
+      MOSTA3LEM_MODE: ${MOSTA3LEM_MODE:-live}
+      DATABASE_URL: postgres://mosta3lem:${POSTGRES_PASSWORD}@db:5432/mosta3lem
+      FILES_KEY: ${FILES_KEY}
+      PUBLIC_URL: https://${CONSOLE_DOMAIN}
+      PUBLIC_API_URL: https://${API_DOMAIN}
+      CORS_ORIGINS: https://${CONSOLE_DOMAIN}
+      # Only the proxy can reach the API (no port is published), so its forwarded address is trusted.
+      TRUST_PROXY: "true"
+      MESSAGING_DRIVER: ${MESSAGING_DRIVER:-dev}
+      ALLOW_DEV_MESSAGING: ${ALLOW_DEV_MESSAGING:-false}
+      PUSH_DRIVER: ${PUSH_DRIVER:-dev}
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+      ALERT_EMAILS: ${ALERT_EMAILS:-}
+      BACKUPS_EXPECTED: "true"
+      LOG_LEVEL: info
+    volumes:
+      - files-data:/srv/backend/.data/files
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mosta3lem
+      POSTGRES_USER: mosta3lem
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mosta3lem -d mosta3lem"]
+      interval: 5s
+      retries: 10
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint: ["sh", "/ops/service.sh"]
+    environment:
+      DATABASE_URL: postgres://mosta3lem:${POSTGRES_PASSWORD}@db:5432/mosta3lem
+      BACKUP_HOUR: ${BACKUP_HOUR:-0}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+    volumes:
+      - ./backup:/ops:ro
+      - ${BACKUP_PATH:-./backups}:/backups
+      - files-data:/files:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  caddy-data:
+  db-data:
+  files-data:

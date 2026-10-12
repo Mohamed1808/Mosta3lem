@@ -43,6 +43,12 @@ function localDriver(dir) {
       await fs.promises.writeFile(where(key), blob, { flag: 'wx' });
     },
     get: (key) => fs.promises.readFile(where(key)),
+    /** Overwrite safely: write a temporary file, then move it over the old one. */
+    async replace(key, blob) {
+      const tmp = where(key) + '.tmp';
+      await fs.promises.writeFile(tmp, blob);
+      await fs.promises.rename(tmp, where(key));
+    },
     remove: (key) => fs.promises.rm(where(key), { force: true })
   };
 }
@@ -51,6 +57,7 @@ function memoryDriver() {
   const blobs = new Map();
   return {
     async put(key, blob) { blobs.set(key, Buffer.from(blob)); },
+    async replace(key, blob) { blobs.set(key, Buffer.from(blob)); },
     async get(key) { if (!blobs.has(key)) throw new Error('missing file ' + key); return blobs.get(key); },
     async remove(key) { blobs.delete(key); }
   };
@@ -73,28 +80,44 @@ function masterKey(config) {
   return Buffer.from(fs.readFileSync(file, 'utf8').trim(), 'base64');
 }
 
+/** A key for one purpose, derived from a master key. */
+const deriveKey = (master, label) => Buffer.from(crypto.hkdfSync('sha256', master, Buffer.alloc(0), label, 32));
+
+/** Encrypting with a master key. AES-256-GCM, stored as iv (12) | tag (16) | ciphertext; the id is bound in. */
+function boxFor(master) {
+  const encKey = deriveKey(master, 'mosta3lem files encryption');
+  return {
+    seal(id, plain) {
+      const iv = crypto.randomBytes(12);
+      const c = crypto.createCipheriv('aes-256-gcm', encKey, iv);
+      c.setAAD(Buffer.from(id));
+      const body = Buffer.concat([c.update(plain), c.final()]);
+      return Buffer.concat([iv, c.getAuthTag(), body]);
+    },
+    open(id, blob) {
+      const d = crypto.createDecipheriv('aes-256-gcm', encKey, blob.subarray(0, 12));
+      d.setAAD(Buffer.from(id));
+      d.setAuthTag(blob.subarray(12, 28));
+      return Buffer.concat([d.update(blob.subarray(28)), d.final()]);
+    }
+  };
+}
+
+/** A FILES_KEY value as 32 bytes, or an error. */
+function parseKey(b64) {
+  const k = Buffer.from(String(b64 || ''), 'base64');
+  if (k.length !== 32) throw new Error('A files key must be 32 random bytes, base64 encoded.');
+  return k;
+}
+
 function createFiles({ db, config, log }) {
   const master = masterKey(config);
-  const derive = (label) => Buffer.from(crypto.hkdfSync('sha256', master, Buffer.alloc(0), label, 32));
-  const encKey = derive('mosta3lem files encryption');
+  const derive = (label) => deriveKey(master, label);
+  const box = boxFor(master);
+  const seal = box.seal, open = box.open;
   const signKey = derive('mosta3lem file links');
   const store = config.filesDriver === 'memory' ? memoryDriver() : localDriver(config.filesDir);
   const maxBytes = config.fileMaxMb * 1024 * 1024;
-
-  // AES-256-GCM. Stored as iv (12) | tag (16) | ciphertext; the file id is bound in as extra data.
-  function seal(id, plain) {
-    const iv = crypto.randomBytes(12);
-    const c = crypto.createCipheriv('aes-256-gcm', encKey, iv);
-    c.setAAD(Buffer.from(id));
-    const body = Buffer.concat([c.update(plain), c.final()]);
-    return Buffer.concat([iv, c.getAuthTag(), body]);
-  }
-  function open(id, blob) {
-    const d = crypto.createDecipheriv('aes-256-gcm', encKey, blob.subarray(0, 12));
-    d.setAAD(Buffer.from(id));
-    d.setAuthTag(blob.subarray(12, 28));
-    return Buffer.concat([d.update(blob.subarray(28)), d.final()]);
-  }
 
   const sign = (id, exp) => crypto.createHmac('sha256', signKey).update(id + '.' + exp).digest('base64url');
 
@@ -162,6 +185,30 @@ function createFiles({ db, config, log }) {
   return {
     /** A key for another purpose, derived from the same master key (e.g. authenticator secrets). */
     keyFor: (label) => derive(label),
+
+    /**
+     * Re-encrypt every stored file with a new master key (see rotate-files-key.js). Safe to
+     * run again after an interruption: a file the new key already opens is left as it is.
+     */
+    async rotateTo(newKeyB64) {
+      const next = boxFor(parseKey(newKeyB64));
+      const rows = (await db.query('SELECT id, storage_key FROM files WHERE deleted_at IS NULL ORDER BY created_at')).rows;
+      let rotated = 0, already = 0;
+      for (const f of rows) {
+        const blob = await store.get(f.storage_key);
+        let plain;
+        try {
+          plain = open(f.id, blob);
+        } catch (e) {
+          next.open(f.id, blob); // throws if neither key opens it: stop rather than lose a file
+          already++;
+          continue;
+        }
+        await store.replace(f.storage_key, next.seal(f.id, plain));
+        rotated++;
+      }
+      return { rotated, already };
+    },
     ingest,
     present,
     referenced,
@@ -207,4 +254,4 @@ function createFiles({ db, config, log }) {
   };
 }
 
-module.exports = { createFiles, sniff };
+module.exports = { deriveKey, parseKey, createFiles, sniff };
