@@ -296,6 +296,8 @@
       case 'provider-admin': return '#/admin/providers/' + id;
       case 'admin': return '#/admin/' + id;
       case 'application': return portalOf(u) === 'applicant' ? '#/application' : null;
+      case 'privacy-request': return portalOf(u) === 'admin' ? '#/admin/privacy/requests/' + id : null;
+      case 'breach': return portalOf(u) === 'admin' ? '#/admin/privacy/breaches/' + id : null;
       default: return null;
     }
   }

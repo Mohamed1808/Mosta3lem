@@ -109,7 +109,8 @@
     payout: { accruing: 'قيد الاستحقاق', pending: 'بانتظار الصرف', paid_out: 'تم الصرف' },
     mask: {
       hidden: 'مخفي', preAcceptNotice: 'بيانات العميل مخفية حتى تقبل هذه الحالة. يمكنك رؤية الخدمة والنوع والمحافظة ونطاق المبلغ والموعد والسعر.',
-      retentionNotice: 'أُغلقت هذه الحالة منذ أكثر من 30 يومًا، لذا أُخفيت بيانات العميل مجددًا.'
+      retentionNotice: 'أُغلقت هذه الحالة منذ أكثر من 30 يومًا، لذا أُخفيت بيانات العميل مجددًا.',
+      erasedNotice: 'حُذفت البيانات الشخصية لهذه الحالة وفقًا لقواعد حماية البيانات.'
     },
     kpi: {
       openCases: 'الحالات المفتوحة', slaAtRisk: 'معرضة للتأخير', slaAtRiskSub: 'استُهلك 80% من الوقت', slaBreached: 'تجاوزت مستوى الخدمة',
@@ -286,6 +287,15 @@
       farFromAddress: 'أبعد من {max} م عن العنوان', photos: 'الصور ({n} من {min} مطلوبة)', photo: 'صورة دليل', noReport: 'لا توجد إجابات بعد',
       label: { entrance: 'المدخل', building: 'العقار', door: 'الباب', street: 'الشارع', premises: 'المقر', signboard: 'اللافتة' }
     },
+    privacy: {
+      kind: { access: 'الاطلاع على بياناته', correction: 'تصحيح بياناته', deletion: 'حذف بياناته', objection: 'الاعتراض على المعالجة' },
+      status: { open: 'جديد', in_review: 'قيد المراجعة', done: 'تم الرد', refused: 'مرفوض' },
+      channel: { email: 'البريد الإلكتروني', phone: 'الهاتف', letter: 'خطاب', in_person: 'حضوريًا', organisation: 'عن طريق الجهة' },
+      severity: { low: 'منخفضة', medium: 'متوسطة', high: 'عالية' },
+      data: { identity: 'الأسماء وأرقام الهوية', contact: 'أرقام الهاتف والبريد', address: 'العناوين', financial: 'المبالغ والحسابات', photos: 'الصور والمستندات', reports: 'تقارير الاستعلام', accounts: 'بيانات الدخول' },
+      breachStatus: { open: 'لم يُبلَّغ بعد', reported: 'تم إبلاغ المركز', closed: 'مغلق' },
+      step: { in_review: 'بدأت المراجعة', done: 'تم الرد', refused: 'مرفوض', exported: 'تم تصدير البيانات', contained: 'تم الاحتواء', reported: 'تم إبلاغ مركز حماية البيانات', people_told: 'تم إخطار المتأثرين', note: 'ملاحظة', closed: 'مغلق' }
+    },
     dispute: {
       title: 'النزاعات', flag: 'متنازع عليه', raise: 'فتح نزاع', raiseCase: 'نزاع على الحالة {ref}', raiseRating: 'الاعتراض على هذا التقييم',
       caseIntro: 'تراجع المنصة موقف الطرفين والسجل الزمني للحالة ثم تقرر.', ratingIntro: 'إذا قبلت المنصة اعتراضك يُستبعد التقييم من درجتك.',
@@ -459,8 +469,13 @@
     },
     audit: {
       subtitle: 'يظهر {n} قيد، الأحدث أولًا.', who: 'من', what: 'ماذا', target: 'الهدف', beforeAfter: 'قبل وبعد',
-      type: { case: 'حالة', offer: 'عرض', batch: 'دفعة', provider: 'مقدم خدمة', rating: 'تقييم', dispute: 'نزاع', invoice: 'فاتورة', config: 'إعدادات', user: 'مستخدم', agent: 'مندوب', entity: 'جهة', clock: 'الساعة' },
+      type: { case: 'حالة', offer: 'عرض', batch: 'دفعة', provider: 'مقدم خدمة', rating: 'تقييم', dispute: 'نزاع', invoice: 'فاتورة', config: 'إعدادات', user: 'مستخدم', agent: 'مندوب', entity: 'جهة', clock: 'الساعة', privacy: 'طلب بيانات', breach: 'اختراق بيانات' },
       action: {
+        privacy_settings: 'تغيير إعدادات حماية البيانات', privacy_erased_photos: 'حذف الصور (مدة الاحتفاظ)', privacy_erased_all: 'حذف البيانات الشخصية',
+        privacy_request_logged: 'تسجيل طلب بيانات', privacy_request_review: 'مراجعة طلب بيانات', privacy_request_done: 'الرد على طلب بيانات',
+        privacy_request_refused: 'رفض طلب بيانات', privacy_exported: 'تصدير بيانات شخصية', privacy_breach_logged: 'تسجيل اختراق',
+        privacy_breach_reported: 'إبلاغ المركز بالاختراق', privacy_breach_contained: 'احتواء اختراق', privacy_breach_people_told: 'إخطار المتأثرين بالاختراق',
+        privacy_breach_note: 'ملاحظة على اختراق', privacy_breach_closed: 'إغلاق اختراق', entity_dpa_accepted: 'الموافقة على اتفاقية معالجة البيانات',
         case_submit: 'أُرسلت الحالة', case_send_offer: 'أُرسل العرض', case_decline: 'رُفض العرض', case_expire: 'انتهى العرض', case_accept: 'قُبلت الحالة',
         case_assign: 'كُلّف مندوب', case_check_in: 'سُجل الوصول', case_submit_report: 'أُرسل التقرير', case_return_to_agent: 'أُعيد التقرير',
         case_resume: 'استُؤنف العمل', case_approve: 'سُلّم التقرير', case_request_rework: 'طُلب تعديل', case_accept_report: 'قُبل التقرير',
@@ -526,9 +541,17 @@
       fee_changed: 'أصبحت عمولة المنصة {pct}%', fee_change_sent_back: 'أُعيد اقتراحك بعمولة {pct}%',
       platform_fee_changed: 'أصبحت عمولة المنصة {pct}% للفواتير التي تُفتح من اليوم', invoice_issued: 'صدرت الفاتورة {ref}', invoice_paid: 'دُفعت الفاتورة {ref}',
       enforcement_changed: 'تغيرت حالة حسابك: {level}', enforcement_admin: 'تغيرت حالة {provider} تلقائيًا: {level}',
-      provider_verified: 'تم اعتماد حسابك', batch_progress: 'تقدمت الدفعة {ref}'
+      provider_verified: 'تم اعتماد حسابك', batch_progress: 'تقدمت الدفعة {ref}',
+      privacy_request_new: 'طلب بيانات جديد {ref} ينتظر الرد', privacy_request_due: 'موعد الرد على طلب البيانات {ref} خلال يوم',
+      privacy_request_late: 'تجاوز طلب البيانات {ref} موعده',
+      privacy_request_org: 'قدّم شخص في {count} من حالاتكم طلبًا بخصوص بياناته ({ref}). سيتواصل معكم الفريق القانوني للمنصة.',
+      breach_new: 'تم الإبلاغ عن اختراق بيانات: {ref}', breach_due: 'يجب إبلاغ مركز حماية البيانات بالاختراق {ref} خلال 24 ساعة',
+      breach_late: 'تجاوز الاختراق {ref} مهلة الإبلاغ (72 ساعة)'
     },
     errors: {
+      dpaRequired: 'يجب أن يوافق مسؤول جهتك على اتفاقية معالجة البيانات قبل إرسال الحالات لمقدمي الخدمة.',
+      privacyRange: 'أدخل عددًا صحيحًا من {min} إلى {max}', photosAfterPersonal: 'لا يمكن الاحتفاظ بالصور مدة أطول من باقي البيانات الشخصية',
+      idOrPhone: 'أدخل الرقم القومي أو رقم الموبايل', breachCloseReason: 'أبلغ مركز حماية البيانات أولًا، أو اكتب سبب عدم الحاجة للإبلاغ',
       sameApprover: 'يجب أن يعتمد هذا شخص آخر: أنت وافقت عليه عن فريق العمليات.',
       wrongPassword: 'البريد الإلكتروني أو كلمة المرور غير صحيحة', signInLocked: 'محاولات خاطئة كثيرة. حاول مرة أخرى بعد {min} دقيقة.',
       passwordShort: 'استخدم 10 أحرف على الأقل', passwordLong: 'كلمة المرور طويلة جدًا', passwordMix: 'استخدم حروفًا وأرقامًا معًا', passwordPersonal: 'لا تستخدم اسم بريدك الإلكتروني في كلمة المرور',

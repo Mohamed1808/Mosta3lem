@@ -207,6 +207,8 @@ async function buildServer(config) {
   app.get('/health', async () => ({ ok: true, mode: config.mode, database: db.kind, dataVersion: ICM.config.DATA_VERSION }));
   /** Pick up other copies' changes now (tests; requests already do it). */
   app.decorate('syncNow', () => inEngine(null, 'en', () => null));
+  /** Run the clock tick now (tests; the timer runs it every TICK_SECONDS). */
+  app.decorate('tickNow', () => inEngine(null, 'en', () => ICM.services.demo.tick()));
 
   app.post('/api/v1/:service/:method', async (req, reply) => {
     const { service, method } = req.params;

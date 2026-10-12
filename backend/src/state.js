@@ -19,7 +19,7 @@ const TABLES = {
   users: 'users', entities: 'entities', providers: 'providers', agents: 'agents',
   cases: 'cases', offers: 'offers', batches: 'batches', ratings: 'ratings',
   clientRatings: 'client_ratings', disputes: 'disputes', invoices: 'invoices',
-  notifications: 'notifications', audit: 'audit'
+  notifications: 'notifications', audit: 'audit', dataRequests: 'data_requests', breaches: 'breaches'
 };
 const COLLECTION_OF = Object.fromEntries(Object.entries(TABLES).map(([c, t]) => [t, c]));
 

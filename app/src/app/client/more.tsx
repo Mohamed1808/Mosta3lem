@@ -49,6 +49,7 @@ export default function ClientMore() {
         <ListItem left={<Icon name="chart" />} title={t('nav.reports')} onPress={() => router.push('/reports')} />
         {u.role === 'entity_admin' ? <><Divider /><ListItem left={<Icon name="file" />} title={t('nav.invoices')} onPress={() => router.push('/invoices')} /></> : null}
         {u.role === 'entity_admin' ? <><Divider /><ListItem left={<Icon name="users" />} title={t('nav.users')} onPress={() => router.push('/org-users')} /></> : null}
+        <Divider /><ListItem left={<Icon name="lock" />} title={t('dpa.title')} onPress={() => router.push('/data-agreement')} />
       </Card>
       <Card title={t('more.language')}>
         <Segmented items={[{ id: 'en', label: 'English' }, { id: 'ar', label: 'العربية' }]} value={lang} onChange={(l) => setLang(l as 'en' | 'ar')} />

@@ -138,7 +138,7 @@
       users: [], entities: [], providers: [], agents: [],
       cases: [], offers: [], batches: [],
       ratings: [], clientRatings: [], disputes: [], invoices: [],
-      notifications: [], audit: [], scores: {}, counters: {}
+      notifications: [], audit: [], dataRequests: [], breaches: [], scores: {}, counters: {}
     };
     var lists = db.config.lists;
     var idn = 0;
@@ -168,7 +168,9 @@
     }
 
     ENTITIES.forEach(function (e) {
-      db.entities.push({ id: e.id, name: e.name, type: e.type, city: e.city, products: e.products, createdAt: T - R.int(300, 900) * DAY, active: true });
+      var since = T - R.int(300, 900) * DAY;
+      db.entities.push({ id: e.id, name: e.name, type: e.type, city: e.city, products: e.products, createdAt: since, active: true,
+        dpa: { version: wf.privacy.DPA_VERSION, at: since + DAY, by: null, byName: e.name } });
       e.users.forEach(function (pair) {
         addUser(pair[0], pair[1], { entityId: e.id, email: slug(pair[0]).replace(/_/g, '.') + '@' + e.mail });
       });
@@ -759,6 +761,22 @@
         status: 'open', outcome: null, resolutionNote: null, createdAt: T - 30 * H, resolvedAt: null, resolvedBy: null, responses: []
       });
       ratedTahrir.disputed = true;
+    }
+
+    // ---------- a person asks to see the data held about them (Legal answers it)
+    var asked = db.cases.filter(function (c) { return c.status === 'closed' && c.customer && c.customer.nationalId; })[0];
+    if (asked) {
+      var askedAt = T - 2 * DAY, ps = wf.privacy.settings(db.config);
+      var legalUser = db.users.filter(function (u) { return u.role === 'platform_legal'; })[0];
+      db.dataRequests.push({
+        id: id('dpr'), ref: ICM.domain.nextRef(db, 'dataRequest'), kind: 'access', status: 'open', channel: 'email',
+        subject: { name: asked.customer.name, nationalId: asked.customer.nationalId, phone: null, email: null },
+        details: 'I received a visit about a finance application and want to know what information you hold about me.',
+        receivedAt: askedAt, dueAt: wf.privacy.requestDueAt(askedAt, ps), loggedBy: legalUser.id, loggedByName: legalUser.name, loggedAt: askedAt + H,
+        steps: [], reminded: {}, caseIds: db.cases.filter(function (c) { return wf.privacy.matchesCase(c, asked.customer); }).map(function (c) { return c.id; }),
+        organisationsTold: [asked.entityId]
+      });
+      db.dataRequests[0].matchedCases = db.dataRequests[0].caseIds.length;
     }
 
     // ---------- invoices from closed cases

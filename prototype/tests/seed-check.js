@@ -1,7 +1,7 @@
 /* Build the seed in Node and print a summary: node tests/seed-check.js */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
-const files = ['js/core/util.js','js/core/i18n.js','js/config/platform.js','js/config/geo.js','js/config/services.js','js/config/ratings.js','js/config/status.js','js/config/defaults.js','js/config/forms.js','js/config/reportForms.js','js/workflow/common.js','js/workflow/validation.js','js/workflow/investigation.js','js/workflow/collection.js','js/workflow/batch.js','js/workflow/sla.js','js/workflow/masking.js','js/workflow/scoring.js','js/workflow/registration.js', 'js/workflow/settings.js','js/workflow/reports.js','js/store/store.js','js/store/domain.js','js/store/seed.js'];
+const files = ['js/core/util.js','js/core/i18n.js','js/config/platform.js','js/config/geo.js','js/config/services.js','js/config/ratings.js','js/config/status.js','js/config/defaults.js','js/config/forms.js','js/config/reportForms.js','js/workflow/common.js','js/workflow/validation.js','js/workflow/investigation.js','js/workflow/collection.js','js/workflow/batch.js','js/workflow/sla.js','js/workflow/masking.js','js/workflow/scoring.js','js/workflow/registration.js', 'js/workflow/settings.js','js/workflow/reports.js','js/workflow/privacy.js','js/store/store.js','js/store/domain.js','js/store/seed.js'];
 const ctx = { console, Intl, Date, Math, JSON, setTimeout, clearTimeout };
 ctx.window = ctx; ctx.globalThis = ctx; ctx.localStorage = { getItem: () => null, setItem: () => {} }; ctx.document = { documentElement: {} };
 vm.createContext(ctx);
@@ -18,3 +18,6 @@ const sla = {}; db.cases.forEach(c => { const s = ctx.ICM.wf.sla.state(c, T); sl
 const pr = {}; db.cases.forEach(c => (c.promises || []).forEach(p => pr[p.status] = (pr[p.status] || 0) + 1)); console.log('promises', pr);
 console.log('invoices', db.invoices.map(i => i.month + ':' + i.status).join(' '));
 console.log('json size KB', Math.round(JSON.stringify(db).length / 1024));
+const ps = ctx.ICM.wf.privacy.settings(db.config);
+const oldest = Math.max(...db.cases.filter(c => c.closedAt).map(c => (T - c.closedAt) / 864e5));
+console.log('retention due now', db.cases.filter(c => ctx.ICM.wf.privacy.eraseDue(c, T, ps)).length, '(oldest closed case', Math.round(oldest), 'days ago)', 'data requests', (db.dataRequests || []).length);

@@ -36,6 +36,7 @@ No SMS or email is really sent yet. Every code and link appears in the API windo
 - [ ] Close the app completely and open it again: you are still signed in.
 - [ ] **More**: there is no "reset demo" button (the data is on the server). **Sign out**.
 - [ ] **Organisation sign-in**: Organisation, `nadia.samir@horus-auto.example` and the demo password, then the emailed code from the API window.
+- [ ] If home shows "Accept the data processing agreement", tap **Read and accept** and accept it (until then, cases cannot go to providers). Tamer (not an Admin) sees the notice but cannot accept. **More > Data processing agreement** shows who accepted and when.
 - [ ] Send a new request. Then on the computer, open the console on the server too (console checklist block 9): the request is there.
 - [ ] **Provider sign-up**: Register as a provider, fill the steps with a new mobile. On the last step, **Send code**, type the code from the API window and submit. The application screen opens.
 - [ ] A wrong code shows "Wrong code"; after 5 wrong codes, ask for a new one.

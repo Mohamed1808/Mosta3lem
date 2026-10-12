@@ -129,7 +129,22 @@
       invite: '(values) -> User',
       setRole: '(userId, role) -> User',
       setActive: '(userId, active) -> User',
-      publicProfile: '(entityId) -> { name, type, clientRating }'
+      publicProfile: '(entityId) -> { name, type, clientRating }',
+      acceptDpa: '() -> Entity   (organisation Admin accepts the current data processing agreement; needed before cases go to providers)'
+    },
+    privacy: {
+      status: '() -> { settings, limits, due, erased, lastRun, openRequests, openBreaches, organisations }   (Legal, Management)',
+      updateSettings: '({ photosDays, personalDays, requestDays }) -> settings',
+      requests: '() -> DataRequest[]',
+      request: '(id) -> DataRequest with matching cases and organisations',
+      logRequest: '({ kind, name, nationalId?, phone?, email?, channel, details?, receivedAt? }) -> DataRequest   (the organisations who sent matching cases are told)',
+      startReview: '(id) -> DataRequest',
+      complete: '(id, done|refused, note?) -> DataRequest   (a done deletion erases the person from their closed cases)',
+      exportRequest: '(id) -> { ref, generatedAt, subject, cases }   (everything held about the person)',
+      breaches: '() -> Breach[]   (Legal and Management: all; other staff: their own reports)',
+      breach: '(id) -> Breach',
+      reportBreach: '({ title, description, discoveredAt?, severity, dataTypes[], peopleAffected? }) -> Breach   (any staff member)',
+      updateBreach: '(id, contained|reported|people_told|note|closed, { note?, centreRef? }) -> Breach'
     },
     batches: {
       parseFile: '(file, service) -> { rows }',

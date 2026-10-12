@@ -4,9 +4,9 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
 const files = ['js/core/util.js', 'js/core/i18n.js', 'js/i18n/en.js', 'js/i18n/ar.js', 'js/i18n/registration.en.js', 'js/i18n/registration.ar.js', 'js/i18n/investigation.en.js', 'js/i18n/investigation.ar.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js',
-  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/settings.js', 'js/workflow/reports.js',
+  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/settings.js', 'js/workflow/reports.js', 'js/workflow/privacy.js',
   'js/store/store.js', 'js/store/domain.js', 'js/store/seed.js',
-  'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/exports.js', 'js/services/index.js'];
+  'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/exports.js', 'js/services/privacy.js', 'js/services/index.js'];
 const mem = {};
 const ctx = { console, Intl, Date, Math, JSON, setTimeout, clearTimeout, Promise };
 ctx.window = ctx; ctx.globalThis = ctx;
@@ -1330,6 +1330,86 @@ async function runInvestigation(caseId, providerId, opts) {
     ok((await S.audit.list({})).length > 0, 'Legal reads the activity log');
     await as('Mai Adel');
     ok(await errOf(S.audit.list({})) === 'errors.forbidden', 'Operations does not');
+  });
+
+  await scenario('35. Data protection: agreement, requests, breaches and retention', async () => {
+    const db = ICM.store.db, P = ICM.wf.privacy, DAY = 24 * H;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+
+    // The organisation must accept the data processing agreement before cases go out.
+    const horus = db.entities.find((e) => e.id === 'ent_horus');
+    horus.dpa = null;
+    await as('Tamer Lotfy');
+    const draft = db.cases.find((c) => c.entityId === 'ent_horus' && c.status === 'draft' && c.service === 'investigation');
+    ok(await errOf(S.cases.sendOffer(draft.id, 'prv_sphinx')) === 'errors.dpaRequired', 'without the agreement no case goes to a provider');
+    ok(await errOf(S.entities.acceptDpa()) === 'errors.forbidden', 'only the organisation Admin accepts it');
+    await as('Nadia Samir');
+    const mine = await S.entities.acceptDpa();
+    ok(mine.dpaCurrent && mine.dpa.version === P.DPA_VERSION, 'the Admin accepts the current version');
+
+    // A person asks to delete their data.
+    const closed = db.cases.filter((c) => c.status === 'closed' && c.customer && c.customer.nationalId && !c.erased);
+    const target = closed[closed.length - 1];
+    const person = target.customer;
+    const org = db.users.find((u) => u.entityId === target.entityId && u.role === 'entity_admin');
+    await as('Amira Galal');
+    ok(await errOf(S.privacy.requests()) === 'errors.forbidden', 'Customer support cannot see data requests');
+    await as('Nermine Saad');
+    ok((await S.privacy.requests()).some((r) => r.kind === 'access'), 'Legal sees the request already waiting');
+    ok(await errOf(S.privacy.logRequest({ kind: 'deletion', name: 'Someone' })) === 'errors.idOrPhone', 'a request needs a national ID or a mobile');
+    const req = await S.privacy.logRequest({ kind: 'deletion', name: person.name, nationalId: person.nationalId, channel: 'letter' });
+    ok(req.ref.indexOf('DPR-') === 0 && req.matchedCases >= 1 && req.dueAt > req.receivedAt, 'the request is logged with its deadline and the matching cases');
+    ok(notifs(org.id, 'notif.privacy_request_org').length === 1, 'the organisation who sent the case is told');
+    const detail = await S.privacy.request(req.id);
+    ok(detail.cases.some((c) => c.id === target.id) && detail.organisations.length >= 1, 'Legal sees which cases and organisations are involved');
+    const exported = await S.privacy.exportRequest(req.id);
+    ok(exported.cases.some((c) => c.customer.name === person.name), 'the data held can be exported for the person');
+    ok(await errOf(S.privacy.complete(req.id, 'refused', '')) === 'wf.err.reasonRequired', 'refusing needs a reason');
+    const done = await S.privacy.complete(req.id, 'done', 'Deleted after checking no legal hold applies');
+    ok(done.outcome.erasedCases.indexOf(target.ref) >= 0, 'answering deletes the person from their closed cases');
+    const after = db.cases.find((c) => c.id === target.id);
+    ok(after.customer.name === null && after.photos.length === 0 && after.erased.reason === 'request', 'the name, ID and photos are gone');
+    ok(db.audit.some((a) => a.action === 'privacy.erased_all' && a.targetId === target.id), 'the deletion is in the activity log');
+    await as_id(org.id);
+    const seen = await S.cases.get(target.id);
+    ok(seen.case.masked && seen.case.maskReason === 'erased', 'the organisation sees the case marked as deleted');
+    await as('Nermine Saad');
+    ok((await S.privacy.request(req.id)).cases.some((c) => c.id === target.id && c.erased), 'the answered request still shows the case it deleted');
+
+    // A breach: any staff member reports it, Legal has 72 hours.
+    await as('Amira Galal');
+    const br = await S.privacy.reportBreach({ title: 'Laptop lost', description: 'A support laptop with an export was lost on the metro.', severity: 'high', dataTypes: ['identity', 'contact'], peopleAffected: 40 });
+    ok(br.ref.indexOf('BRC-') === 0 && br.dueAt === br.discoveredAt + 72 * H, 'the breach is logged with a 72-hour deadline');
+    ok((await S.privacy.breaches()).length === 1, 'the person who reported it can follow it');
+    const nermine = db.users.find((u) => u.name === 'Nermine Saad');
+    ok(notifs(nermine.id, 'notif.breach_new').length === 1, 'Legal is told at once');
+    await as('Laila Hosny');
+    await S.demo.advance(50 * H);
+    await S.demo.tick();
+    ok(notifs(nermine.id, 'notif.breach_due').length === 1, 'and reminded when less than a day is left');
+    await as('Nermine Saad');
+    ok(await errOf(S.privacy.updateBreach(br.id, 'closed', {})) === 'errors.breachCloseReason', 'it cannot be closed without a report or a reason');
+    await S.privacy.updateBreach(br.id, 'contained', {});
+    const rep = await S.privacy.updateBreach(br.id, 'reported', { centreRef: 'PDPC-2026-118' });
+    ok(rep.status === 'reported' && rep.centreRef === 'PDPC-2026-118' && !rep.late, 'reported to the centre in time');
+    ok((await S.privacy.updateBreach(br.id, 'closed', {})).status === 'closed', 'then closed');
+
+    // Retention: photos go after the first period, everything after the second.
+    ok(await errOf(S.privacy.updateSettings({ photosDays: 400, personalDays: 300 })) === 'errors.photosAfterPersonal', 'photos cannot outlive the other details');
+    await S.privacy.updateSettings({ photosDays: 60, personalDays: 120 });
+    const withPhotos = db.cases.filter((c) => c.status === 'closed' && (c.photos || []).length && !c.erased);
+    const old = withPhotos[0], older = withPhotos[1];
+    const now = ICM.clock.now();
+    old.closedAt = now - 70 * DAY;
+    older.closedAt = now - 130 * DAY;
+    const status = await S.privacy.status();
+    ok(status.due.photos >= 1 && status.due.all >= 1, 'the settings page shows what will be deleted next');
+    await S.demo.tick();
+    const o1 = db.cases.find((c) => c.id === old.id), o2 = db.cases.find((c) => c.id === older.id);
+    ok(o1.photos.length === 0 && o1.customer.name && o1.erased.scope === 'photos', 'after 60 days only the photos are deleted');
+    ok(o2.customer.name === null && o2.erased.scope === 'all', 'after 120 days all personal details are deleted');
+    ok((await S.privacy.status()).lastRun.cases >= 2, 'the run is recorded');
+    await S.privacy.updateSettings({ photosDays: 365, personalDays: 1095 });
   });
 
   // ---------------------------------------------------------------- report

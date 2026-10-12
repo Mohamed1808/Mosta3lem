@@ -472,6 +472,7 @@
         var a = requireEntity(c.service);
         if (c.entityId !== a.entityId) throw new Err('errors.forbidden');
         if (['draft', 'submitted', 'declined', 'expired'].indexOf(c.status) < 0) throw new Err('wf.err.invalidState');
+        E.requireDpa(c.entityId);
         var demand = {}; demand[D.caseGov(c)] = 1;
         var el = eligible({ service: c.service, demand: demand, inquiryTypes: c.inquiryTypes, bucket: c.bucket, caseId: c.id });
         if (!el.providers.some(function (p) { return p.id === providerId; })) throw new Err('errors.providerNotEligible');

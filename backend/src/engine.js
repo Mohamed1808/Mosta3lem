@@ -24,11 +24,11 @@ const SCRIPTS = [
   'config/status.js', 'config/defaults.js', 'config/forms.js', 'config/reportForms.js',
   'workflow/common.js', 'workflow/validation.js', 'workflow/investigation.js',
   'workflow/collection.js', 'workflow/batch.js', 'workflow/sla.js', 'workflow/masking.js',
-  'workflow/scoring.js', 'workflow/registration.js', 'workflow/settings.js', 'workflow/reports.js',
+  'workflow/scoring.js', 'workflow/registration.js', 'workflow/settings.js', 'workflow/reports.js', 'workflow/privacy.js',
   'store/store.js', 'store/domain.js', 'store/seed.js',
   'services/engine.js', 'services/contracts.js', 'services/core.js', 'services/cases.js',
   'services/batches.js', 'services/providers.js', 'services/ratings.js', 'services/billing.js',
-  'services/registration.js', 'services/exports.js', 'services/index.js'
+  'services/registration.js', 'services/exports.js', 'services/privacy.js', 'services/index.js'
 ];
 
 /** Load a fresh engine. Returns { ICM, as(userId, lang) } where as() sets who is calling. */

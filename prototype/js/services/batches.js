@@ -272,6 +272,7 @@
       return E.mutate(function (db) {
         var a = E.actor(), b = mustBatch(batchId, a);
         if (!wf.isEntityRole(a.role)) throw new Err('errors.forbidden');
+        E.requireDpa(b.entityId);
         var open = batchCases(b).filter(function (c) { return ASSIGNABLE.indexOf(c.status) >= 0; });
         if (!open.length) throw new Err('errors.nothingToAssign');
         var types = U.uniq([].concat.apply([], open.map(function (c) { return c.inquiryTypes || []; })));

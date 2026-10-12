@@ -35,6 +35,13 @@ Tell the Mosta3lem team directly (not in a public GitHub issue): what you found,
 - **Every change is saved before the answer goes back**, in one transaction. If saving fails, the server stops instead of serving unsaved data.
 - **Push notifications carry no names**, because push services are outside Egypt. Email and SMS will go through providers chosen in Egypt.
 
+### Data protection (Law 151 of 2020)
+- **Data processing agreement:** each organisation's Admin accepts it in the app (with its version and date) before any case can go to a provider.
+- **Consent on sign-up:** a provider's self sign-up records which version of the terms and privacy notice they agreed to, and when.
+- **Retention:** once a case closes, its photos and receipts are deleted after 365 days and all other personal details after 1,095 days (settings, to be confirmed by the lawyer). The clock tick does it, the stored files go with it, and each deletion is in the activity log.
+- **Requests from people** (see, correct or delete their data, or object): Legal and Management log them on the console's **Data protection** page. The cases about the person are found by national ID or mobile, the organisations who sent them are told, and the deadline is counted in working days (6 by default). Answering a deletion request deletes the person from their closed cases. Their data can be exported for an access request, and the export is recorded.
+- **Breaches:** any staff member reports one (**Report a breach**). Legal and Management are told at once, reminded when less than 24 hours of the 72 are left, and record containing it, reporting it to the centre and telling the people affected.
+
 ### Requests and answers
 - **Headers on every answer:** `nosniff`, `X-Frame-Options: DENY`, a `Content-Security-Policy` that allows nothing to run, `no-store` caching, no referrer, a strict `Permissions-Policy`, and HSTS over https.
 - **Request size:** without a sign-in, requests are limited to 64 KB (a provider's sign-up may carry documents). Signed-in requests can be up to 15 MB.
@@ -83,11 +90,10 @@ For whoever deploys the live platform.
 ## Still open
 
 - **Outside penetration test** before launch, by a security company.
-- **Legal review against Egypt's Personal Data Protection Law (Law 151 of 2020).** It covers:
-  - consent;
-  - how long data is kept (the engine hides personal data after the retention period, but the stored files and records still need a deletion policy);
-  - the rights of the people investigated;
-  - registering with the data protection centre.
+- **Legal review against Egypt's Personal Data Protection Law (Law 151 of 2020).** The tools are built (see Data protection above); the lawyer confirms:
+  - the retention periods and the request deadline (the settings);
+  - the full text of the data processing agreement and the privacy notice;
+  - the licence from the data protection centre and the Data Protection Officer.
 - **Choice of providers:** SMS, email, OCR, maps and cloud, each checked for keeping data in Egypt.
 - **Staff second factor:** staff already need an email code. Consider a phone authenticator app for the Super admin and Finance.
 - **Rotating `FILES_KEY`:** the procedure (re-encrypting the files) is not written yet.

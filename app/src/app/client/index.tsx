@@ -11,7 +11,7 @@ import { CaseList } from '@/components/case';
 import { money, num } from '@/lib/format';
 import { useApp, useQuery, useT } from '@/state/app';
 import { colors, radius } from '@/theme';
-import { Badge, Card, Kpi, Loading, Row, Stack, Txt, useDir } from '@/ui/core';
+import { Badge, Button, Card, Kpi, Loading, Notice, Row, Stack, Txt, useDir } from '@/ui/core';
 import { Screen } from '@/ui/screen';
 
 export default function ClientHome() {
@@ -25,6 +25,7 @@ export default function ClientHome() {
   const waiting = d ? (d.statusCounts.delivered || 0) + (d.statusCounts.awaiting_entity_approval || 0) : 0;
   return (
     <Screen title={t('home.hello', { name: (session?.user?.name || '').split(' ')[0] })} sub={session?.entity?.name}>
+      <DpaBanner admin={admin} />
       {!d ? <Loading /> : (
         <>
           <Row wrap gap={6}>
@@ -51,6 +52,18 @@ export default function ClientHome() {
         </>
       )}
     </Screen>
+  );
+}
+
+/** Until the Admin accepts the data processing agreement, no case can go to a provider. */
+function DpaBanner({ admin }: { admin: boolean }) {
+  const t = useT();
+  const q = useQuery<any>(() => services().entities.mine());
+  if (!q.data || q.data.dpaCurrent) return null;
+  return (
+    <Notice tone="warning" icon="lock" text={admin ? t('dpa.needed') : t('dpa.adminOnly')}>
+      <Button small kind="primary" label={admin ? t('dpa.open') : t('dpa.read')} onPress={() => router.push('/data-agreement')} style={{ marginTop: 8 }} />
+    </Notice>
   );
 }
 

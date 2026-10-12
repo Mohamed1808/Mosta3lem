@@ -527,6 +527,7 @@
     var invoices = db.invoices.filter(function (i) { return i.entityId === e.id; });
     var cr = db.clientRatings.filter(function (r) { return r.entityId === e.id; });
     return Object.assign({}, e, {
+      dpaCurrent: E.dpaCurrent(e),
       users: db.users.filter(function (u) { return u.entityId === e.id; }),
       volume: cases.length,
       open: cases.filter(function (c) { return !wf.isTerminal(c.status); }).length,
@@ -605,6 +606,21 @@
         var a = E.actor();
         if (!a.entityId) throw new Err('errors.forbidden');
         return entityStats(E.entityById(a.entityId));
+      });
+    },
+    /**
+     * The organisation's Admin accepts the data processing agreement: the organisation
+     * decides what data to send and has the legal basis for it; Mosta3lem processes it for
+     * them. Cases cannot be sent to providers until the current version is accepted.
+     */
+    acceptDpa: function () {
+      return E.mutate(function () {
+        var a = myEntityAdmin();
+        var e = E.entityById(a.entityId);
+        var before = e.dpa || null;
+        e.dpa = { version: wf.privacy.DPA_VERSION, at: E.now(), by: a.userId, byName: a.name };
+        E.audit('entity.dpa_accepted', 'entity', e.id, e.name, before, { version: e.dpa.version }, null, a);
+        return entityStats(e);
       });
     },
     users: function (entityId) {

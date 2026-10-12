@@ -68,6 +68,13 @@
   E.disputeById = finder('disputes');
   E.invoiceById = finder('invoices');
 
+  /** Has the organisation accepted the current data processing agreement? */
+  E.dpaCurrent = function (e) { return !!(e && e.dpa && e.dpa.version === wf.privacy.DPA_VERSION); };
+  /** Cases go to providers only after the organisation's Admin accepted the agreement. */
+  E.requireDpa = function (entityId) {
+    if (!E.dpaCurrent(E.entityById(entityId))) throw new ServiceError('errors.dpaRequired');
+  };
+
   E.mustCase = function (id) {
     var c = E.caseById(id);
     if (!c) throw new ServiceError('errors.notFound');
@@ -264,10 +271,16 @@
     });
     var liveDocs = function (p) { return p.verification && p.verification.status === 'verified' ? p.verification.documents : []; };
     db.providers.forEach(function (p) { if (liveDocs(p).some(function (d) { return wf.dueReminder(d, now); })) work = true; });
+    // Retention and data protection deadlines (services/privacy.js).
+    if (E.privacyWork && E.privacyWork(db, now)) work = true;
     if (!work) return { changed: false };
 
-    var summary = { expired: 0, warned: 0, atRisk: 0, breached: 0, brokenPromises: 0, docReminders: 0, changed: true };
+    var summary = { expired: 0, warned: 0, atRisk: 0, breached: 0, brokenPromises: 0, docReminders: 0, erased: 0, changed: true };
     ICM.store.tx(function () {
+      if (E.applyRetention) {
+        summary.erased = E.applyRetention(db, now);
+        E.privacyReminders(db, now);
+      }
       // Document expiry: reminders 30 and 7 days before, then a notice when it lapses.
       db.providers.forEach(function (p) {
         liveDocs(p).forEach(function (d) {

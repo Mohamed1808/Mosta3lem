@@ -79,7 +79,7 @@
   domain.nextRef = function (db, kind) {
     db.counters = db.counters || {};
     db.counters[kind] = (db.counters[kind] || 0) + 1;
-    var prefix = { investigation: 'INV', collection: 'COL', batch: 'BAT', invoice: 'INVC', dispute: 'DSP', registration: 'REG' }[kind] || 'REF';
+    var prefix = { investigation: 'INV', collection: 'COL', batch: 'BAT', invoice: 'INVC', dispute: 'DSP', registration: 'REG', dataRequest: 'DPR', breach: 'BRC' }[kind] || 'REF';
     return prefix + '-' + new Date().getFullYear() + '-' + String(db.counters[kind]).padStart(5, '0');
   };
 
