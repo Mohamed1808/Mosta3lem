@@ -78,6 +78,7 @@ To start over at any point: More, then **Reset demo data**.
 
 - [ ] Tarek: open a collection case, log a call, log a **field visit** (location asked), record a promise to pay.
 - [ ] Adel: the case shows the actions; record a payment; request a settlement.
+- [ ] Adel: **Settings > Documents** shows the FRA registration with its number. Send a renewal (photo and register number; the expiry date is optional): it waits for operations, and the current one still counts.
 
 ## 7. Arabic
 

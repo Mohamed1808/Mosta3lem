@@ -63,11 +63,12 @@ export default function SelectProvider() {
   const list = sorted(market.providers, sort);
   const best = market.providers[0];
   const ex = market.excluded || {};
-  const hidden = [ex.full ? t('select.hiddenFull', { n: ex.full }) : '', ex.suspended ? t('select.hiddenSuspended', { n: ex.suspended }) : '', ex.documents ? t('select.hiddenDocuments', { n: ex.documents }) : ''].filter(Boolean);
+  const hidden = [ex.full ? t('select.hiddenFull', { n: ex.full }) : '', ex.suspended ? t('select.hiddenSuspended', { n: ex.suspended }) : '', ex.documents ? t('select.hiddenDocuments', { n: ex.documents }) : '', ex.fra ? t('select.hiddenFra', { n: ex.fra }) : ''].filter(Boolean);
   return (
     <Screen title={t('select.title')} sub={sub} back pad={false}>
       <View style={{ paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.md }}>
         {c.status === 'declined' ? <Notice tone="warning" text={t('select.afterDecline')} /> : c.status === 'expired' ? <Notice tone="warning" text={t('select.afterExpiry')} /> : null}
+        {market.fraRequired ? <Notice tone="info" icon="shield" text={t('fra.requiredNote')} /> : null}
         {best ? <Button kind="primary" icon="zap" block label={t('client.sendBest', { name: best.name })} onPress={() => send(best)} /> : null}
         <Txt v="sm" c="muted">{[t('select.eligibleCount', { n: market.providers.length })].concat(hidden).join(' · ')}</Txt>
       </View>
@@ -83,6 +84,7 @@ export default function SelectProvider() {
                     <Badge label={t('kind.' + p.kind)} />
                     {p.id === best?.id ? <Badge label={t('select.bestMatch')} tone="success" /> : null}
                     {p.enforcement === 'warned' || p.enforcement === 'reduced' ? <Badge label={t('enforcement.' + p.enforcement)} tone="warning" /> : null}
+                    {p.fraNumber ? <Badge label={t('fra.registered')} tone="info" /> : null}
                     <Badge label={t('avail.' + p.availability)} tone={AVAIL_TONE[p.availability]} />
                   </Row>
                 </Grow>

@@ -126,6 +126,16 @@
     return out;
   }
 
+  /**
+   * A collection provider's documents with an entry for the FRA registration, which is
+   * optional: it is added when first sent, and shown as missing until then.
+   */
+  function withFraDoc(p) {
+    var docs = p.verification.documents;
+    if (p.services.indexOf('collection') < 0 || docs.some(function (d) { return d.type === wf.FRA_DOC; })) return docs;
+    return docs.concat([{ type: wf.FRA_DOC, status: 'missing', optional: true }]);
+  }
+
   S.providers = {
     _agentStats: agentStats,
     _withScore: withScore,
@@ -177,8 +187,8 @@
           limits: wf.slaLimits(db.config),
           pricingConfig: db.config.pricing,
           zones: C.ZONES,
-          documents: p.verification.documents.map(function (d) {
-            return Object.assign({}, d, { expiring: wf.isExpiringDoc(d.type), expiry: wf.docExpiry(d, now) });
+          documents: withFraDoc(p).map(function (d) {
+            return Object.assign({}, d, { expiring: wf.isExpiringDoc(d.type), fra: d.type === wf.FRA_DOC, expiry: wf.docExpiry(d, now) });
           }),
           expired: wf.expiredDocs(p, now).map(function (d) { return d.type; }),
           priceRequest: p.priceRequest || null,
@@ -266,17 +276,27 @@
     submitDocument: function (type, file) {
       return E.mutate(function () {
         var x = liveOwner(), p = x.p, now = E.now();
+        var fra = type === wf.FRA_DOC;
         var d = p.verification.documents.filter(function (k) { return k.type === type; })[0];
+        if (!d && fra) {
+          if (p.services.indexOf('collection') < 0) throw new Err('errors.fraCollectionOnly');
+          d = { type: type, status: 'missing', optional: true };
+          p.verification.documents.push(d);
+        }
         if (!d) throw new Err('errors.notFound');
         file = file || {};
         if (!file.url && !file.fileName) throw new Err('errors.documentPhotoRequired', { field: 'file' });
-        if (wf.isExpiringDoc(type)) {
+        // The FRA registration needs its register number; its expiry date is optional.
+        var number = fra ? String(file.number || '').trim() : null;
+        if (fra && !number) throw new Err('errors.required', { field: 'number' });
+        if (wf.isExpiringDoc(type) || (fra && file.expiresAt)) {
           var e = wf.validateExpiry(file.expiresAt, now);
           if (e) throw new Err(e, { field: 'expiresAt' });
         }
         var sent = { fileName: file.fileName || null, url: file.url || null, expiresAt: file.expiresAt || null, at: now, by: x.a.name };
+        if (fra) sent.number = number;
         if (d.status === 'verified') d.renewal = sent;
-        else Object.assign(d, { status: 'uploaded', fileName: sent.fileName, url: sent.url, expiresAt: sent.expiresAt, uploadedAt: now });
+        else Object.assign(d, { status: 'uploaded', fileName: sent.fileName, url: sent.url, expiresAt: sent.expiresAt, uploadedAt: now }, fra ? { number: number } : {});
         E.audit('provider.document_submitted', 'provider', p.id, p.name, null, { type: type }, null, x.a);
         E.notify(E.staffWith('providers.documents'), 'notif.document_submitted', { name: p.name, doc: type }, 'provider-admin:' + p.id);
         return withScore(p);
@@ -310,7 +330,7 @@
         var d = p && p.verification.documents.filter(function (k) { return k.type === type; })[0];
         if (!d) throw new Err('errors.notFound');
         if (d.renewal) {
-          Object.assign(d, { fileName: d.renewal.fileName, url: d.renewal.url, expiresAt: d.renewal.expiresAt, uploadedAt: d.renewal.at });
+          Object.assign(d, { fileName: d.renewal.fileName, url: d.renewal.url, expiresAt: d.renewal.expiresAt, uploadedAt: d.renewal.at }, d.renewal.number ? { number: d.renewal.number } : {});
           d.renewal = null;
         } else if (d.status !== 'uploaded') throw new Err('errors.notFound');
         d.status = 'verified';
@@ -528,6 +548,7 @@
     var cr = db.clientRatings.filter(function (r) { return r.entityId === e.id; });
     return Object.assign({}, e, {
       dpaCurrent: E.dpaCurrent(e),
+      fraRegulated: wf.fraRegulated(e),
       users: db.users.filter(function (u) { return u.entityId === e.id; }),
       volume: cases.length,
       open: cases.filter(function (c) { return !wf.isTerminal(c.status); }).length,
@@ -606,6 +627,24 @@
         var a = E.actor();
         if (!a.entityId) throw new Err('errors.forbidden');
         return entityStats(E.entityById(a.entityId));
+      });
+    },
+    /**
+     * Whether the FRA supervises this organisation (a non-bank finance company), which
+     * decides if its collections need FRA-registered providers. The default comes from its
+     * type; Sales or Management can set it either way, with a reason.
+     */
+    setFraRegulated: function (entityId, value, reason) {
+      return E.mutate(function () {
+        var a = E.requirePermission('orgs.create');
+        var e = E.entityById(entityId);
+        if (!e) throw new Err('errors.notFound');
+        reason = String(reason || '').trim();
+        if (!reason) throw new Err('wf.err.reasonRequired');
+        var before = wf.fraRegulated(e);
+        e.fraRegulated = !!value;
+        E.audit('entity.fra_regulated', 'entity', e.id, e.name, { fraRegulated: before }, { fraRegulated: e.fraRegulated }, reason, a);
+        return entityForStaff(e, a);
       });
     },
     /**

@@ -292,7 +292,8 @@
           d.reminders = sent;
           var owners = D.providerUsers(db, p.id, ['provider_admin', 'freelancer']);
           if (due === 'expired') {
-            E.notify(owners, 'notif.document_expired', { doc: d.type }, 'provider:profile');
+            // A lapsed FRA registration only stops collections for non-bank finance clients.
+            E.notify(owners, d.type === wf.FRA_DOC ? 'notif.fra_expired' : 'notif.document_expired', { doc: d.type }, 'provider:profile');
             E.notify(E.staffWith('providers.documents'), 'notif.document_expired_admin', { name: p.name, doc: d.type }, 'provider-admin:' + p.id);
             E.audit('provider.document_expired', 'provider', p.id, p.name, null, { type: d.type }, null, wf.SYSTEM);
           } else {

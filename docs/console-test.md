@@ -66,6 +66,7 @@ The console keeps its own demo data in this browser, separate from the phone. To
 
 - [ ] Sherif: **New organisation** with its first Admin; then sign in to the app as that Admin.
 - [ ] Amira: on an organisation, **Reset sign-in** for a user who was locked out.
+- [ ] Sherif: an organisation page shows **Compliance**: Horus is supervised by the FRA, Delta Crest Bank is not. **Change FRA supervision** needs a reason. Mai: Recovery Partners' documents show its FRA register number.
 - [ ] Laila: **Staff**: add a person, change their team, deactivate them.
 - [ ] Laila: **Settings**: change a scoring threshold and save.
 

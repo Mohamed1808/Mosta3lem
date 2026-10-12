@@ -31,6 +31,15 @@ export default function OrganisationPage() {
   const e = q.data;
   const now = icm().clock.now();
 
+  const changeFra = async () => {
+    const v = await ask({
+      title: t("console.orgs.fraTitle"), message: t("console.orgs.fraBody"),
+      options: [{ value: "yes", label: t("fra.regulated") }, { value: "no", label: t("fra.notRegulated") }], optionLabel: t("console.orgs.fraTitle"),
+      note: "required", noteLabel: t("common.reason"), confirmLabel: t("common.save"),
+    });
+    if (v && v.option) await run(() => services().entities.setFraRegulated(e.id, v.option === "yes", v.note), t("console.orgs.fraSaved"));
+  };
+
   const reset = async (u: Any) => {
     if (await ask({ title: t("console.accounts.reset"), message: t("console.accounts.resetBody", { name: u.name }), confirmLabel: t("console.accounts.reset") })) {
       await run(async () => {
@@ -52,6 +61,18 @@ export default function OrganisationPage() {
         <Kpi label={t("console.orgs.col.rating")} value={e.clientRating.count ? num(e.clientRating.dataQuality, 1) + " / " + num(e.clientRating.paymentTimeliness, 1) : "-"}
           sub={e.clientRating.count ? t("console.orgs.ratingSub", { n: num(e.clientRating.count) }) : t("console.orgs.noRatings")} />
       </div>
+      <Card title={t("console.orgs.compliance")} className="mb-4" right={can("orgs.create") ? <Button kind="ghost" onClick={changeFra}>{t("console.orgs.fraChange")}</Button> : undefined}>
+        <ul className="space-y-1.5 text-sm">
+          <li className="flex flex-wrap items-center gap-2">
+            <Badge tone={e.fraRegulated ? "info" : "neutral"}>{e.fraRegulated ? t("fra.regulated") : t("fra.notRegulated")}</Badge>
+            <span className="text-xs text-ink2">{e.fraRegulated ? t("fra.requiredNote") : t("console.orgs.fraNotNeeded")}</span>
+          </li>
+          <li className="flex flex-wrap items-center gap-2">
+            <Badge tone={e.dpaCurrent ? "success" : "warning"}>{t("console.privacy.settings.dpa")}</Badge>
+            <span className="text-xs text-ink2">{e.dpaCurrent ? t("console.privacy.settings.accepted", { date: date(e.dpa.at), name: e.dpa.byName || "-" }) : t("console.privacy.settings.notAccepted")}</span>
+          </li>
+        </ul>
+      </Card>
       <Card title={t("console.orgs.users", { n: num(e.users.length) })}>
         <ul className="-m-5 divide-y divide-line">
           {e.users.map((u: Any) => {

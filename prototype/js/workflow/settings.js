@@ -17,6 +17,34 @@
   wf.isExpiringDoc = function (type) { return wf.EXPIRING_DOCS.indexOf(type) >= 0; };
 
   /**
+   * Registration with the Financial Regulatory Authority (FRA) as a collection company
+   * (FRA Board Resolution 278 of 2025). Non-bank finance companies may only use registered
+   * collectors, so collection cases from those clients only go to providers whose
+   * registration Operations has checked. It is optional for everyone else, and a lapsed
+   * registration does not pause other work.
+   */
+  wf.FRA_DOC = 'fra_registration';
+  /** Organisation types the FRA supervises, unless staff set the organisation otherwise. */
+  wf.FRA_ENTITY_TYPES = ['auto_finance', 'consumer_finance', 'insurance'];
+  wf.fraRegulated = function (entity) {
+    if (!entity) return false;
+    if (entity.fraRegulated === true || entity.fraRegulated === false) return entity.fraRegulated;
+    return wf.FRA_ENTITY_TYPES.indexOf(entity.type) >= 0;
+  };
+  /** Does this client's work need an FRA-registered provider? Collections only. */
+  wf.fraRequired = function (entity, service) { return service === 'collection' && wf.fraRegulated(entity); };
+  /** The provider's checked FRA registration, if it is in force now (a pending renewal does not count yet). */
+  wf.fraRegistration = function (p, now) {
+    var docs = (p && p.verification && p.verification.documents) || [];
+    var d = docs.filter(function (x) { return x.type === wf.FRA_DOC; })[0];
+    if (!d || d.status !== 'verified') return null;
+    if (d.expiresAt && d.expiresAt <= now) return null;
+    return d;
+  };
+  /** Documents whose expiry date triggers reminders. */
+  wf.remindsExpiry = function (type) { return wf.isExpiringDoc(type) || type === wf.FRA_DOC; };
+
+  /**
    * Where a document stands on expiry.
    * state: 'none' (no date), 'valid', 'expiring' (within the first reminder window) or 'expired'.
    */
@@ -39,7 +67,7 @@
    * or 'expired' once past the date. sent: { 30: true, 7: true, expired: true }.
    */
   wf.dueReminder = function (doc, now) {
-    if (!doc || !doc.expiresAt || !wf.isExpiringDoc(doc.type)) return null;
+    if (!doc || !doc.expiresAt || !wf.remindsExpiry(doc.type)) return null;
     var sent = doc.reminders || {};
     if (doc.expiresAt <= now) return sent.expired ? null : 'expired';
     var daysLeft = (doc.expiresAt - now) / DAY;

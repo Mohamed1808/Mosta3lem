@@ -142,6 +142,7 @@ const en = {
     demoTitle: 'Demo: the platform decision', demoBody: 'In the live app the platform team decides from the internal console. Use this to try each outcome.'
   },
   settingsApp: {
+    sendFra: 'Send your FRA registration', notSent: 'Not sent',
     title: 'Settings', moreSub: 'Coverage, response times, prices and documents', coverage: 'Coverage', responseTimes: 'Response times', prices: 'Prices',
     pricesSub: 'Changes are approved by operations', priceWaitingShort: 'Change sent {date}, waiting for operations', hoursShort: '{n} h',
     ownerOnly: 'Only the owner can change settings.', saved: 'Saved',
@@ -312,6 +313,7 @@ const ar: typeof en = {
     demoTitle: 'نسخة تجريبية: قرار المنصة', demoBody: 'في التطبيق الفعلي يقرر فريق المنصة من لوحة التحكم الداخلية. استخدم هذا لتجربة كل نتيجة.'
   },
   settingsApp: {
+    sendFra: 'إرسال القيد بالرقابة المالية', notSent: 'لم يُرسل',
     title: 'الإعدادات', moreSub: 'نطاق التغطية وأوقات الاستجابة والأسعار والمستندات', coverage: 'نطاق التغطية', responseTimes: 'أوقات الاستجابة', prices: 'الأسعار',
     pricesSub: 'يعتمد فريق العمليات أي تغيير', priceWaitingShort: 'أُرسل التغيير {date}، بانتظار فريق العمليات', hoursShort: '{n} س',
     ownerOnly: 'المالك فقط يمكنه تغيير الإعدادات.', saved: 'تم الحفظ',

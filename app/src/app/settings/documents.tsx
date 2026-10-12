@@ -1,7 +1,9 @@
 /**
  * Documents with expiry dates. The owner sends a renewed commercial register or tax card
  * with its new expiry date; the current one stays in force until Operations checks it.
- * Expired documents pause new offers. A demo panel plays Operations and the calendar.
+ * Expired documents pause new offers. Collection providers can also send their FRA
+ * registration (register number, optional expiry), which non-bank finance clients need.
+ * A demo panel plays Operations and the calendar.
  */
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
@@ -40,6 +42,8 @@ function DocCard({ d, canEdit }: { d: any; canEdit: boolean }) {
         <Row gap={12}>
           {d.url ? <DataImage uri={d.url} width={72} height={50} /> : null}
           <Grow>
+            {d.number ? <Txt v="sm">{t('fra.number', { n: d.number })}</Txt> : null}
+            {d.fra && d.status === 'missing' ? <Txt v="sm" c="muted">{t('fra.optional')}</Txt> : null}
             {expiryText(d, t) ? <Txt v="sm" c={d.expiry?.state === 'expired' ? 'bad' : d.expiry?.state === 'expiring' ? 'warn' : 'muted'}>{expiryText(d, t)}</Txt> : null}
             {d.verifiedAt ? <Txt v="xs" c="faint">{t('settingsApp.verifiedOn', { date: date(d.verifiedAt) })}</Txt> : null}
           </Grow>
@@ -50,22 +54,26 @@ function DocCard({ d, canEdit }: { d: any; canEdit: boolean }) {
             <Txt v="xs" c="muted">{t(d.expiry?.state === 'expired' ? 'settingsApp.renewalBodyExpired' : 'settingsApp.renewalBody')}</Txt>
           </Notice>
         ) : null}
-        {canEdit && d.expiring && !open ? (
-          <Button label={d.renewal ? t('settingsApp.replaceRenewal') : t('settingsApp.sendRenewal')} icon="upload" onPress={() => setOpen(true)} block />
+        {canEdit && (d.expiring || d.fra) && !open ? (
+          <Button label={d.fra && d.status === 'missing' ? t('settingsApp.sendFra') : d.renewal ? t('settingsApp.replaceRenewal') : t('settingsApp.sendRenewal')} icon="upload" onPress={() => setOpen(true)} block />
         ) : null}
-        {open ? <RenewForm type={d.type} onDone={() => setOpen(false)} /> : null}
+        {open ? <RenewForm type={d.type} fra={!!d.fra} onDone={() => setOpen(false)} /> : null}
         <DemoDoc d={d} />
       </Stack>
     </Card>
   );
 }
 
-/** Photo of the renewed document and its new expiry date (YYYY-MM-DD). */
-function RenewForm({ type, onDone }: { type: string; onDone: () => void }) {
+/**
+ * Photo of the renewed document and its new expiry date (YYYY-MM-DD). The FRA registration
+ * also needs its register number, and its expiry date is optional.
+ */
+function RenewForm({ type, fra, onDone }: { type: string; fra: boolean; onDone: () => void }) {
   const t = useT();
   const { toast } = useDialog();
   const [url, setUrl] = useState<string | null>(null);
   const [day, setDay] = useState('');
+  const [number, setNumber] = useState('');
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -77,12 +85,13 @@ function RenewForm({ type, onDone }: { type: string; onDone: () => void }) {
     const expiresAt = icm().wf.parseDay(day);
     const e: Record<string, string> = {};
     if (!url) e.file = 'errors.documentPhotoRequired';
-    if (!day) e.expiresAt = 'errors.required';
-    else if (!expiresAt) e.expiresAt = 'errors.dateFormat';
+    if (fra && !number.trim()) e.number = 'errors.required';
+    if (!day && !fra) e.expiresAt = 'errors.required';
+    else if (day && !expiresAt) e.expiresAt = 'errors.dateFormat';
     if (Object.keys(e).length) { setErrs(e); return; }
     setBusy('send');
     try {
-      await services().providers.submitDocument(type, { fileName: type + '.jpg', url, expiresAt });
+      await services().providers.submitDocument(type, { fileName: type + '.jpg', url, expiresAt: expiresAt || null, number: fra ? number.trim() : undefined });
       toast(t('settingsApp.renewalSentToast'));
       onDone();
     } catch (x: any) {
@@ -100,8 +109,16 @@ function RenewForm({ type, onDone }: { type: string; onDone: () => void }) {
         <Button small kind="ghost" label={t('field.choosePhoto')} busy={busy === 'library'} onPress={() => grab('library')} />
       </Row>
       {errs.file ? <Txt v="xs" c="bad">{t(errs.file)}</Txt> : null}
+      {fra ? (
+        <Stack gap={6}>
+          <Txt v="sm" b c="muted">{t('fra.numberLabel')} *</Txt>
+          <TextInput value={number} onChangeText={(v) => { setNumber(v); setErrs({ ...errs, number: '' }); }} autoCapitalize="characters"
+            style={[inputStyle, { textAlign: 'left', writingDirection: 'ltr', borderColor: errs.number ? colors.bad : colors.borderStrong }]} accessibilityLabel={t('fra.numberLabel')} />
+          {errs.number ? <Txt v="xs" c="bad">{t(errs.number)}</Txt> : null}
+        </Stack>
+      ) : null}
       <Stack gap={6}>
-        <Txt v="sm" b c="muted">{t('settingsApp.newExpiry')} *</Txt>
+        <Txt v="sm" b c="muted">{fra ? t('fra.expiryOptional') : t('settingsApp.newExpiry') + ' *'}</Txt>
         <TextInput value={day} onChangeText={(v) => { setDay(v); setErrs({ ...errs, expiresAt: '' }); }} placeholder={t('form.datePlaceholder')} keyboardType="numbers-and-punctuation" maxLength={10}
           style={[inputStyle, { textAlign: 'left', writingDirection: 'ltr', borderColor: errs.expiresAt ? colors.bad : colors.borderStrong }]} accessibilityLabel={t('settingsApp.newExpiry')} />
         <Txt v="xs" c="faint">{t('settingsApp.expiryHint')}</Txt>

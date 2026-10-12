@@ -105,7 +105,7 @@
     paymentMethod: { cash: 'نقدي', bank_transfer: 'تحويل بنكي', instapay: 'إنستاباي', fawry: 'فوري', cheque: 'شيك' },
     amountRange: { r0: 'حتى 10,000 جنيه', r1: 'من 10,000 إلى 25,000 جنيه', r2: 'من 25,000 إلى 50,000 جنيه', r3: 'من 50,000 إلى 100,000 جنيه', r4: 'من 100,000 إلى 250,000 جنيه', r5: 'أكثر من 250,000 جنيه' },
     address: { home: 'عنوان السكن', work: 'عنوان العمل', business: 'عنوان النشاط', governorate: 'المحافظة', city: 'المدينة / الحي', street: 'الشارع والعقار', landmark: 'علامة مميزة' },
-    doc: { commercial_register: 'السجل التجاري', tax_card: 'البطاقة الضريبية', insurance: 'شهادة التأمين', national_id: 'بطاقة الرقم القومي', training_certificate: 'شهادة التدريب' },
+    doc: { commercial_register: 'السجل التجاري', tax_card: 'البطاقة الضريبية', insurance: 'شهادة التأمين', national_id: 'بطاقة الرقم القومي', training_certificate: 'شهادة التدريب', fra_registration: 'القيد بالرقابة المالية (التحصيل)' },
     payout: { accruing: 'قيد الاستحقاق', pending: 'بانتظار الصرف', paid_out: 'تم الصرف' },
     mask: {
       hidden: 'مخفي', preAcceptNotice: 'بيانات العميل مخفية حتى تقبل هذه الحالة. يمكنك رؤية الخدمة والنوع والمحافظة ونطاق المبلغ والموعد والسعر.',
@@ -296,6 +296,12 @@
       breachStatus: { open: 'لم يُبلَّغ بعد', reported: 'تم إبلاغ المركز', closed: 'مغلق' },
       step: { in_review: 'بدأت المراجعة', done: 'تم الرد', refused: 'مرفوض', exported: 'تم تصدير البيانات', contained: 'تم الاحتواء', reported: 'تم إبلاغ مركز حماية البيانات', people_told: 'تم إخطار المتأثرين', note: 'ملاحظة', closed: 'مغلق' }
     },
+    fra: {
+      registered: 'مقيد بالرقابة المالية', number: 'رقم القيد بالرقابة المالية {n}', regulated: 'تخضع لرقابة الهيئة العامة للرقابة المالية', notRegulated: 'لا تخضع لرقابة الهيئة العامة للرقابة المالية',
+      requiredNote: 'تُرسل حالات التحصيل لهذا العميل فقط لمقدمي خدمة مقيدين لدى الهيئة العامة للرقابة المالية.',
+      optional: 'اختياري. مطلوب لاستلام حالات تحصيل من شركات التمويل غير المصرفي (تمويل السيارات والتمويل الاستهلاكي والتأمين).',
+      numberLabel: 'رقم القيد بالرقابة المالية', expiryOptional: 'تاريخ الانتهاء إن وُجد'
+    },
     dispute: {
       title: 'النزاعات', flag: 'متنازع عليه', raise: 'فتح نزاع', raiseCase: 'نزاع على الحالة {ref}', raiseRating: 'الاعتراض على هذا التقييم',
       caseIntro: 'تراجع المنصة موقف الطرفين والسجل الزمني للحالة ثم تقرر.', ratingIntro: 'إذا قبلت المنصة اعتراضك يُستبعد التقييم من درجتك.',
@@ -475,7 +481,7 @@
         privacy_request_logged: 'تسجيل طلب بيانات', privacy_request_review: 'مراجعة طلب بيانات', privacy_request_done: 'الرد على طلب بيانات',
         privacy_request_refused: 'رفض طلب بيانات', privacy_exported: 'تصدير بيانات شخصية', privacy_breach_logged: 'تسجيل اختراق',
         privacy_breach_reported: 'إبلاغ المركز بالاختراق', privacy_breach_contained: 'احتواء اختراق', privacy_breach_people_told: 'إخطار المتأثرين بالاختراق',
-        privacy_breach_note: 'ملاحظة على اختراق', privacy_breach_closed: 'إغلاق اختراق', entity_dpa_accepted: 'الموافقة على اتفاقية معالجة البيانات',
+        privacy_breach_note: 'ملاحظة على اختراق', privacy_breach_closed: 'إغلاق اختراق', entity_dpa_accepted: 'الموافقة على اتفاقية معالجة البيانات', entity_fra_regulated: 'تغيير خضوع الجهة للرقابة المالية',
         case_submit: 'أُرسلت الحالة', case_send_offer: 'أُرسل العرض', case_decline: 'رُفض العرض', case_expire: 'انتهى العرض', case_accept: 'قُبلت الحالة',
         case_assign: 'كُلّف مندوب', case_check_in: 'سُجل الوصول', case_submit_report: 'أُرسل التقرير', case_return_to_agent: 'أُعيد التقرير',
         case_resume: 'استُؤنف العمل', case_approve: 'سُلّم التقرير', case_request_rework: 'طُلب تعديل', case_accept_report: 'قُبل التقرير',
@@ -542,6 +548,7 @@
       platform_fee_changed: 'أصبحت عمولة المنصة {pct}% للفواتير التي تُفتح من اليوم', invoice_issued: 'صدرت الفاتورة {ref}', invoice_paid: 'دُفعت الفاتورة {ref}',
       enforcement_changed: 'تغيرت حالة حسابك: {level}', enforcement_admin: 'تغيرت حالة {provider} تلقائيًا: {level}',
       provider_verified: 'تم اعتماد حسابك', batch_progress: 'تقدمت الدفعة {ref}',
+      fra_expired: 'انتهى قيدك بالرقابة المالية. تتوقف حالات التحصيل من شركات التمويل غير المصرفي حتى يراجع فريق العمليات القيد المجدد.',
       privacy_request_new: 'طلب بيانات جديد {ref} ينتظر الرد', privacy_request_due: 'موعد الرد على طلب البيانات {ref} خلال يوم',
       privacy_request_late: 'تجاوز طلب البيانات {ref} موعده',
       privacy_request_org: 'قدّم شخص في {count} من حالاتكم طلبًا بخصوص بياناته ({ref}). سيتواصل معكم الفريق القانوني للمنصة.',
@@ -549,6 +556,7 @@
       breach_late: 'تجاوز الاختراق {ref} مهلة الإبلاغ (72 ساعة)'
     },
     errors: {
+      fraCollectionOnly: 'القيد بالرقابة المالية لمقدمي خدمة التحصيل فقط.',
       dpaRequired: 'يجب أن يوافق مسؤول جهتك على اتفاقية معالجة البيانات قبل إرسال الحالات لمقدمي الخدمة.',
       privacyRange: 'أدخل عددًا صحيحًا من {min} إلى {max}', photosAfterPersonal: 'لا يمكن الاحتفاظ بالصور مدة أطول من باقي البيانات الشخصية',
       idOrPhone: 'أدخل الرقم القومي أو رقم الموبايل', breachCloseReason: 'أبلغ مركز حماية البيانات أولًا، أو اكتب سبب عدم الحاجة للإبلاغ',

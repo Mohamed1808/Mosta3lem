@@ -106,7 +106,7 @@
     paymentMethod: { cash: 'Cash', bank_transfer: 'Bank transfer', instapay: 'InstaPay', fawry: 'Fawry', cheque: 'Cheque' },
     amountRange: { r0: 'Up to EGP 10,000', r1: 'EGP 10,000 to 25,000', r2: 'EGP 25,000 to 50,000', r3: 'EGP 50,000 to 100,000', r4: 'EGP 100,000 to 250,000', r5: 'Above EGP 250,000' },
     address: { home: 'Home address', work: 'Work address', business: 'Business address', governorate: 'Governorate', city: 'City / district', street: 'Street and building', landmark: 'Landmark' },
-    doc: { commercial_register: 'Commercial register', tax_card: 'Tax card', insurance: 'Insurance certificate', national_id: 'National ID', training_certificate: 'Training certificate' },
+    doc: { commercial_register: 'Commercial register', tax_card: 'Tax card', insurance: 'Insurance certificate', national_id: 'National ID', training_certificate: 'Training certificate', fra_registration: 'FRA registration (collections)' },
     payout: { accruing: 'Accruing', pending: 'Payout pending', paid_out: 'Paid out' },
     mask: {
       hidden: 'Hidden', preAcceptNotice: 'Customer details are hidden until you accept this case. You can see the service, type, governorate, amount range, deadline and price.',
@@ -297,6 +297,12 @@
       breachStatus: { open: 'Not reported yet', reported: 'Reported to the centre', closed: 'Closed' },
       step: { in_review: 'Review started', done: 'Answered', refused: 'Refused', exported: 'Data exported', contained: 'Contained', reported: 'Reported to the data protection centre', people_told: 'People affected told', note: 'Note', closed: 'Closed' }
     },
+    fra: {
+      registered: 'FRA registered', number: 'FRA register no. {n}', regulated: 'Supervised by the FRA', notRegulated: 'Not supervised by the FRA',
+      requiredNote: 'Collections for this client go only to providers registered with the Financial Regulatory Authority (FRA).',
+      optional: 'Optional. Needed to receive collections from non-bank finance companies (auto, consumer finance, insurance).',
+      numberLabel: 'FRA register number', expiryOptional: 'Expiry date, if it has one'
+    },
     dispute: {
       title: 'Disputes', flag: 'Disputed', raise: 'Raise a dispute', raiseCase: 'Dispute case {ref}', raiseRating: 'Dispute this rating',
       caseIntro: 'The platform reviews both sides and the case timeline, then decides.', ratingIntro: 'If the platform upholds your dispute, the rating is removed from your score.',
@@ -476,7 +482,7 @@
         privacy_request_logged: 'Data request logged', privacy_request_review: 'Data request in review', privacy_request_done: 'Data request answered',
         privacy_request_refused: 'Data request refused', privacy_exported: 'Personal data exported', privacy_breach_logged: 'Breach logged',
         privacy_breach_reported: 'Breach reported to the centre', privacy_breach_contained: 'Breach contained', privacy_breach_people_told: 'People told about a breach',
-        privacy_breach_note: 'Breach note', privacy_breach_closed: 'Breach closed', entity_dpa_accepted: 'Data processing agreement accepted',
+        privacy_breach_note: 'Breach note', privacy_breach_closed: 'Breach closed', entity_dpa_accepted: 'Data processing agreement accepted', entity_fra_regulated: 'FRA supervision changed',
         case_submit: 'Case submitted', case_send_offer: 'Offer sent', case_decline: 'Offer declined', case_expire: 'Offer expired', case_accept: 'Case accepted',
         case_assign: 'Agent assigned', case_check_in: 'Checked in', case_submit_report: 'Report submitted', case_return_to_agent: 'Report returned',
         case_resume: 'Work resumed', case_approve: 'Report delivered', case_request_rework: 'Rework requested', case_accept_report: 'Report accepted',
@@ -543,6 +549,7 @@
       platform_fee_changed: 'The platform fee is now {pct}% for invoices opened from today', invoice_issued: 'Invoice {ref} was issued', invoice_paid: 'Invoice {ref} was paid',
       enforcement_changed: 'Your account status changed: {level}', enforcement_admin: '{provider} status changed automatically: {level}',
       provider_verified: 'Your account is verified', batch_progress: 'Batch {ref} moved forward',
+      fra_expired: 'Your FRA registration has expired. Collections from non-bank finance clients stop until operations checks the renewed one.',
       privacy_request_new: 'New data request {ref} waits for an answer', privacy_request_due: 'Data request {ref} is due within a day',
       privacy_request_late: 'Data request {ref} is past its deadline',
       privacy_request_org: 'A person in {count} of your cases made a request about their data ({ref}). The platform Legal team will contact you.',
@@ -550,6 +557,7 @@
       breach_late: 'Breach {ref} is past the 72-hour reporting deadline'
     },
     errors: {
+      fraCollectionOnly: 'The FRA registration is for providers that do collections.',
       dpaRequired: 'Your organisation Admin must accept the data processing agreement before cases can be sent to providers.',
       privacyRange: 'Enter a whole number from {min} to {max}', photosAfterPersonal: 'Photos cannot be kept longer than the other personal details',
       idOrPhone: 'Enter the national ID or the mobile number', breachCloseReason: 'Report it to the data protection centre first, or write why no report was needed',

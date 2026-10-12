@@ -43,6 +43,7 @@ To start over at any point: More, then **Reset demo data**.
 - [ ] Changing inquiry types moves the deadline.
 - [ ] **Save draft**, open it from Cases → Drafts, edit it.
 - [ ] **Choose provider**: only providers covering that city; sort by price; **Send to best match**.
+- [ ] Youssef (Collections): choosing a provider for a collection says it must be registered with the FRA (Horus is an auto finance company), and Recovery Partners shows **FRA registered**.
 
 ## 4. Bulk upload and batches (Tamer)
 

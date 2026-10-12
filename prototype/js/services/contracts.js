@@ -66,7 +66,7 @@
       agentTasks: '() -> CaseRow[]   (field agent)'
     },
     marketplace: {
-      eligible: '({ service, demand: {gov: count}, inquiryTypes, bucket, caseId }) -> ProviderCard[]',
+      eligible: '({ service, demand: {gov: count}, inquiryTypes, bucket, caseId, entityId? }) -> { providers: ProviderCard[], excluded, fraRequired }',
       profile: '(providerId, service) -> ProviderProfile (anonymised feedback)'
     },
     offers: {
@@ -130,6 +130,7 @@
       setRole: '(userId, role) -> User',
       setActive: '(userId, active) -> User',
       publicProfile: '(entityId) -> { name, type, clientRating }',
+      setFraRegulated: '(entityId, true|false, reason) -> Entity   (Sales, Management: whether its collections need FRA-registered providers)',
       acceptDpa: '() -> Entity   (organisation Admin accepts the current data processing agreement; needed before cases go to providers)'
     },
     privacy: {

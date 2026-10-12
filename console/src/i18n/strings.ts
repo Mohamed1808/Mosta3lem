@@ -84,6 +84,9 @@ const en = {
       col: { name: 'Organisation', users: 'Users', open: 'Open cases', volume: 'All cases', spend: 'Spend to date', rating: 'Rated by providers' },
       ratingLine: 'Data {data} · paying {pay} ({n})', ratingSub: 'Data quality / paying on time, {n} ratings', noRatings: 'Not rated yet',
       newSub: 'Open the account and its first Admin. The Admin adds the rest of the team from the app.', organisation: 'Organisation', name: 'Organisation name', type: 'Type',
+      compliance: 'Compliance', fraChange: 'Change FRA supervision', fraTitle: 'Supervised by the FRA?',
+      fraBody: 'Non-bank finance companies (auto and consumer finance, insurance) are supervised by the Financial Regulatory Authority. Their collections then go only to FRA-registered providers.',
+      fraSaved: 'Saved', fraNotNeeded: 'Its collections can go to any provider.',
       firstAdmin: 'First Admin', adminNote: 'Demo: no email is sent. The Admin signs in to the app with this email and the password {pw}.',
       create: 'Open the account', created: '{name} is ready', since: 'client since {date}', users: 'Users ({n})',
       createdNote: 'Account opened. The Admin signs in to the app with their email and the password {pw}, then adds their team.'
@@ -269,6 +272,9 @@ const ar: typeof en = {
       col: { name: 'الجهة', users: 'المستخدمون', open: 'حالات مفتوحة', volume: 'كل الحالات', spend: 'الإنفاق حتى الآن', rating: 'تقييم مقدمي الخدمة' },
       ratingLine: 'البيانات {data} · السداد {pay} ({n})', ratingSub: 'جودة البيانات / السداد في الموعد، {n} تقييم', noRatings: 'لم تُقيَّم بعد',
       newSub: 'افتح الحساب وأول مدير له. يضيف المدير باقي الفريق من التطبيق.', organisation: 'الجهة', name: 'اسم الجهة', type: 'النوع',
+      compliance: 'الامتثال', fraChange: 'تغيير الخضوع للرقابة المالية', fraTitle: 'تخضع للهيئة العامة للرقابة المالية؟',
+      fraBody: 'تخضع شركات التمويل غير المصرفي (تمويل السيارات والتمويل الاستهلاكي والتأمين) للهيئة العامة للرقابة المالية، وعندها تُرسل حالات التحصيل الخاصة بها لمقدمي خدمة مقيدين لديها فقط.',
+      fraSaved: 'تم الحفظ', fraNotNeeded: 'يمكن إرسال حالات التحصيل الخاصة بها لأي مقدم خدمة.',
       firstAdmin: 'أول مدير', adminNote: 'نسخة تجريبية: لا يُرسل بريد. يسجّل المدير الدخول إلى التطبيق بهذا البريد وكلمة المرور {pw}.',
       create: 'فتح الحساب', created: '{name} جاهزة', since: 'عميل منذ {date}', users: 'المستخدمون ({n})',
       createdNote: 'تم فتح الحساب. يسجّل المدير الدخول إلى التطبيق ببريده وكلمة المرور {pw}، ثم يضيف فريقه.'
