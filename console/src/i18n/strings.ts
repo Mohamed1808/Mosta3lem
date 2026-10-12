@@ -5,6 +5,20 @@
  */
 const en = {
   console: {
+    eta: {
+      title: 'E-invoicing (ETA)', sub: 'What every e-invoice to the Egyptian Tax Authority carries about Mosta3lem. Fill it in once the company is registered on the ETA portal.',
+      profileReady: 'The tax profile is complete.', missing: 'Still missing before e-invoices can be sent:', saved: 'Saved',
+      company: 'Company', legalName: 'Legal name (as on the tax card)', taxId: 'Tax registration number', taxIdHint: '9 digits',
+      activityCode: 'Activity code', activityHint: 'From the tax card, 4 digits (8291: collection agencies and credit bureaus)',
+      address: 'Registered address', city: 'City or district', street: 'Street', building: 'Building number',
+      vat: 'VAT', vatRate: 'VAT rate (%)', pricesVat: 'Prices on invoices', vatOnTop: 'VAT is added on top', vatIncluded: 'Prices already include VAT',
+      vatNote: 'Confirm with your accountant. Invoices in the platform show amounts before VAT today.',
+      itemCodes: 'Item codes registered on the ETA portal', itemCodesNote: 'Register one code per service on the ETA portal (EGS codes), then enter them here.',
+      invoiceTitle: 'E-invoice (ETA)', ready: 'Ready', notReady: 'Not ready', net: 'Before VAT', vatAmount: 'VAT', total: 'Total with VAT',
+      download: 'Download the ETA file', downloaded: 'File downloaded',
+      signNote: 'The file still needs the company e-seal and sending to the ETA. That is connected once the company has its ETA credentials.',
+      taxDetails: 'Tax details (for e-invoices)', noTaxDetails: 'No tax registration number yet. E-invoices to this organisation need it.'
+    },
     privacy: {
       sub: 'Requests from people about their data, data breaches, and how long personal data is kept (Personal Data Protection Law, Law 151 of 2020).',
       tab: { requests: 'Requests from people', breaches: 'Breaches', settings: 'Retention and agreements' },
@@ -193,6 +207,20 @@ const en = {
 
 const ar: typeof en = {
   console: {
+    eta: {
+      title: 'الفاتورة الإلكترونية', sub: 'ما تحمله كل فاتورة إلكترونية إلى مصلحة الضرائب المصرية عن مستعلم. تُستكمل بعد تسجيل الشركة على منظومة الفاتورة الإلكترونية.',
+      profileReady: 'الملف الضريبي مكتمل.', missing: 'ما زال ناقصًا قبل إرسال الفواتير الإلكترونية:', saved: 'تم الحفظ',
+      company: 'الشركة', legalName: 'الاسم القانوني (كما في البطاقة الضريبية)', taxId: 'رقم التسجيل الضريبي', taxIdHint: '9 أرقام',
+      activityCode: 'رمز النشاط', activityHint: 'من البطاقة الضريبية، 4 أرقام (8291: أنشطة وكالات التحصيل ومكاتب الائتمان)',
+      address: 'العنوان المسجل', city: 'المدينة أو الحي', street: 'الشارع', building: 'رقم المبنى',
+      vat: 'ضريبة القيمة المضافة', vatRate: 'نسبة الضريبة (%)', pricesVat: 'الأسعار في الفواتير', vatOnTop: 'تُضاف الضريبة على السعر', vatIncluded: 'الأسعار شاملة الضريبة',
+      vatNote: 'راجع ذلك مع المحاسب. الفواتير على المنصة تعرض المبالغ قبل الضريبة حاليًا.',
+      itemCodes: 'رموز الأصناف المسجلة على المنظومة', itemCodesNote: 'سجّل رمزًا لكل خدمة على منظومة الفاتورة الإلكترونية (رموز EGS)، ثم أدخلها هنا.',
+      invoiceTitle: 'الفاتورة الإلكترونية', ready: 'جاهزة', notReady: 'غير جاهزة', net: 'قبل الضريبة', vatAmount: 'الضريبة', total: 'الإجمالي شامل الضريبة',
+      download: 'تنزيل ملف الفاتورة الإلكترونية', downloaded: 'تم تنزيل الملف',
+      signNote: 'ما زال الملف يحتاج التوقيع الإلكتروني للشركة والإرسال إلى المصلحة، ويُربط ذلك بعد حصول الشركة على بيانات الربط مع المنظومة.',
+      taxDetails: 'البيانات الضريبية (للفاتورة الإلكترونية)', noTaxDetails: 'لا يوجد رقم تسجيل ضريبي بعد. تحتاجه الفواتير الإلكترونية لهذه الجهة.'
+    },
     privacy: {
       sub: 'طلبات الأشخاص بخصوص بياناتهم، واختراقات البيانات، ومدة الاحتفاظ بالبيانات الشخصية (قانون حماية البيانات الشخصية رقم 151 لسنة 2020).',
       tab: { requests: 'طلبات الأشخاص', breaches: 'الاختراقات', settings: 'مدة الاحتفاظ والاتفاقيات' },

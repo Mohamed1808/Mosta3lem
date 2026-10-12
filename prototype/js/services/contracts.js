@@ -130,6 +130,7 @@
       setRole: '(userId, role) -> User',
       setActive: '(userId, active) -> User',
       publicProfile: '(entityId) -> { name, type, clientRating }',
+      setTaxDetails: '(entityId, { taxId, address }) -> Entity   (Sales or Finance: what e-invoices to it must carry)',
       setFraRegulated: '(entityId, true|false, reason) -> Entity   (Sales, Management: whether its collections need FRA-registered providers)',
       acceptDpa: '() -> Entity   (organisation Admin accepts the current data processing agreement; needed before cases go to providers)'
     },
@@ -196,6 +197,9 @@
       proposeFee: '(pct, note) -> FeeProposal   (Finance or Management: first step)',
       confirmFee: '() -> { pct }   (the other team: invoices opened from now on use it)',
       sendBackFee: '(note) -> null   (the other team disagrees)',
+      etaSettings: '() -> { settings, problems }   (Mosta3lem tax profile for e-invoices)',
+      updateEtaSettings: '({ legalName, taxId, activityCode, vatRate, pricesIncludeVat, branch, itemCodes }) -> { settings, problems }   (Finance)',
+      etaDocument: '(invoiceId) -> { document, problems, ready }   (the invoice as an ETA e-invoice document, version 1.0)',
       markPaid: '(invoiceId) -> Invoice',
       issue: '(invoiceId) -> Invoice   (admin)',
       earnings: '(service?) -> EarningsSummary { scope: all|team, rows, byAgent, totals }   (owner and individual: all; supervisor: own agents; agents: forbidden)',

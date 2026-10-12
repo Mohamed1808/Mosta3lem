@@ -296,6 +296,15 @@
       breachStatus: { open: 'لم يُبلَّغ بعد', reported: 'تم إبلاغ المركز', closed: 'مغلق' },
       step: { in_review: 'بدأت المراجعة', done: 'تم الرد', refused: 'مرفوض', exported: 'تم تصدير البيانات', contained: 'تم الاحتواء', reported: 'تم إبلاغ مركز حماية البيانات', people_told: 'تم إخطار المتأثرين', note: 'ملاحظة', closed: 'مغلق' }
     },
+    eta: {
+      problem: {
+        legalName: 'الاسم القانوني لمستعلم غير موجود', taxId: 'رقم التسجيل الضريبي لمستعلم (9 أرقام) غير موجود',
+        activityCode: 'رمز النشاط (4 أرقام) غير موجود', branch: 'العنوان المسجل لمستعلم غير مكتمل', vatRate: 'نسبة ضريبة القيمة المضافة يجب أن تكون من 0 إلى 100',
+        itemCode: 'رمز الصنف لخدمة {service} غير موجود (EG-الرقم الضريبي-الرمز، مسجل على بوابة الفاتورة الإلكترونية)',
+        receiverTaxId: 'رقم التسجيل الضريبي للجهة (9 أرقام) غير موجود', receiverAddress: 'العنوان المسجل للجهة غير مكتمل',
+        notIssued: 'الفاتورة لم تُصدر بعد', noLines: 'الفاتورة لا تحتوي على حالات'
+      }
+    },
     digest: {
       hello: 'صباح الخير {name}. ملخصك من مستعلم:',
       delivered: '{n} نتيجة جديدة خلال اليوم الماضي', waiting: '{n} حالة تنتظر قرارك',
@@ -487,7 +496,7 @@
         privacy_request_logged: 'تسجيل طلب بيانات', privacy_request_review: 'مراجعة طلب بيانات', privacy_request_done: 'الرد على طلب بيانات',
         privacy_request_refused: 'رفض طلب بيانات', privacy_exported: 'تصدير بيانات شخصية', privacy_breach_logged: 'تسجيل اختراق',
         privacy_breach_reported: 'إبلاغ المركز بالاختراق', privacy_breach_contained: 'احتواء اختراق', privacy_breach_people_told: 'إخطار المتأثرين بالاختراق',
-        privacy_breach_note: 'ملاحظة على اختراق', privacy_breach_closed: 'إغلاق اختراق', entity_dpa_accepted: 'الموافقة على اتفاقية معالجة البيانات', entity_fra_regulated: 'تغيير خضوع الجهة للرقابة المالية', user_digest_on: 'تفعيل الملخص اليومي', user_digest_off: 'إيقاف الملخص اليومي',
+        privacy_breach_note: 'ملاحظة على اختراق', privacy_breach_closed: 'إغلاق اختراق', entity_dpa_accepted: 'الموافقة على اتفاقية معالجة البيانات', entity_fra_regulated: 'تغيير خضوع الجهة للرقابة المالية', user_digest_on: 'تفعيل الملخص اليومي', config_eta: 'تغيير الملف الضريبي للفاتورة الإلكترونية', entity_tax_details: 'تغيير البيانات الضريبية', user_digest_off: 'إيقاف الملخص اليومي',
         case_submit: 'أُرسلت الحالة', case_send_offer: 'أُرسل العرض', case_decline: 'رُفض العرض', case_expire: 'انتهى العرض', case_accept: 'قُبلت الحالة',
         case_assign: 'كُلّف مندوب', case_check_in: 'سُجل الوصول', case_submit_report: 'أُرسل التقرير', case_return_to_agent: 'أُعيد التقرير',
         case_resume: 'استُؤنف العمل', case_approve: 'سُلّم التقرير', case_request_rework: 'طُلب تعديل', case_accept_report: 'قُبل التقرير',
@@ -562,6 +571,7 @@
       breach_late: 'تجاوز الاختراق {ref} مهلة الإبلاغ (72 ساعة)'
     },
     errors: {
+      taxIdFormat: 'رقم التسجيل الضريبي 9 أرقام',
       fraCollectionOnly: 'القيد بالرقابة المالية لمقدمي خدمة التحصيل فقط.',
       dpaRequired: 'يجب أن يوافق مسؤول جهتك على اتفاقية معالجة البيانات قبل إرسال الحالات لمقدمي الخدمة.',
       privacyRange: 'أدخل عددًا صحيحًا من {min} إلى {max}', photosAfterPersonal: 'لا يمكن الاحتفاظ بالصور مدة أطول من باقي البيانات الشخصية',

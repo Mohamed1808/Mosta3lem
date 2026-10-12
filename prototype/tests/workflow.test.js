@@ -691,6 +691,46 @@
     });
   });
 
+  describe('ETA e-invoice document', function () {
+    var cfg = { lists: { governorates: [{ id: 'cairo', en: 'Cairo' }, { id: 'giza', en: 'Giza' }] }, eta: {
+      legalName: 'Mosta3lem LLC', taxId: '123456789', activityCode: '8291', vatRate: 14,
+      branch: { governorate: 'cairo', regionCity: 'Nasr City', street: 'Abbas El Akkad', buildingNumber: '10' },
+      itemCodes: { investigation: 'EG-123456789-INV', collection: 'EG-123456789-COL' } } };
+    var entity = { name: 'Horus Auto Finance', tax: { taxId: '987654321', address: { governorate: 'giza', regionCity: 'Dokki', street: 'Tahrir', buildingNumber: '5' } } };
+    var inv = { ref: 'INVC-2026-00001', status: 'issued', issuedAt: Date.UTC(2026, 9, 12, 9), lines: [
+      { caseRef: 'INV-2026-00001', service: 'investigation', billed: 450 },
+      { caseRef: 'COL-2026-00002', service: 'collection', billed: 333.33 },
+      { caseRef: 'INV-2026-00003', service: 'investigation', billed: 0 }] };
+    it('builds lines with 14% VAT added and totals that add up', function () {
+      var r = wf.eta.document(inv, entity, cfg);
+      expect(r.problems.length).toBe(0);
+      var d = r.document;
+      expect(d.invoiceLines.length).toBe(2);
+      expect(d.invoiceLines[0].taxableItems[0].amount).toBe(63);
+      expect(d.netAmount).toBe(783.33);
+      expect(d.taxTotals[0].amount).toBe(109.6662);
+      expect(d.totalAmount).toBe(892.9962);
+      expect(d.issuer.address.governate).toBe('Cairo');
+      expect(d.receiver.id).toBe('987654321');
+      expect(d.dateTimeIssued).toBe('2026-10-12T09:00:00Z');
+    });
+    it('takes VAT out of the price when prices include it', function () {
+      var c2 = JSON.parse(JSON.stringify(cfg)); c2.eta.pricesIncludeVat = true;
+      var d = wf.eta.document({ ref: 'X', status: 'issued', lines: [{ caseRef: 'A', service: 'investigation', billed: 114 }] }, entity, c2).document;
+      expect(d.netAmount).toBe(100);
+      expect(d.totalAmount).toBe(114);
+    });
+    it('lists what is missing before it can be sent', function () {
+      var r = wf.eta.document(Object.assign({}, inv, { status: 'draft' }), { name: 'X' }, { lists: {} });
+      var keys = r.problems.map(function (p) { return p.key; });
+      expect(keys.indexOf('eta.problem.taxId') >= 0).toBe(true);
+      expect(keys.indexOf('eta.problem.receiverTaxId') >= 0).toBe(true);
+      expect(keys.indexOf('eta.problem.notIssued') >= 0).toBe(true);
+      expect(wf.eta.itemCodeOk('EG-123456789-INV', '123456789')).toBe(true);
+      expect(wf.eta.itemCodeOk('EG-111111111-INV', '123456789')).toBe(false);
+    });
+  });
+
   describe('FRA registration', function () {
     var NOW = Date.UTC(2026, 9, 12);
     function prov(doc) { return { verification: { documents: doc ? [doc] : [] } }; }

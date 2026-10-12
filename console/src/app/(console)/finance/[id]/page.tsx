@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 
 import { icm, services } from "@/backend/engine";
 import { useAction, useDialog } from "@/components/dialog";
+import { EtaCard } from "@/components/eta";
 import { Badge, Button, Card, Kpi, Loading, Notice, PageHead } from "@/components/ui";
 import { date, dateTime, money, num } from "@/lib/format";
 import { useApp, useQuery, useT } from "@/lib/app";
@@ -92,6 +93,7 @@ function Body({ inv }: { inv: Any }) {
           </table>
         </div>
       </Card>
+      <EtaCard invoiceId={inv.id} invoiceRef={inv.ref} />
       {inv.paidAt ? <p className="mt-3 text-xs text-ink2">{t("console.finance.paidLine", { at: dateTime(inv.paidAt), by: inv.paidBy ? inv.paidBy.name : "-" })}</p> : null}
     </>
   );

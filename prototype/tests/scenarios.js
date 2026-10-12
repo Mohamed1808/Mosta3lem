@@ -4,7 +4,7 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
 const files = ['js/core/util.js', 'js/core/i18n.js', 'js/i18n/en.js', 'js/i18n/ar.js', 'js/i18n/registration.en.js', 'js/i18n/registration.ar.js', 'js/i18n/investigation.en.js', 'js/i18n/investigation.ar.js', 'js/config/platform.js', 'js/config/geo.js', 'js/config/services.js', 'js/config/ratings.js', 'js/config/status.js', 'js/config/defaults.js', 'js/config/forms.js', 'js/config/reportForms.js',
-  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/settings.js', 'js/workflow/reports.js', 'js/workflow/privacy.js',
+  'js/workflow/common.js', 'js/workflow/validation.js', 'js/workflow/investigation.js', 'js/workflow/collection.js', 'js/workflow/batch.js', 'js/workflow/sla.js', 'js/workflow/masking.js', 'js/workflow/scoring.js', 'js/workflow/registration.js', 'js/workflow/settings.js', 'js/workflow/reports.js', 'js/workflow/privacy.js', 'js/workflow/eta.js',
   'js/store/store.js', 'js/store/domain.js', 'js/store/seed.js',
   'js/services/engine.js', 'js/services/contracts.js', 'js/services/core.js', 'js/services/cases.js', 'js/services/batches.js', 'js/services/providers.js', 'js/services/ratings.js', 'js/services/billing.js', 'js/services/registration.js', 'js/services/exports.js', 'js/services/privacy.js', 'js/services/index.js'];
 const mem = {};
@@ -1499,6 +1499,43 @@ async function runInvestigation(caseId, providerId, opts) {
     await S.digest.setEnabled(true);
     await as('Mai Adel');
     ok(await errOf(S.digest.mine()) === 'errors.forbidden', 'staff do not get it');
+  });
+
+  await scenario('38. E-invoices for the tax authority (ETA)', async () => {
+    const db = ICM.store.db;
+    const errOf = async (p) => { try { await p; return null; } catch (e) { return e.key; } };
+    const inv = db.invoices.find((i) => i.status === 'issued');
+
+    await as('Hossam Tawfik');
+    const first = await S.billing.etaDocument(inv.id);
+    ok(!first.ready && first.problems.some((p) => p.key === 'eta.problem.taxId'), 'before the tax profile is filled in, the invoice is not ready');
+    ok(await errOf(S.billing.updateEtaSettings({ taxId: '12345' })) === 'errors.taxIdFormat', 'the tax number must be 9 digits');
+    const st = await S.billing.updateEtaSettings({
+      legalName: 'Mosta3lem LLC', taxId: '123456789', activityCode: '8291',
+      branch: { governorate: 'cairo', regionCity: 'Nasr City', street: 'Abbas El Akkad', buildingNumber: '10' },
+      itemCodes: { investigation: 'EG-123456789-INV', collection: 'EG-123456789-COL' }
+    });
+    ok(!st.problems.length, 'Finance completes the tax profile');
+    const second = await S.billing.etaDocument(inv.id);
+    ok(second.problems.length && second.problems.every((p) => p.key.indexOf('receiver') >= 0), 'then only the organisation details are missing');
+
+    await as('Mai Adel');
+    ok(await errOf(S.entities.setTaxDetails(inv.entityId, { taxId: '987654321' })) === 'errors.forbidden', 'Operations cannot change tax details');
+    await as('Sherif Lotfy');
+    ok(await errOf(S.entities.setTaxDetails(inv.entityId, { taxId: '987654321', address: { regionCity: 'Dokki' } })) === 'errors.required', 'the full address is needed');
+    const ent = await S.entities.setTaxDetails(inv.entityId, { taxId: '987654321', address: { governorate: 'giza', regionCity: 'Dokki', street: 'Tahrir', buildingNumber: '5' } });
+    ok(!ent.etaProblems.length, 'Sales enters the organisation tax number and address');
+
+    await as('Hossam Tawfik');
+    const ready = await S.billing.etaDocument(inv.id);
+    const d = ready.document;
+    ok(ready.ready && d.internalID === inv.ref && d.receiver.id === '987654321', 'the invoice is ready as an ETA document');
+    const billed = inv.lines.reduce((s, l) => s + Math.round(l.amount * (l.adjustment == null ? 1 : l.adjustment)), 0);
+    ok(Math.abs(d.netAmount - billed) < 0.01 && Math.abs(d.taxTotals[0].amount - billed * 0.14) < 0.01, 'net is the billed amount, with 14% VAT on top');
+    const names = db.cases.filter((c) => c.customer && c.customer.name).map((c) => c.customer.name);
+    ok(!names.some((n) => JSON.stringify(d).indexOf(n) >= 0), 'no customer names in the document');
+    await as('Nadia Samir');
+    ok(await errOf(S.billing.etaDocument(inv.id)) === 'errors.forbidden', 'organisations do not get the raw document');
   });
 
   // ---------------------------------------------------------------- report

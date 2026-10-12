@@ -61,6 +61,7 @@ The console keeps its own demo data in this browser, separate from the phone. To
 - [ ] Totals, the fee card and invoices by Draft / Issued / Paid.
 - [ ] Open an invoice: **Adjust** one case to 50% with a reason; **Record payment received** on an issued one.
 - [ ] Hossam: **Propose a new fee**. Karim: **Confirm the new fee**. The history shows both.
+- [ ] Hossam: **E-invoicing (ETA)** lists what is missing. Fill in a test profile (tax number 123456789, item codes EG-123456789-INV and EG-123456789-COL). On an issued invoice, the **E-invoice (ETA)** card shows VAT and what is still missing; Sherif adds the organisation's **Tax details**; the card turns **Ready** and the file downloads.
 
 ## 6. Accounts and settings (Sherif, Amira, Laila)
 

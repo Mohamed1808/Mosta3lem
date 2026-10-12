@@ -30,6 +30,7 @@ export const SCRIPTS = [
   () => import("../../../prototype/js/workflow/settings.js"),
   () => import("../../../prototype/js/workflow/reports.js"),
   () => import("../../../prototype/js/workflow/privacy.js"),
+  () => import("../../../prototype/js/workflow/eta.js"),
   () => import("../../../prototype/js/store/store.js"),
   () => import("../../../prototype/js/store/domain.js"),
   () => import("../../../prototype/js/store/seed.js"),

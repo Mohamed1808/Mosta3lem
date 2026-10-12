@@ -7,11 +7,12 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { FormEvent, useState } from "react";
 
 import { icm, remoteMode, services } from "@/backend/engine";
 import { useAction, useDialog } from "@/components/dialog";
-import { Badge, Button, Card, Kpi, Loading, Notice, PageHead } from "@/components/ui";
-import { date, dateTime, money, num, orgPlace } from "@/lib/format";
+import { Badge, Button, Card, Field, inputClass, Kpi, Loading, Notice, PageHead } from "@/components/ui";
+import { date, dateTime, gov, money, num, orgPlace } from "@/lib/format";
 import { useApp, useQuery, useT } from "@/lib/app";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,6 +74,7 @@ export default function OrganisationPage() {
           </li>
         </ul>
       </Card>
+      <TaxDetails e={e} edit={can("orgs.create") || can("billing.issue")} />
       <Card title={t("console.orgs.users", { n: num(e.users.length) })}>
         <ul className="-m-5 divide-y divide-line">
           {e.users.map((u: Any) => {
@@ -109,4 +111,41 @@ export default function OrganisationPage() {
 function auditLabel(action: string) {
   const key = "audit.action." + action.replace(/\./g, "_");
   return icm().i18n.has(key) ? icm().t(key) : action;
+}
+
+/** The organisation's tax number and registered address, which e-invoices to it carry. */
+function TaxDetails({ e, edit }: { e: Any; edit: boolean }) {
+  const t = useT();
+  const run = useAction();
+  const [open, setOpen] = useState(false);
+  const tax = e.tax || { taxId: "", address: { governorate: e.governorate || "cairo", regionCity: "", street: "", buildingNumber: "" } };
+  const [v, setV] = useState<Any>(tax);
+  const govs: Any[] = icm().store.db.config.lists.governorates;
+  const setAd = (k: string, val: string) => setV({ ...v, address: { ...v.address, [k]: val } });
+  const save = async (ev: FormEvent) => {
+    ev.preventDefault();
+    if (await run(() => services().entities.setTaxDetails(e.id, v), t("console.eta.saved"))) setOpen(false);
+  };
+  const a = e.tax && e.tax.address;
+  return (
+    <Card title={t("console.eta.taxDetails")} className="mb-4"
+      right={edit && !open ? <Button kind="ghost" onClick={() => { setV(tax); setOpen(true); }}>{t("common.edit")}</Button> : undefined}>
+      {open ? (
+        <form onSubmit={save} className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+            <Field label={t("console.eta.taxId")}><input className={`${inputClass} ltr`} value={v.taxId} onChange={(x) => setV({ ...v, taxId: x.target.value })} /></Field>
+            <Field label={t("address.governorate")}>
+              <select className={inputClass} value={v.address.governorate} onChange={(x) => setAd("governorate", x.target.value)}>{govs.map((g) => <option key={g.id} value={g.id}>{icm().util.label(g)}</option>)}</select>
+            </Field>
+            <Field label={t("console.eta.city")}><input className={inputClass} value={v.address.regionCity} onChange={(x) => setAd("regionCity", x.target.value)} /></Field>
+            <Field label={t("console.eta.street")}><input className={inputClass} value={v.address.street} onChange={(x) => setAd("street", x.target.value)} /></Field>
+            <Field label={t("console.eta.building")}><input className={`${inputClass} ltr`} value={v.address.buildingNumber} onChange={(x) => setAd("buildingNumber", x.target.value)} /></Field>
+          </div>
+          <div className="flex justify-end gap-2"><Button onClick={() => setOpen(false)}>{t("common.cancel")}</Button><Button type="submit" kind="primary">{t("common.save")}</Button></div>
+        </form>
+      ) : e.tax ? (
+        <p className="text-sm"><span className="font-mono"><bdi dir="ltr">{e.tax.taxId}</bdi></span> · {[a.buildingNumber, a.street, a.regionCity, gov(a.governorate)].filter(Boolean).join(", ")}</p>
+      ) : <p className="text-sm text-ink3">{t("console.eta.noTaxDetails")}</p>}
+    </Card>
+  );
 }
